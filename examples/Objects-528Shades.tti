@@ -1,0 +1,104 @@
+DE,528 shades of colour
+PN,12801
+SC,0001
+PS,8000
+CT,30,T
+OL,26,@oD@FC@hQ]pD@Fc@hQ]qD@FCAhQ]rD@FcAhQ]sD@
+OL,26,AFCBhQ]tD@FcBhQ]uD@FCChQ]vD@FcChQ]wD@FCD
+OL,26,BhQ]xD@FcDhQ]yD@FCEhQ]zD@FcEhQ]{D@FCFhQ]
+OL,26,C|D@FcFhQ]}D@FCGhQ]~D@FcGhQ]_xU]@@@@kW
+OL,26,DA`@AkWB@ABkWC`ACkWD@BDkWE`BEkWF@CFkWG`C
+OL,26,EGkWH@DHkWI`DIkWJ@EJkWK`EKkWL@FLkWM`FMkW
+OL,26,FN@GNkWO`GOkWP@HPkWQ`HQkWR@IRkWS`ISkWT@J
+OL,26,GTkWU`JUkWV@KVkWW`KWkWX@LXkWY`LYkWZ@MZkW
+OL,26,H[`M[kW\@N\kW]`N]kW^@O^kW_`O_kW
+OL,1,  Using an Object to build a    F(1/3)  
+OL,2,  repetitive tartan pattern.            
+OL,3,  CLUTS 0 and 1.                        
+OL,4,      0       1       2       3         
+OL,5,      01234567012345670123456701234567  
+OL,7,  00  This page requires a Level 2.5  \ 
+OL,8,   1  decoder with support for        \ 
+OL,9,   2  Active Objects within the       \ 
+OL,10,   3  Local Enhancement Data.         \ 
+OL,11,   4                                  \ 
+OL,12,   5                                  \ 
+OL,13,   6                                  \ 
+OL,14,   7                                  \ 
+OL,15,  10                                  \ 
+OL,16,   1                                  \ 
+OL,17,   2                                  \ 
+OL,18,   3                                  \ 
+OL,19,   4                                  \ 
+OL,20,   5                                  \ 
+OL,21,   6                                  \ 
+OL,22,   7                                  \ 
+PN,12802
+SC,0002
+PS,8000
+CT,30,T
+OL,26,@oD@FCHhQ]pD@FcHhQ]qD@FCIhQ]rD@FcIhQ]sD@
+OL,26,AFCJhQ]tD@FcJhQ]uD@FCKhQ]vD@FcKhQ]wD@FCL
+OL,26,BhQ]xD@FcLhQ]yD@FCMhQ]zD@FcMhQ]{D@FCNhQ]
+OL,26,C|D@FcNhQ]}D@FCOhQ]~D@FcOhQ]_xU]@@@@kW
+OL,26,DA`@AkWB@ABkWC`ACkWD@BDkWE`BEkWF@CFkWG`C
+OL,26,EGkWH@DHkWI`DIkWJ@EJkWK`EKkWL@FLkWM`FMkW
+OL,26,FN@GNkWO`GOkWP@HPkWQ`HQkWR@IRkWS`ISkWT@J
+OL,26,GTkWU`JUkWV@KVkWW`KWkWX@LXkWY`LYkWZ@MZkW
+OL,26,H[`M[kW\@N\kW]`N]kW^@O^kW_`O_kW
+OL,1,  Using an Object to build a    F(2/3)  
+OL,2,  repetitive tartan pattern.            
+OL,3,  CLUTS 2 and 3, default palette.       
+OL,4,      0       1       2       3         
+OL,5,      01234567012345670123456701234567  
+OL,7,  20  This page requires a Level 2.5  \ 
+OL,8,   1  decoder with support for        \ 
+OL,9,   2  Active Objects within the       \ 
+OL,10,   3  Local Enhancement Data.         \ 
+OL,11,   4                                  \ 
+OL,12,   5                                  \ 
+OL,13,   6                                  \ 
+OL,14,   7                                  \ 
+OL,15,  30                                  \ 
+OL,16,   1                                  \ 
+OL,17,   2                                  \ 
+OL,18,   3                                  \ 
+OL,19,   4                                  \ 
+OL,20,   5                                  \ 
+OL,21,   6                                  \ 
+OL,22,   7                                  \ 
+PN,12803
+SC,0003
+PS,8000
+CT,30,T
+OL,28,@@@@`P@p@PApAPBpBPCpCPDqLSUu]Wfyn[w}O@@
+OL,26,@oD@FCHhQ]pD@FcHhQ]qD@FCIhQ]rD@FcIhQ]sD@
+OL,26,AFCJhQ]tD@FcJhQ]uD@FCKhQ]vD@FcKhQ]wD@FCL
+OL,26,BhQ]xD@FcLhQ]yD@FCMhQ]zD@FcMhQ]{D@FCNhQ]
+OL,26,C|D@FcNhQ]}D@FCOhQ]~D@FcOhQ]_xU]@@@@kW
+OL,26,DA`@AkWB@ABkWC`ACkWD@BDkWE`BEkWF@CFkWG`C
+OL,26,EGkWH@DHkWI`DIkWJ@EJkWK`EKkWL@FLkWM`FMkW
+OL,26,FN@GNkWO`GOkWP@HPkWQ`HQkWR@IRkWS`ISkWT@J
+OL,26,GTkWU`JUkWV@KVkWW`KWkWX@LXkWY`LYkWZ@MZkW
+OL,26,H[`M[kW\@N\kW]`N]kW^@O^kW_`O_kW
+OL,1,  Using an Object to build a    F(3/3)  
+OL,2,  repetitive tartan pattern.            
+OL,3,  CLUTS 2 and 3, custom palette.        
+OL,4,      0       1       2       3         
+OL,5,      01234567012345670123456701234567  
+OL,7,  20  This page requires a Level 2.5  \ 
+OL,8,   1  decoder with support for        \ 
+OL,9,   2  Active Objects within the       \ 
+OL,10,   3  Local Enhancement Data.         \ 
+OL,11,   4                                  \ 
+OL,12,   5                                  \ 
+OL,13,   6                                  \ 
+OL,14,   7                                  \ 
+OL,15,  30                                  \ 
+OL,16,   1                                  \ 
+OL,17,   2                                  \ 
+OL,18,   3                                  \ 
+OL,19,   4                                  \ 
+OL,20,   5                                  \ 
+OL,21,   6                                  \ 
+OL,22,   7                                  \ 
