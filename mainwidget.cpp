@@ -234,12 +234,12 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 					toggleCharacterBit(0x08); // Middle right
 					break;
 				case Qt::Key_Z:
-				case Qt::Key_2:
-					toggleCharacterBit(0x40); // Bottom left
+				case Qt::Key_1:
+					toggleCharacterBit(0x10); // Bottom left
 					break;
 				case Qt::Key_X:
-				case Qt::Key_1:
-					toggleCharacterBit(0x10); // Bottom right
+				case Qt::Key_2:
+					toggleCharacterBit(0x40); // Bottom right
 					break;
 				case Qt::Key_R:
 				case Qt::Key_9:
