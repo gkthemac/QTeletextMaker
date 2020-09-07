@@ -572,6 +572,8 @@ bool X26Model::insertFirstRow()
 	beginInsertRows(QModelIndex(), 0, 0);
 	m_parentMainWidget->document()->currentSubPage()->localEnhance.insert(0, firstTriplet);
 	endInsertRows();
+
+	// Since we always insert a Termination Marker there's no need to refresh the page
 	return true;
 }
 
@@ -584,6 +586,8 @@ bool X26Model::insertRows(int position, int rows, const QModelIndex &parent)
 	for (int row=0; row<rows; ++row)
 		m_parentMainWidget->document()->currentSubPage()->localEnhance.insert(position+row, copyTriplet);
 	endInsertRows();
+
+	// Since we always insert duplicates of the selected triplet there's no need to refresh the page
 	return true;
 }
 
@@ -596,6 +600,8 @@ bool X26Model::removeRows(int position, int rows, const QModelIndex &index)
 		m_parentMainWidget->document()->currentSubPage()->localEnhance.removeAt(position+row);
 
 	endRemoveRows();
+
+	m_parentMainWidget->refreshPage();
 	return true;
 }
 /*
