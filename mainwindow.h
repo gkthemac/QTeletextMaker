@@ -29,10 +29,10 @@
 #include <QLabel>
 
 #include "mainwidget.h"
+#include "pageenhancementsdockwidget.h"
 #include "pageoptionsdockwidget.h"
 #include "palettedockwidget.h"
 #include "x26dockwidget.h"
-#include "x28dockwidget.h"
 
 class QAction;
 class QMenu;
@@ -102,10 +102,10 @@ private:
 	QGraphicsRectItem *m_fullRowLeftRectItem[25], *m_fullRowRightRectItem[25];
 
 	int m_viewBorder, m_viewAspectRatio, m_viewZoom;
-	PaletteDockWidget *m_paletteDock;
-	X26DockWidget *m_x26Dock;
-	X28DockWidget *m_x28Dock;
-	PageOptionsDockWidget *m_pageOptionsDock;
+	PageOptionsDockWidget *m_pageOptionsDockWidget;
+	PageEnhancementsDockWidget *m_pageEnhancementsDockWidget;
+	X26DockWidget *m_x26DockWidget;
+	PaletteDockWidget *m_paletteDockWidget;
 
 	QAction *m_recentFileActs[m_MaxRecentFiles];
 	QAction *m_recentFileSeparator;

@@ -17,8 +17,8 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef X28DOCKWIDGET_H
-#define X28DOCKWIDGET_H
+#ifndef PAGEENHANCEMENTSDOCKWIDGET_H
+#define PAGEENHANCEMENTSDOCKWIDGET_H
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -27,12 +27,12 @@
 
 #include "mainwidget.h"
 
-class X28DockWidget : public QDockWidget
+class PageEnhancementsDockWidget : public QDockWidget
 {
 	Q_OBJECT
 
 public:
-	X28DockWidget(TeletextWidget *parent);
+	PageEnhancementsDockWidget(TeletextWidget *parent);
 	void updateWidgets();
 
 private:

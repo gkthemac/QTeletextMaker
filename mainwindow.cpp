@@ -33,10 +33,10 @@
 #include "mainwindow.h"
 
 #include "mainwidget.h"
+#include "pageenhancementsdockwidget.h"
 #include "pageoptionsdockwidget.h"
 #include "palettedockwidget.h"
 #include "x26dockwidget.h"
-#include "x28dockwidget.h"
 
 MainWindow::MainWindow()
 {
@@ -132,14 +132,14 @@ void MainWindow::init()
 
 	m_textWidget = new TeletextWidget;
 
-	m_paletteDock = new PaletteDockWidget(m_textWidget);
-	addDockWidget(Qt::RightDockWidgetArea, m_paletteDock);
-	m_x26Dock = new X26DockWidget(m_textWidget);
-	addDockWidget(Qt::RightDockWidgetArea, m_x26Dock);
-	m_x28Dock = new X28DockWidget(m_textWidget);
-	addDockWidget(Qt::RightDockWidgetArea, m_x28Dock);
-	m_pageOptionsDock = new PageOptionsDockWidget(m_textWidget);
-	addDockWidget(Qt::RightDockWidgetArea, m_pageOptionsDock);
+	m_pageOptionsDockWidget = new PageOptionsDockWidget(m_textWidget);
+	addDockWidget(Qt::RightDockWidgetArea, m_pageOptionsDockWidget);
+	m_pageEnhancementsDockWidget = new PageEnhancementsDockWidget(m_textWidget);
+	addDockWidget(Qt::RightDockWidgetArea, m_pageEnhancementsDockWidget);
+	m_x26DockWidget = new X26DockWidget(m_textWidget);
+	addDockWidget(Qt::RightDockWidgetArea, m_x26DockWidget);
+	m_paletteDockWidget = new PaletteDockWidget(m_textWidget);
+	addDockWidget(Qt::RightDockWidgetArea, m_paletteDockWidget);
 
 	createActions();
 	createStatusBar();
@@ -181,7 +181,7 @@ void MainWindow::init()
 
 	connect(m_textWidget->document(), &TeletextDocument::cursorMoved, this, &MainWindow::updateCursorPosition);
 	connect(m_textWidget->document()->undoStack(), &QUndoStack::cleanChanged, this, [=]() { setWindowModified(!m_textWidget->document()->undoStack()->isClean()); } );
-	connect(m_textWidget->document(), &TeletextDocument::aboutToChangeSubPage, m_x26Dock, &X26DockWidget::unloadX26List);
+	connect(m_textWidget->document(), &TeletextDocument::aboutToChangeSubPage, m_x26DockWidget, &X26DockWidget::unloadX26List);
 	connect(m_textWidget->document(), &TeletextDocument::subPageSelected, this, &MainWindow::updatePageWidgets);
 	connect(m_textWidget, &TeletextWidget::sizeChanged, this, &MainWindow::setSceneDimensions);
 	connect(m_textWidget->pageRender(), &TeletextPageRender::fullScreenColourChanged, this, &MainWindow::updateFullScreenRectItems);
@@ -485,10 +485,10 @@ void MainWindow::createActions()
 
 	QMenu *toolsMenu = menuBar()->addMenu(tr("&Tools"));
 
-	toolsMenu->addAction(m_pageOptionsDock->toggleViewAction());
-	toolsMenu->addAction(m_x26Dock->toggleViewAction());
-	toolsMenu->addAction(m_x28Dock->toggleViewAction());
-	toolsMenu->addAction(m_paletteDock->toggleViewAction());
+	toolsMenu->addAction(m_pageOptionsDockWidget->toggleViewAction());
+	toolsMenu->addAction(m_x26DockWidget->toggleViewAction());
+	toolsMenu->addAction(m_pageEnhancementsDockWidget->toggleViewAction());
+	toolsMenu->addAction(m_paletteDockWidget->toggleViewAction());
 
 	//FIXME is this main menubar separator to put help menu towards the right?
 	menuBar()->addSeparator();
@@ -631,14 +631,14 @@ void MainWindow::readSettings()
 	} else
 		restoreGeometry(geometry);
 	if (windowState.isEmpty()) {
-		m_x26Dock->hide();
-		m_x26Dock->setFloating(true);
-		m_x28Dock->hide();
-		m_x26Dock->setFloating(true);
-		m_pageOptionsDock->hide();
-		m_pageOptionsDock->setFloating(true);
-		m_paletteDock->hide();
-		m_paletteDock->setFloating(true);
+		m_pageOptionsDockWidget->hide();
+		m_pageOptionsDockWidget->setFloating(true);
+		m_pageEnhancementsDockWidget->hide();
+		m_pageEnhancementsDockWidget->setFloating(true);
+		m_x26DockWidget->hide();
+		m_x26DockWidget->setFloating(true);
+		m_paletteDockWidget->hide();
+		m_paletteDockWidget->setFloating(true);
 	} else
 		restoreState(windowState);
 }
@@ -827,8 +827,8 @@ void MainWindow::updateCursorPosition()
 void MainWindow::updatePageWidgets()
 {
 	updateCursorPosition();
-	m_paletteDock->updateAllColourButtons();
-	m_x26Dock->loadX26List();
-	m_x28Dock->updateWidgets();
-	m_pageOptionsDock->updateWidgets();
+	m_pageOptionsDockWidget->updateWidgets();
+	m_pageEnhancementsDockWidget->updateWidgets();
+	m_x26DockWidget->loadX26List();
+	m_paletteDockWidget->updateAllColourButtons();
 }

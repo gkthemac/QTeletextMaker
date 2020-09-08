@@ -23,19 +23,19 @@
 #include <QLabel>
 #include <QSpinBox>
 
-#include "x28dockwidget.h"
+#include "pageenhancementsdockwidget.h"
 
-X28DockWidget::X28DockWidget(TeletextWidget *parent): QDockWidget(parent)
+PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): QDockWidget(parent)
 {
-	QGridLayout *x28Layout = new QGridLayout;
-	QWidget *x28Widget = new QWidget;
+	QGridLayout *pageEnhancementsLayout = new QGridLayout;
+	QWidget *pageEnhancementsWidget = new QWidget;
 
 	m_parentMainWidget = parent;
 
-	this->setObjectName("X28DockWidget");
-	this->setWindowTitle("X/28 enhancements");
-	x28Layout->addWidget(new QLabel(tr("Default screen colour")), 0, 0, 1, 1);
-	x28Layout->addWidget(new QLabel(tr("Default row colour")), 1, 0, 1, 1);
+	this->setObjectName("PageEnhancementsDockWidget");
+	this->setWindowTitle("Page enhancements");
+	pageEnhancementsLayout->addWidget(new QLabel(tr("Default screen colour")), 0, 0, 1, 1);
+	pageEnhancementsLayout->addWidget(new QLabel(tr("Default row colour")), 1, 0, 1, 1);
 	m_defaultScreenColourCombo = new QComboBox;
 	m_defaultRowColourCombo = new QComboBox;
 	for (int r=0; r<=3; r++)
@@ -43,11 +43,11 @@ X28DockWidget::X28DockWidget(TeletextWidget *parent): QDockWidget(parent)
 			m_defaultScreenColourCombo->addItem(tr("CLUT %1:%2").arg(r).arg(c));
 			m_defaultRowColourCombo->addItem(tr("CLUT %1:%2").arg(r).arg(c));
 		}
-	x28Layout->addWidget(m_defaultScreenColourCombo, 0, 1, 1, 1, Qt::AlignTop);
+	pageEnhancementsLayout->addWidget(m_defaultScreenColourCombo, 0, 1, 1, 1, Qt::AlignTop);
 	connect(m_defaultScreenColourCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->setDefaultScreenColour(index); });
-	x28Layout->addWidget(m_defaultRowColourCombo, 1, 1, 1, 1, Qt::AlignTop);
+	pageEnhancementsLayout->addWidget(m_defaultRowColourCombo, 1, 1, 1, 1, Qt::AlignTop);
 	connect(m_defaultRowColourCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->setDefaultRowColour(index); });
-	x28Layout->addWidget(new QLabel(tr("Colour remapping")), 2, 0, 1, 1);
+	pageEnhancementsLayout->addWidget(new QLabel(tr("Colour remapping")), 2, 0, 1, 1);
 	m_colourTableCombo = new QComboBox;
 	m_colourTableCombo->addItem("Fore 0  Back 0");
 	m_colourTableCombo->addItem("Fore 0  Back 1");
@@ -57,34 +57,34 @@ X28DockWidget::X28DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	m_colourTableCombo->addItem("Fore 2  Back 1");
 	m_colourTableCombo->addItem("Fore 2  Back 2");
 	m_colourTableCombo->addItem("Fore 2  Back 3");
-	x28Layout->addWidget(m_colourTableCombo, 2, 1, 1, 1, Qt::AlignTop);
+	pageEnhancementsLayout->addWidget(m_colourTableCombo, 2, 1, 1, 1, Qt::AlignTop);
 	connect(m_colourTableCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->setColourTableRemap(index); });
 	m_blackBackgroundSubstAct = new QCheckBox("Black background colour substitution");
-	x28Layout->addWidget(m_blackBackgroundSubstAct, 3, 0, 1, 2, Qt::AlignTop);
+	pageEnhancementsLayout->addWidget(m_blackBackgroundSubstAct, 3, 0, 1, 2, Qt::AlignTop);
 	connect(m_blackBackgroundSubstAct, &QCheckBox::stateChanged, m_parentMainWidget, &TeletextWidget::setBlackBackgroundSubst);
 
-	x28Layout->addWidget(new QLabel(tr("Left side panel columns")), 4, 0, 1, 1);
+	pageEnhancementsLayout->addWidget(new QLabel(tr("Left side panel columns")), 4, 0, 1, 1);
 	m_leftSidePanelSpinBox = new QSpinBox(this);
 	m_leftSidePanelSpinBox->setMaximum(16);
-	x28Layout->addWidget(m_leftSidePanelSpinBox, 4, 1, 1, 1, Qt::AlignTop);
+	pageEnhancementsLayout->addWidget(m_leftSidePanelSpinBox, 4, 1, 1, 1, Qt::AlignTop);
 	connect(m_leftSidePanelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int index){ setLeftSidePanelWidth(index); });
 
-	x28Layout->addWidget(new QLabel(tr("Right side panel columns")), 5, 0, 1, 1);
+	pageEnhancementsLayout->addWidget(new QLabel(tr("Right side panel columns")), 5, 0, 1, 1);
 	m_rightSidePanelSpinBox = new QSpinBox(this);
 	m_rightSidePanelSpinBox->setMaximum(16);
-	x28Layout->addWidget(m_rightSidePanelSpinBox, 5, 1, 1, 1, Qt::AlignTop);
+	pageEnhancementsLayout->addWidget(m_rightSidePanelSpinBox, 5, 1, 1, 1, Qt::AlignTop);
 	connect(m_rightSidePanelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int index){ setRightSidePanelWidth(index); });
 
 	m_sidePanelStatusAct = new QCheckBox("Side panels at level 3.5 only");
-	x28Layout->addWidget(m_sidePanelStatusAct, 6, 0, 1, 2, Qt::AlignTop);
+	pageEnhancementsLayout->addWidget(m_sidePanelStatusAct, 6, 0, 1, 2, Qt::AlignTop);
 	connect(m_sidePanelStatusAct, &QCheckBox::stateChanged, m_parentMainWidget, &TeletextWidget::setSidePanelAtL35Only);
 
-	x28Layout->setRowStretch(6, 1);
-	x28Widget->setLayout(x28Layout);
-	this->setWidget(x28Widget);
+	pageEnhancementsLayout->setRowStretch(6, 1);
+	pageEnhancementsWidget->setLayout(pageEnhancementsLayout);
+	this->setWidget(pageEnhancementsWidget);
 }
 
-void X28DockWidget::setLeftSidePanelWidth(int newLeftPanelSize)
+void PageEnhancementsDockWidget::setLeftSidePanelWidth(int newLeftPanelSize)
 {
 	if (newLeftPanelSize && m_rightSidePanelSpinBox->value()) {
 		int newRightPanelSize = 16-newLeftPanelSize;
@@ -95,7 +95,7 @@ void X28DockWidget::setLeftSidePanelWidth(int newLeftPanelSize)
 	m_parentMainWidget->setSidePanelWidths(newLeftPanelSize, m_rightSidePanelSpinBox->value());
 }
 
-void X28DockWidget::setRightSidePanelWidth(int newRightPanelSize)
+void PageEnhancementsDockWidget::setRightSidePanelWidth(int newRightPanelSize)
 {
 	if (newRightPanelSize && m_leftSidePanelSpinBox->value()) {
 		int newLeftPanelSize = 16-newRightPanelSize;
@@ -106,7 +106,7 @@ void X28DockWidget::setRightSidePanelWidth(int newRightPanelSize)
 	m_parentMainWidget->setSidePanelWidths(m_leftSidePanelSpinBox->value(), newRightPanelSize);
 }
 
-void X28DockWidget::updateWidgets()
+void PageEnhancementsDockWidget::updateWidgets()
 {
 	int leftSidePanelColumnsResult = 0;
 	int rightSidePanelColumnsResult = 0;
