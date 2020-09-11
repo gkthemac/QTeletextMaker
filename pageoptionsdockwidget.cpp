@@ -188,7 +188,7 @@ void PageOptionsDockWidget::updateWidgets()
 	m_secondRegionCombo->blockSignals(false);
 	m_secondNOSCombo->blockSignals(true);
 	updateSecondNOSOptions();
-	m_secondNOSCombo->setCurrentIndex(m_defaultNOSCombo->findData((m_parentMainWidget->document()->currentSubPage()->secondCharSet() << 3) | m_parentMainWidget->document()->currentSubPage()->secondNOS()));
+	m_secondNOSCombo->setCurrentIndex(m_secondNOSCombo->findData((m_parentMainWidget->document()->currentSubPage()->secondCharSet() << 3) | m_parentMainWidget->document()->currentSubPage()->secondNOS()));
 	m_secondNOSCombo->blockSignals(false);
 }
 
