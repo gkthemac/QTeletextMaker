@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "document.h"
-#include "page.h"
+#include "levelonepage.h"
 #include "render.h"
 
 class QPaintEvent;

@@ -25,7 +25,7 @@
 #include <QMultiMap>
 #include <vector>
 
-#include "page.h"
+#include "levelonepage.h"
 
 
 struct textCharacter {

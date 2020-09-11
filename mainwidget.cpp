@@ -30,7 +30,7 @@
 #include "mainwidget.h"
 
 #include "document.h"
-#include "page.h"
+#include "levelonepage.h"
 #include "render.h"
 #include "x26triplets.h"
 

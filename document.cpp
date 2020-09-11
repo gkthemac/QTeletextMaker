@@ -23,7 +23,7 @@
 
 #include "document.h"
 
-#include "page.h"
+#include "levelonepage.h"
 
 TeletextDocument::TeletextDocument()
 {

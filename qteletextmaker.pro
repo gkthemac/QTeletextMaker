@@ -2,9 +2,10 @@ QT += widgets
 requires(qtConfig(filedialog))
 
 HEADERS       = document.h \
+                levelonepage.h \
                 mainwidget.h \
                 mainwindow.h \
-                page.h \
+                pagebase.h \
                 pageenhancementsdockwidget.h \
                 pageoptionsdockwidget.h \
                 palettedockwidget.h \
@@ -13,13 +14,14 @@ HEADERS       = document.h \
                 x26model.h \
                 x26triplets.h
 SOURCES       = document.cpp \
+                levelonepage.cpp \
                 main.cpp \
                 mainwidget.cpp \
                 mainwindow.cpp \
+                pagebase.cpp \
                 pageenhancementsdockwidget.cpp \
                 pageoptionsdockwidget.cpp \
                 palettedockwidget.cpp \
-                page.cpp \
                 render.cpp \
                 x26dockwidget.cpp \
                 x26model.cpp \

@@ -17,8 +17,8 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PAGE_H
-#define PAGE_H
+#ifndef LEVELONEPAGE_H
+#define LEVELONEPAGE_H
 
 #include <QByteArray>
 #include <QColor>
@@ -27,12 +27,13 @@
 #include <QString>
 #include <QTextStream>
 
+#include "pagebase.h"
 #include "x26triplets.h"
 
 QColor CLUTtoQColor(int myColour);
 
 // If we inherit from QObject then we can't copy construct, so "make a new subpage that's a copy of this one" wouldn't work
-class TeletextPage //: public QObject
+class TeletextPage : public PageBase //: public QObject
 {
 	//Q_OBJECT
 
@@ -40,6 +41,9 @@ public:
 	enum CycleTypeEnum { CTcycles, CTseconds };
 
 	TeletextPage();
+
+	bool packetNeeded(int, int=0) const;
+
 	void clearPage();
 	void loadPagePacket(QByteArray &);
 	void savePage(QTextStream *, int, int);
@@ -80,7 +84,6 @@ public:
 	void setSidePanelColumns(int);
 	bool sidePanelStatusL25() const { return m_sidePanelStatusL25; }
 	void setSidePanelStatusL25(bool);
-	int x28Needed();
 	QString colourHash(int);
 	QList<X26Triplet> localEnhance;
 

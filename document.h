@@ -26,8 +26,7 @@
 #include <QUndoCommand>
 #include <QUndoStack>
 #include <vector>
-#include "document.h"
-#include "page.h"
+#include "levelonepage.h"
 
 class TeletextDocument : public QObject
 {

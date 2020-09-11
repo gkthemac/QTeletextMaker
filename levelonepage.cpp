@@ -23,7 +23,7 @@
 #include <QString>
 #include <algorithm>
 
-#include "page.h"
+#include "levelonepage.h"
 
 TeletextPage::TeletextPage()
 {
@@ -57,6 +57,36 @@ void TeletextPage::clearPage()
 //	If clearPage() is called outside constructor, we need to implement localEnhance.clear();
 }
 
+bool TeletextPage::packetNeeded(int packetNumber, int designationCode) const
+{
+	if (packetNumber <= 24) {
+		for (int c=0; c<40; c++)
+			if (m_level1Page[packetNumber][c] != 0x20)
+				return true;
+		return false;
+	}
+	// TODO packets 26 and 27
+	if (packetNumber == 28) {
+		if (designationCode == 0) {
+			if (m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf)
+				return true;
+			for (int i=16; i<32; i++)
+				if (m_CLUT[i] != defaultCLUT[i])
+					return true;
+			return false;
+		}
+		if (designationCode == 4) {
+			for (int i=0; i<16; i++)
+				if (m_CLUT[i] != defaultCLUT[i])
+					return true;
+			return false;
+		}
+	}
+	return true;
+}
+
+// At the moment this awkwardly combines parsing a TTI file and making sense of the packets within it.
+// This will be gradually converted to just parsing a TTI file and passing the raw packets to the Page class.
 void TeletextPage::loadPagePacket(QByteArray &inLine)
 {
 	bool lineNumberOk;
@@ -65,10 +95,14 @@ void TeletextPage::loadPagePacket(QByteArray &inLine)
 	secondCommaPosition = inLine.indexOf(",", 3);
 	if (secondCommaPosition != 4 && secondCommaPosition != 5)
 		return;
+
 	lineNumber = inLine.mid(3, secondCommaPosition-3).toInt(&lineNumberOk, 10);
-	if (lineNumberOk && lineNumber>=0 && lineNumber<=31) {
+	if (lineNumberOk && lineNumber>=0 && lineNumber<=29) {
 		inLine.remove(0, secondCommaPosition+1);
-		if (lineNumber<=24) {
+		// Won't be a designation code for line numbers below 25!
+		int designationCode = inLine.at(0) & 0x3f;
+
+		if (lineNumber <= 24) {
 			for (int i=0, j=0; j<=39; i++, j++) {
 				if (i == inLine.size())
 					break;
@@ -83,10 +117,7 @@ void TeletextPage::loadPagePacket(QByteArray &inLine)
 				}
 				setCharacter(lineNumber, j, myChar);
 			}
-		}
-		if (lineNumber == 26) {
-			int designationCode = inLine.at(0) & 0x3f;
-
+		} else if (lineNumber == 26) {
 			// TODO deal with gaps or out of order X26 designation codes in a more graceful way
 			// At the moment gaps are dealt with by simply inserting "dummy" reserved 11110 Row
 			// Triplets in case Local Objects are referenced within.
@@ -116,69 +147,55 @@ void TeletextPage::loadPagePacket(QByteArray &inLine)
 				if (newX26Triplet.mode() == 0x1f && newX26Triplet.address() == 0x3f && newX26Triplet.data() & 0x01)
 					break;
 			}
-		}
-		if (lineNumber == 28) {
-			int offset;
+		} else if (lineNumber == 28 && (designationCode == 0 || designationCode == 4)) {
+			int offset = (designationCode == 0) ? 16 : 0;
 
-			int designationCode = inLine.at(0) & 0x3f;
-			switch (designationCode) {
-				case 0:
-					offset = 16;
-					break;
-				case 4:
-					offset = 0;
-					break;
-				default:
-					offset = -1;
-					break;
+			int x28Triplets[13];
+
+			for (int i=1, j=0; i<39; i+=3, j++)
+				x28Triplets[j] = ((inLine.at(i+2) & 0x3f) << 12) | ((inLine.at(i+1) & 0x3f) << 6) | (inLine.at(i) & 0x3f);
+
+			m_defaultCharSet = (x28Triplets[0] >> 10) & 0xF;
+			m_defaultNOS = (x28Triplets[0] >> 7) & 0x7;
+			m_secondCharSet = ((x28Triplets[1] << 1) & 0xE) | ((x28Triplets[0] >> 17) & 0x1);
+			m_secondNOS = (x28Triplets[0] >> 14) & 0x7;
+
+			m_leftSidePanelDisplayed = (x28Triplets[1] >> 3) & 1;
+			m_rightSidePanelDisplayed = (x28Triplets[1] >> 4) & 1;
+			m_sidePanelStatusL25 = (x28Triplets[1] >> 5) & 1;
+			m_sidePanelColumns = (x28Triplets[1] >> 6) & 0xF;
+
+			for (int c=0; c<16; c++) {
+				int rtr = ((c * 12) + 28) / 18;
+				int rsh = ((c * 12) + 28) % 18;
+				int r = (x28Triplets[rtr] >> rsh) & 0xF;
+				if (rsh == 16)
+					r |= (x28Triplets[rtr+1] & 3) << 2;
+
+				int gtr = ((c * 12) + 32) / 18;
+				int gsh = ((c * 12) + 32) % 18;
+				int g = (x28Triplets[gtr] >> gsh) & 0xF;
+				if (gsh == 16)
+					g |= (x28Triplets[gtr+1] & 3) << 2;
+
+				int btr = ((c * 12) + 36) / 18;
+				int bsh = ((c * 12) + 36) % 18;
+				int b = (x28Triplets[btr] >> bsh) & 0xF;
+				if (bsh == 16)
+					b |= (x28Triplets[btr+1] & 3) << 2;
+
+				m_CLUT[offset+c] = (r << 8) | (g << 4) | b;
 			}
-			if (offset >= 0) {
-				int x28Triplets[13];
-
-				for (int i=1, j=0; i<39; i+=3, j++) {
-					x28Triplets[j] = ((inLine.at(i+2) & 0x3f) << 12) | ((inLine.at(i+1) & 0x3f) << 6) | (inLine.at(i) & 0x3f);
-				}
-
-				m_defaultCharSet = (x28Triplets[0] >> 10) & 0xF;
-				m_defaultNOS = (x28Triplets[0] >> 7) & 0x7;
-				m_secondCharSet = ((x28Triplets[1] << 1) & 0xE) | ((x28Triplets[0] >> 17) & 0x1);
-				m_secondNOS = (x28Triplets[0] >> 14) & 0x7;
-
-				m_leftSidePanelDisplayed = (x28Triplets[1] >> 3) & 1;
-				m_rightSidePanelDisplayed = (x28Triplets[1] >> 4) & 1;
-				m_sidePanelStatusL25 = (x28Triplets[1] >> 5) & 1;
-				m_sidePanelColumns = (x28Triplets[1] >> 6) & 0xF;
-
-				for (int c=0; c<16; c++) {
-					int rtr = ((c * 12) + 28) / 18;
-					int rsh = ((c * 12) + 28) % 18;
-					int r = (x28Triplets[rtr] >> rsh) & 0xF;
-					if (rsh == 16)
-						r |= (x28Triplets[rtr+1] & 3) << 2;
-
-					int gtr = ((c * 12) + 32) / 18;
-					int gsh = ((c * 12) + 32) % 18;
-					int g = (x28Triplets[gtr] >> gsh) & 0xF;
-					if (gsh == 16)
-						g |= (x28Triplets[gtr+1] & 3) << 2;
-
-					int btr = ((c * 12) + 36) / 18;
-					int bsh = ((c * 12) + 36) % 18;
-					int b = (x28Triplets[btr] >> bsh) & 0xF;
-					if (bsh == 16)
-						b |= (x28Triplets[btr+1] & 3) << 2;
-
-					m_CLUT[offset+c] = (r << 8) | (g << 4) | b;
-				}
-				m_defaultScreenColour = (x28Triplets[12] >> 4) & 0x1f;
-				m_defaultRowColour = (x28Triplets[12] >> 9) & 0x1f;
-				m_blackBackgroundSubst = ((x28Triplets[12] >> 14) & 1);
-				m_colourTableRemap = (x28Triplets[12] >> 15) & 7;
-			}
-		}
+			m_defaultScreenColour = (x28Triplets[12] >> 4) & 0x1f;
+			m_defaultRowColour = (x28Triplets[12] >> 9) & 0x1f;
+			m_blackBackgroundSubst = ((x28Triplets[12] >> 14) & 1);
+			m_colourTableRemap = (x28Triplets[12] >> 15) & 7;
+		} else
+			qDebug("Packet X/%d/%d unhandled (yet?)", lineNumber, designationCode);
 	} //TODO panic if invalid line number is encountered
 }
 
+// This will be gradually be converted to just getting the raw packets from the Page class and writing out a TTI file.
 void TeletextPage::savePage(QTextStream *outStream, int pageNumber, int subPageNumber)
 {
 //	int pageStatus = 0x8000 | (controlBits[0] << 14) | ((defaultPageNOS & 1) << 9) | ((defaultPageNOS & 2) << 7) | ((defaultPageNOS & 4) << 5);
@@ -189,12 +206,12 @@ void TeletextPage::savePage(QTextStream *outStream, int pageNumber, int subPageN
 	*outStream << QString("PS,%1").arg(0x8000 | controlBitsToPS(), 4, 16, QChar('0')) << endl;
 	*outStream << QString("CT,%1,%2").arg(m_cycleValue).arg(m_cycleType==CTcycles ? 'C' : 'T') << endl;
 	//TODO RE and maybe FLOF?
-	if (int x28Result = x28Needed()) {
-		if (x28Result & 1)
-			*outStream << "OL,28," << x28toTTI(0) << endl;
-		if (x28Result & 2)
-			*outStream << "OL,28," << x28toTTI(4) << endl;
-	}
+
+	if (packetNeeded(28, 0))
+		*outStream << "OL,28," << x28toTTI(0) << endl;
+	if (packetNeeded(28, 4))
+		*outStream << "OL,28," << x28toTTI(4) << endl;
+
 	if (!localEnhance.isEmpty()) {
 		int tripletNumber = 0;
 		X26Triplet lastTriplet = localEnhance.at(localEnhance.size()-1);
@@ -235,22 +252,19 @@ void TeletextPage::savePage(QTextStream *outStream, int pageNumber, int subPageN
 				break;
 		}
 	}
-	for (int r=1; r<25; r++) {
-		bool blankRow = true;
-		QString rowString;
+	for (int r=1; r<25; r++)
+		if (packetNeeded(r)) {
+			QString rowString;
 
-		rowString.append(QString("OL,%1,").arg(r));
-		for (int c=0; c<40; c++) {
-			unsigned char myChar = m_level1Page[r][c];
-			if (myChar != 0x20)
-				blankRow = false;
-			if (myChar < 32) {
-				rowString.append((char)0x1b);
-				rowString.append((char)(myChar+0x40));
-			} else
-				rowString.append((char)myChar);
-		}
-		if (!blankRow)
+			rowString.append(QString("OL,%1,").arg(r));
+			for (int c=0; c<40; c++) {
+				unsigned char myChar = m_level1Page[r][c];
+				if (myChar < 32) {
+					rowString.append((char)0x1b);
+					rowString.append((char)(myChar+0x40));
+				} else
+					rowString.append((char)myChar);
+			}
 			*outStream << rowString << endl;
 	}
 }
@@ -341,7 +355,7 @@ QString TeletextPage::exportURLHash(QString pageHash)
 //	CLUTChangedResult = CLUTChanged();
 //	if (leftSidePanel || rightSidePanel || defaultScreenColour !=0 || defaultRowColour !=0 || blackBackgroundSubst || colourTableRemap !=0 || CLUTChangedResult) {
 
-	if (int x28Result = x28Needed()) {
+	if (packetNeeded(28,0) || packetNeeded(28,4)) {
 		QString x28StringBegin, x28StringEnd;
 
 		x28StringBegin.append(QString("00%1").arg((m_defaultCharSet << 3) | m_defaultNOS, 2, 16, QChar('0')).toUpper());
@@ -350,13 +364,13 @@ QString TeletextPage::exportURLHash(QString pageHash)
 
 		x28StringEnd = QString("%1%2%3%4").arg(m_defaultScreenColour, 2, 16, QChar('0')).arg(m_defaultRowColour, 2, 16, QChar('0')).arg(m_blackBackgroundSubst, 1, 10).arg(m_colourTableRemap, 1, 10);
 
-		if (x28Result & 1) {
+		if (packetNeeded(28,0)) {
 			pageHash.append(":X280=");
 			pageHash.append(x28StringBegin);
 			pageHash.append(colourHash(1));
 			pageHash.append(x28StringEnd);
 		}
-		if (x28Result & 2) {
+		if (packetNeeded(28,4)) {
 			pageHash.append(":X284=");
 			pageHash.append(x28StringBegin);
 			pageHash.append(colourHash(0));
@@ -412,23 +426,6 @@ void TeletextPage::setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed) { m
 void TeletextPage::setRightSidePanelDisplayed(bool newRightSidePanelDisplayed) { m_rightSidePanelDisplayed = newRightSidePanelDisplayed; }
 void TeletextPage::setSidePanelColumns(int newSidePanelColumns) { m_sidePanelColumns = newSidePanelColumns; }
 void TeletextPage::setSidePanelStatusL25(bool newSidePanelStatusL25) { m_sidePanelStatusL25 = newSidePanelStatusL25; }
-
-int TeletextPage::x28Needed()
-{
-	int result = (m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf);
-
-	for (int i=0; i<16; i++)
-		if (m_CLUT[i] != defaultCLUT[i]) {
-			result |= 2;
-			break;
-		}
-	for (int i=16; i<32; i++)
-		if (m_CLUT[i] != defaultCLUT[i]) {
-			result |= 1;
-			break;
-		}
-	return result;
-}
 
 QString TeletextPage::colourHash(int whichCLUT)
 {
