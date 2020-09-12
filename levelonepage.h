@@ -42,6 +42,8 @@ public:
 
 	TeletextPage();
 
+	bool setPacket(int, QByteArray);
+	bool setPacket(int, int, QByteArray);
 	bool packetNeeded(int, int=0) const;
 
 	void clearPage();
@@ -101,6 +103,7 @@ private:
 	int m_defaultScreenColour, m_defaultRowColour, m_colourTableRemap, m_sidePanelColumns;
 	bool m_blackBackgroundSubst, m_leftSidePanelDisplayed, m_rightSidePanelDisplayed, m_sidePanelStatusL25;
 	int m_CLUT[32];
+	X26Triplet m_paddingX26Triplet;
 
 	const int defaultCLUT[32] = {
 	0x000, 0xf00, 0x0f0, 0xff0, 0x00f, 0xf0f, 0x0ff, 0xfff,

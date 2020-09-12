@@ -39,23 +39,16 @@ PageBase::~PageBase()
 
 bool PageBase::setPacket(int packetNumber, QByteArray packetContents)
 {
-	// X/26 and above need a designation code
-	if (packetNumber >= 26)
-		return false;
-
 	return setPacket(packetNumber, 0, packetContents);
 }
 
 bool PageBase::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
 {
-	if (packetNumber >= 30)
-		return false;
-
 	int packetArrayNumber = packetNumber;
 	if (packetNumber >= 26)
 		packetArrayNumber += (packetNumber - 26) * 16;
 	if (m_packets[packetArrayNumber] == nullptr)
-		m_packets[packetArrayNumber] = new QByteArray;
+		m_packets[packetArrayNumber] = new QByteArray(40, 0x00);
 	*m_packets[packetArrayNumber] = packetContents;
 
 	return true;

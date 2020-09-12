@@ -27,6 +27,10 @@
 
 TeletextPage::TeletextPage()
 {
+	m_paddingX26Triplet.setAddress(41);
+	m_paddingX26Triplet.setMode(0x1e);
+	m_paddingX26Triplet.setData(0);
+	localEnhance.reserve(208);
 	clearPage();
 }
 
@@ -57,6 +61,72 @@ void TeletextPage::clearPage()
 //	If clearPage() is called outside constructor, we need to implement localEnhance.clear();
 }
 
+bool TeletextPage::setPacket(int packetNumber, QByteArray packetContents)
+{
+	if (packetNumber <= 24) {
+		for (int c=0; c<40; c++)
+			m_level1Page[packetNumber][c] = packetContents.at(c);
+		return true;
+	}
+
+	return PageBase::setPacket(packetNumber, packetContents);
+}
+
+bool TeletextPage::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
+{
+	if (packetNumber == 26) {
+		// Preallocate entries in the localEnhance list to hold our incoming triplets.
+		// We write "dummy" reserved 11110 Row Triplets in the allocated entries which then get overwritten by the packet contents.
+		// This is in case of missing packets so we can keep Local Object pointers valid.
+		while (localEnhance.size() < (designationCode+1)*13)
+			localEnhance.append(m_paddingX26Triplet);
+
+		int enhanceListPointer;
+		X26Triplet newX26Triplet;
+
+		for (int i=0; i<13; i++) {
+			enhanceListPointer = designationCode*13+i;
+
+			newX26Triplet.setAddress(packetContents.at(i*3+1) & 0x3f);
+			newX26Triplet.setMode(packetContents.at(i*3+2) & 0x1f);
+			newX26Triplet.setData(((packetContents.at(i*3+3) & 0x3f) << 1) | ((packetContents.at(i*3+2) & 0x20) >> 5));
+			localEnhance[enhanceListPointer] = newX26Triplet;
+		}
+		if (newX26Triplet.mode() == 0x1f && newX26Triplet.address() == 0x3f && newX26Triplet.data() & 0x01)
+			// Last triplet was a Termination Marker (without ..follows) so clean up the repeated ones
+			while (localEnhance.size()>1 && localEnhance.at(localEnhance.size()-2).mode() == 0x1f && localEnhance.at(localEnhance.size()-2).address() == 0x3f && localEnhance.at(localEnhance.size()-2).data() == newX26Triplet.data())
+				localEnhance.removeLast();
+
+		return true;
+	}
+	if (packetNumber == 28 && (designationCode == 0 || designationCode == 4)) {
+		int CLUToffset = (designationCode == 0) ? 16 : 0;
+
+		m_defaultCharSet = ((packetContents.at(2) >> 4) & 0x3) | ((packetContents.at(3) << 2) & 0xc);
+		m_defaultNOS = (packetContents.at(2) >> 1) & 0x7;
+		m_secondCharSet = ((packetContents.at(3) >> 5) & 0x1) | ((packetContents.at(4) << 1) & 0xe);
+		m_secondNOS = (packetContents.at(3) >> 2) & 0x7;
+
+		m_leftSidePanelDisplayed = (packetContents.at(4) >> 3) & 1;
+		m_rightSidePanelDisplayed = (packetContents.at(4) >> 4) & 1;
+		m_sidePanelStatusL25 = (packetContents.at(4) >> 5) & 1;
+		m_sidePanelColumns = packetContents.at(5) & 0xf;
+
+		for (int c=0; c<16; c++)
+			m_CLUT[CLUToffset+c] = ((packetContents.at(c*2+5) << 4) & 0x300) | ((packetContents.at(c*2+6) << 10) & 0xc00) | ((packetContents.at(c*2+6) << 2) & 0x0f0) | (packetContents.at(c*2+7) & 0xf);
+
+		m_defaultScreenColour = (packetContents.at(37) >> 4) | ((packetContents.at(38) << 2) & 0x1c);
+		m_defaultRowColour = ((packetContents.at(38)) >> 3) | ((packetContents.at(39) << 3) & 0x18);
+		m_blackBackgroundSubst = (packetContents.at(39) >> 2) & 1;
+		m_colourTableRemap = (packetContents.at(39) >> 3) & 7;
+
+		return true;
+	}
+
+	qDebug("LevelOnePage unhandled packet X%d/%d", packetNumber, designationCode);
+	return PageBase::setPacket(packetNumber, designationCode, packetContents);
+}
+
 bool TeletextPage::packetNeeded(int packetNumber, int designationCode) const
 {
 	if (packetNumber <= 24) {
@@ -85,8 +155,6 @@ bool TeletextPage::packetNeeded(int packetNumber, int designationCode) const
 	return true;
 }
 
-// At the moment this awkwardly combines parsing a TTI file and making sense of the packets within it.
-// This will be gradually converted to just parsing a TTI file and passing the raw packets to the Page class.
 void TeletextPage::loadPagePacket(QByteArray &inLine)
 {
 	bool lineNumberOk;
@@ -99,100 +167,29 @@ void TeletextPage::loadPagePacket(QByteArray &inLine)
 	lineNumber = inLine.mid(3, secondCommaPosition-3).toInt(&lineNumberOk, 10);
 	if (lineNumberOk && lineNumber>=0 && lineNumber<=29) {
 		inLine.remove(0, secondCommaPosition+1);
-		// Won't be a designation code for line numbers below 25!
-		int designationCode = inLine.at(0) & 0x3f;
-
-		if (lineNumber <= 24) {
-			for (int i=0, j=0; j<=39; i++, j++) {
-				if (i == inLine.size())
-					break;
-				int myChar = inLine.at(i);
-				if (myChar & 0x80)
-					myChar &= 0x7f;
-				else if (myChar == 0x10)
-					myChar = 0x0d;
-				else if (myChar == 0x1b) {
-					i++;
-					myChar = inLine.at(i)-0x40;
+		if (lineNumber <= 25) {
+			for (int c=0; c<40; c++) {
+				// trimmed() helpfully removes CRLF line endings from the just-read line
+				// but it also (un)helpfully removes spaces at end of a line, so put them back
+				if (c >= inLine.size())
+					inLine.append(' ');
+				if (inLine.at(c) & 0x80)
+					inLine[c] = inLine.at(c) & 0x7f;
+				else if (inLine.at(c) == 0x10)
+					inLine[c] = 0x0d;
+				else if (inLine.at(c) == 0x1b) {
+					inLine.remove(c, 1);
+					inLine[c] = inLine.at(c) & 0xbf;
 				}
-				setCharacter(lineNumber, j, myChar);
 			}
-		} else if (lineNumber == 26) {
-			// TODO deal with gaps or out of order X26 designation codes in a more graceful way
-			// At the moment gaps are dealt with by simply inserting "dummy" reserved 11110 Row
-			// Triplets in case Local Objects are referenced within.
-			// Out of order X26 designation codes aren't handled at all!
-			if (designationCode*13 != localEnhance.size()) {
-				qDebug("Gap or out of order X26 designation code");
-				X26Triplet paddingX26Triplet;
-
-				paddingX26Triplet.setAddress(41);
-				paddingX26Triplet.setMode(0x1e);
-				paddingX26Triplet.setData(0);
-				while (localEnhance.size() < designationCode*13)
-					localEnhance.append(paddingX26Triplet);
-			}
-
-			// Round loop counter to nearest multiple of 3 so an incomplete triplet doesn't crash us
-			int inLineLength = (((inLine.size() <= 39) ? inLine.size() : 39) / 3) * 3;
-
-			for (int i=1; i<inLineLength; i+=3) {
-				X26Triplet newX26Triplet;
-
-				newX26Triplet.setAddress(inLine.at(i) & 0x3f);
-				newX26Triplet.setMode(inLine.at(i+1) & 0x1f);
-				newX26Triplet.setData(((inLine.at(i+2) & 0x3f) << 1) | ((inLine.at(i+1) & 0x20) >> 5));
-				localEnhance.append(newX26Triplet);
-				// Break out of loop if termination marker (without a "...follow") is encountered
-				if (newX26Triplet.mode() == 0x1f && newX26Triplet.address() == 0x3f && newX26Triplet.data() & 0x01)
-					break;
-			}
-		} else if (lineNumber == 28 && (designationCode == 0 || designationCode == 4)) {
-			int offset = (designationCode == 0) ? 16 : 0;
-
-			int x28Triplets[13];
-
-			for (int i=1, j=0; i<39; i+=3, j++)
-				x28Triplets[j] = ((inLine.at(i+2) & 0x3f) << 12) | ((inLine.at(i+1) & 0x3f) << 6) | (inLine.at(i) & 0x3f);
-
-			m_defaultCharSet = (x28Triplets[0] >> 10) & 0xF;
-			m_defaultNOS = (x28Triplets[0] >> 7) & 0x7;
-			m_secondCharSet = ((x28Triplets[1] << 1) & 0xE) | ((x28Triplets[0] >> 17) & 0x1);
-			m_secondNOS = (x28Triplets[0] >> 14) & 0x7;
-
-			m_leftSidePanelDisplayed = (x28Triplets[1] >> 3) & 1;
-			m_rightSidePanelDisplayed = (x28Triplets[1] >> 4) & 1;
-			m_sidePanelStatusL25 = (x28Triplets[1] >> 5) & 1;
-			m_sidePanelColumns = (x28Triplets[1] >> 6) & 0xF;
-
-			for (int c=0; c<16; c++) {
-				int rtr = ((c * 12) + 28) / 18;
-				int rsh = ((c * 12) + 28) % 18;
-				int r = (x28Triplets[rtr] >> rsh) & 0xF;
-				if (rsh == 16)
-					r |= (x28Triplets[rtr+1] & 3) << 2;
-
-				int gtr = ((c * 12) + 32) / 18;
-				int gsh = ((c * 12) + 32) % 18;
-				int g = (x28Triplets[gtr] >> gsh) & 0xF;
-				if (gsh == 16)
-					g |= (x28Triplets[gtr+1] & 3) << 2;
-
-				int btr = ((c * 12) + 36) / 18;
-				int bsh = ((c * 12) + 36) % 18;
-				int b = (x28Triplets[btr] >> bsh) & 0xF;
-				if (bsh == 16)
-					b |= (x28Triplets[btr+1] & 3) << 2;
-
-				m_CLUT[offset+c] = (r << 8) | (g << 4) | b;
-			}
-			m_defaultScreenColour = (x28Triplets[12] >> 4) & 0x1f;
-			m_defaultRowColour = (x28Triplets[12] >> 9) & 0x1f;
-			m_blackBackgroundSubst = ((x28Triplets[12] >> 14) & 1);
-			m_colourTableRemap = (x28Triplets[12] >> 15) & 7;
-		} else
-			qDebug("Packet X/%d/%d unhandled (yet?)", lineNumber, designationCode);
-	} //TODO panic if invalid line number is encountered
+			setPacket(lineNumber, inLine);
+		} else {
+			int designationCode = inLine.at(0) & 0x3f;
+			for (int i=1; i<=39; i++)
+				inLine[i] = inLine.at(i) & 0x3f;
+			setPacket(lineNumber, designationCode, inLine);
+		}
+	}
 }
 
 // This will be gradually be converted to just getting the raw packets from the Page class and writing out a TTI file.
