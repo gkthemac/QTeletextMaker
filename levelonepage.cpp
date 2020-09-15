@@ -61,6 +61,77 @@ void TeletextPage::clearPage()
 //	If clearPage() is called outside constructor, we need to implement localEnhance.clear();
 }
 
+QByteArray TeletextPage::packet(int packetNumber, int designationCode)
+{
+	QByteArray result(40, 0x00);
+
+	if (packetNumber <= 24) {
+		for (int c=0; c<40; c++)
+			result[c] = m_level1Page[packetNumber][c];
+		return result;
+	}
+
+	if (packetNumber == 26) {
+		if (!packetNeeded(26, designationCode))
+			return result; // Blank result
+
+		int enhanceListPointer;
+		X26Triplet lastTriplet;
+
+		for (int i=0; i<13; i++) {
+			enhanceListPointer = designationCode*13+i;
+
+			if (enhanceListPointer < localEnhance.size()) {
+				result[i*3+1] = localEnhance.at(enhanceListPointer).address();
+				result[i*3+2] = localEnhance.at(enhanceListPointer).mode() | ((localEnhance.at(enhanceListPointer).data() & 1) << 5);
+				result[i*3+3] = localEnhance.at(enhanceListPointer).data() >> 1;
+
+				// If this is the last triplet, get a copy to repeat to the end of the packet
+				if (enhanceListPointer == localEnhance.size()-1) {
+					lastTriplet = localEnhance.at(enhanceListPointer);
+					// If the last triplet was NOT a Termination Marker, make up one
+					if (lastTriplet.mode() != 0x1f || lastTriplet.address() != 0x3f) {
+						lastTriplet.setAddress(0x3f);
+						lastTriplet.setMode(0x1f);
+						lastTriplet.setData(0x07);
+					}
+				}
+			} else {
+				// We've gone past the end of the triplet list, so repeat the Termination Marker to the end
+				result[i*3+1] = lastTriplet.address();
+				result[i*3+2] = lastTriplet.mode() | ((lastTriplet.data() & 1) << 5);
+				result[i*3+3] = lastTriplet.data() >> 1;
+			}
+		}
+		return result;
+	}
+
+	// TODO packet 27
+
+	if (packetNumber == 28 && (designationCode == 0 || designationCode == 4)) {
+		int CLUToffset = (designationCode == 0) ? 16 : 0;
+
+		result[1] = 0x00;
+		result[2] = ((m_defaultCharSet & 0x3) << 4) | (m_defaultNOS << 1);
+		result[3] = ((m_secondCharSet & 0x1) << 5) | (m_secondNOS << 2) | (m_defaultCharSet >> 2);
+		result[4] = (m_sidePanelStatusL25 << 5) | (m_rightSidePanelDisplayed << 4) | (m_leftSidePanelDisplayed << 3) | (m_secondCharSet >> 1);
+		result[5] = m_sidePanelColumns | ((m_CLUT[CLUToffset] & 0x300) >> 4);
+
+		for (int c=0; c<16; c++) {
+			result[c*2+6] = ((m_CLUT[CLUToffset+c] & 0x0f0) >> 2) | ((m_CLUT[CLUToffset+c] & 0xf00) >> 10);
+			result[c*2+7] = ((m_CLUT[CLUToffset+c+1] & 0x300) >> 4) | (m_CLUT[CLUToffset+c] & 0x00f);
+		}
+
+		result[37] = ((m_defaultScreenColour & 0x03) << 4) | (m_CLUT[CLUToffset+15] & 0x00f);
+		result[38] = ((m_defaultRowColour & 0x07) << 3) | (m_defaultScreenColour >> 2);
+		result[39] = (m_colourTableRemap << 3) | (m_blackBackgroundSubst << 2) | (m_defaultRowColour >> 3);
+
+		return result;
+	}
+
+	return PageBase::packet(packetNumber, designationCode);
+}
+
 bool TeletextPage::setPacket(int packetNumber, QByteArray packetContents)
 {
 	if (packetNumber <= 24) {
@@ -99,6 +170,9 @@ bool TeletextPage::setPacket(int packetNumber, int designationCode, QByteArray p
 
 		return true;
 	}
+
+	// TODO packet 27
+
 	if (packetNumber == 28 && (designationCode == 0 || designationCode == 4)) {
 		int CLUToffset = (designationCode == 0) ? 16 : 0;
 
@@ -113,7 +187,7 @@ bool TeletextPage::setPacket(int packetNumber, int designationCode, QByteArray p
 		m_sidePanelColumns = packetContents.at(5) & 0xf;
 
 		for (int c=0; c<16; c++)
-			m_CLUT[CLUToffset+c] = ((packetContents.at(c*2+5) << 4) & 0x300) | ((packetContents.at(c*2+6) << 10) & 0xc00) | ((packetContents.at(c*2+6) << 2) & 0x0f0) | (packetContents.at(c*2+7) & 0xf);
+			m_CLUT[CLUToffset+c] = ((packetContents.at(c*2+5) << 4) & 0x300) | ((packetContents.at(c*2+6) << 10) & 0xc00) | ((packetContents.at(c*2+6) << 2) & 0x0f0) | (packetContents.at(c*2+7) & 0x00f);
 
 		m_defaultScreenColour = (packetContents.at(37) >> 4) | ((packetContents.at(38) << 2) & 0x1c);
 		m_defaultRowColour = ((packetContents.at(38)) >> 3) | ((packetContents.at(39) << 3) & 0x18);
@@ -123,7 +197,7 @@ bool TeletextPage::setPacket(int packetNumber, int designationCode, QByteArray p
 		return true;
 	}
 
-	qDebug("LevelOnePage unhandled packet X%d/%d", packetNumber, designationCode);
+	qDebug("LevelOnePage unhandled packet X/%d/%d", packetNumber, designationCode);
 	return PageBase::setPacket(packetNumber, designationCode, packetContents);
 }
 
@@ -135,7 +209,12 @@ bool TeletextPage::packetNeeded(int packetNumber, int designationCode) const
 				return true;
 		return false;
 	}
-	// TODO packets 26 and 27
+
+	if (packetNumber == 26)
+		return ((localEnhance.size()+12) / 13) > designationCode;
+
+	// TODO packet 27
+
 	if (packetNumber == 28) {
 		if (designationCode == 0) {
 			if (m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf)
@@ -152,7 +231,7 @@ bool TeletextPage::packetNeeded(int packetNumber, int designationCode) const
 			return false;
 		}
 	}
-	return true;
+	return PageBase::packetNeeded(packetNumber, designationCode);
 }
 
 void TeletextPage::loadPagePacket(QByteArray &inLine)
@@ -169,8 +248,8 @@ void TeletextPage::loadPagePacket(QByteArray &inLine)
 		inLine.remove(0, secondCommaPosition+1);
 		if (lineNumber <= 25) {
 			for (int c=0; c<40; c++) {
-				// trimmed() helpfully removes CRLF line endings from the just-read line
-				// but it also (un)helpfully removes spaces at end of a line, so put them back
+				// trimmed() helpfully removes CRLF line endings from the just-read line for us
+				// But it also (un)helpfully removes spaces at the end of a 40 character line, so put them back
 				if (c >= inLine.size())
 					inLine.append(' ');
 				if (inLine.at(c) & 0x80)
@@ -192,78 +271,46 @@ void TeletextPage::loadPagePacket(QByteArray &inLine)
 	}
 }
 
-// This will be gradually be converted to just getting the raw packets from the Page class and writing out a TTI file.
 void TeletextPage::savePage(QTextStream *outStream, int pageNumber, int subPageNumber)
 {
-//	int pageStatus = 0x8000 | (controlBits[0] << 14) | ((defaultPageNOS & 1) << 9) | ((defaultPageNOS & 2) << 7) | ((defaultPageNOS & 4) << 5);
-//	for (int i=1; i<8; i++)
-//		pageStatus |= controlBits[i] << i;
+	auto writePacketsWithDesignationCodes=[&](int packetNumber)
+	{
+		for (int i=0; i<=16; i++)
+			if (packetNeeded(packetNumber, i)) {
+				QByteArray outLine = packet(packetNumber, i);
+
+				*outStream << QString("OL,%1,").arg(packetNumber);
+				outLine[0] = i | 0x40;
+				for (int c=1; c<outLine.size(); c++)
+					outLine[c] = outLine.at(c) | 0x40;
+				*outStream << outLine << endl;
+			}
+	};
+
 	*outStream << QString("PN,%1%2").arg(pageNumber, 3, 16, QChar('0')).arg(subPageNumber & 0xff, 2, 16, QChar('0')) << endl;
 	*outStream << QString("SC,%1").arg(subPageNumber, 4, 16, QChar('0')) << endl;
 	*outStream << QString("PS,%1").arg(0x8000 | controlBitsToPS(), 4, 16, QChar('0')) << endl;
 	*outStream << QString("CT,%1,%2").arg(m_cycleValue).arg(m_cycleType==CTcycles ? 'C' : 'T') << endl;
-	//TODO RE and maybe FLOF?
+	// TODO RE and maybe FLOF?
 
-	if (packetNeeded(28, 0))
-		*outStream << "OL,28," << x28toTTI(0) << endl;
-	if (packetNeeded(28, 4))
-		*outStream << "OL,28," << x28toTTI(4) << endl;
+	// BUG FL commands may clash with X/27/0 packets that specify links manually (e.g. with subcodes)
+	writePacketsWithDesignationCodes(27);
+	writePacketsWithDesignationCodes(28);
+	writePacketsWithDesignationCodes(26);
 
-	if (!localEnhance.isEmpty()) {
-		int tripletNumber = 0;
-		X26Triplet lastTriplet = localEnhance.at(localEnhance.size()-1);
-		int terminatorNeeded = true; // Becomes false if a termination marker (without a "...follow") is already at the end
-
-		if (lastTriplet.mode() == 0x1f && lastTriplet.address() == 0x3f)
-			if (lastTriplet.data() & 0x01)
-				terminatorNeeded = false;
-			else
-				// Last termination marker has "follow" set but nothing follows, so write another one afterwards
-				lastTriplet.setData(lastTriplet.data() | 0x01);
-		else {
-			// No termination marker there, so make up one
-			lastTriplet.setAddress(0x3f);
-			lastTriplet.setMode(0x1f);
-			lastTriplet.setData(0x07);
-		}
-
-		for (int d=0; d<16; d++) {
-			*outStream << "OL,26," << (char)(d | 0x40);
-			for (int t=0; t<13; t++) {
-				if (tripletNumber < localEnhance.size()) {
-					*outStream << (char)(0x40 | localEnhance.at(tripletNumber).address());
-					*outStream << (char)(0x40 | (localEnhance.at(tripletNumber).mode() | ((localEnhance.at(tripletNumber).data() & 1) << 5)));
-					*outStream << (char)(0x40 | (localEnhance.at(tripletNumber).data() >> 1));
-				} else {
-					*outStream << (char)(0x40 | lastTriplet.address());
-					*outStream << (char)(0x40 | (lastTriplet.mode() | ((lastTriplet.data() & 1) << 5)));
-					*outStream << (char)(0x40 | (lastTriplet.data() >> 1));
-					terminatorNeeded = false;
-				}
-				tripletNumber++;
-			}
-			*outStream << endl;
-			// If the last triplet of the last X26 row wasn't a termination marker,
-			// terminatorNeeded ensures we write an additional X26 row full of termination markers.
-			if (!terminatorNeeded && tripletNumber >= localEnhance.size())
-				break;
-		}
-	}
 	for (int r=1; r<25; r++)
 		if (packetNeeded(r)) {
-			QString rowString;
+			QByteArray outLine = packet(r);
 
-			rowString.append(QString("OL,%1,").arg(r));
-			for (int c=0; c<40; c++) {
-				unsigned char myChar = m_level1Page[r][c];
-				if (myChar < 32) {
-					rowString.append((char)0x1b);
-					rowString.append((char)(myChar+0x40));
-				} else
-					rowString.append((char)myChar);
-			}
-			*outStream << rowString << endl;
-	}
+			*outStream << QString("OL,%1,").arg(r);
+			for (int c=0; c<outLine.size(); c++)
+				if (outLine.at(c) < 0x20) {
+					outLine[c] = outLine.at(c) | 0x40;
+					outLine.insert(c, 0x1b);
+					c++;
+				}
+			*outStream << outLine << endl;
+		}
 }
 
 int TeletextPage::controlBitsToPS() const
@@ -273,61 +320,6 @@ int TeletextPage::controlBitsToPS() const
 	for (int i=1; i<8; i++)
 		pageStatus |= m_controlBits[i] << (i-1);
 	return pageStatus;
-}
-
-QString TeletextPage::x28toTTI(int designationCode)
-{
-	QString result;
-	int x28Triplets[13] = {0};
-
-	int offset;
-
-	switch (designationCode) {
-		case 0:
-			offset = 16;
-			break;
-		case 4:
-			offset = 0;
-			break;
-	}
-	result.append(designationCode + 0x40);
-
-	x28Triplets[0] = ((m_secondCharSet & 1) << 17) | (m_secondNOS << 14) | (m_defaultCharSet << 10) | (m_defaultNOS << 7);
-	x28Triplets[1] = (m_secondCharSet >> 1) | (m_leftSidePanelDisplayed << 3) | (m_rightSidePanelDisplayed << 4) | (m_sidePanelStatusL25 << 5) | (m_sidePanelColumns << 6);
-
-	for (int c=0; c<16; c++){
-		int r = (m_CLUT[offset+c] & 0xF00) >> 8;
-		int g = (m_CLUT[offset+c] & 0xF0) >> 4;
-		int b = m_CLUT[offset+c] & 0xF;
-
-		int rtr = ((c * 12) + 28) / 18;
-		int rsh = ((c * 12) + 28) % 18;
-		x28Triplets[rtr] |= (r << rsh);
-		if (rsh == 16)
-			x28Triplets[rtr+1] |= (r >> 2) & 3;
-
-		int gtr = ((c * 12) + 32) / 18;
-		int gsh = ((c * 12) + 32) % 18;
-		x28Triplets[gtr] |= (g << gsh);
-		if (gsh == 16)
-			x28Triplets[gtr+1] |= (g >> 2) & 3;
-
-		int btr = ((c * 12) + 36) / 18;
-		int bsh = ((c * 12) + 36) % 18;
-		x28Triplets[btr] |= (b << bsh);
-		if (bsh == 16)
-			x28Triplets[btr+1] |= (b >> 2) & 3;
-	}
-
-	x28Triplets[12] |= (m_defaultScreenColour << 4) | (m_defaultRowColour << 9) | (m_blackBackgroundSubst << 14) | (m_colourTableRemap << 15);
-	
-	for (int i=0; i<13; i++) {
-		result.append(0x40 | (x28Triplets[i] & 0x3F));
-		result.append(0x40 | ((x28Triplets[i] & 0xFC0) >> 6));
-		result.append(0x40 | ((x28Triplets[i] & 0x3F000) >> 12));
-	}
-
-	return result;
 }
 
 QString TeletextPage::exportURLHash(QString pageHash)
@@ -348,9 +340,6 @@ QString TeletextPage::exportURLHash(QString pageHash)
 
 	for (int i=0; i<1167; i++)
 		pageHash.append(base64[hashDigits[i]]);
-
-//	CLUTChangedResult = CLUTChanged();
-//	if (leftSidePanel || rightSidePanel || defaultScreenColour !=0 || defaultRowColour !=0 || blackBackgroundSubst || colourTableRemap !=0 || CLUTChangedResult) {
 
 	if (packetNeeded(28,0) || packetNeeded(28,4)) {
 		QString x28StringBegin, x28StringEnd;

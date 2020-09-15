@@ -42,6 +42,7 @@ public:
 
 	TeletextPage();
 
+	QByteArray packet(int, int=0);
 	bool setPacket(int, QByteArray);
 	bool setPacket(int, int, QByteArray);
 	bool packetNeeded(int, int=0) const;
@@ -91,7 +92,6 @@ public:
 
 protected:
 	int controlBitsToPS() const;
-	QString x28toTTI(int);
 
 private:
 	unsigned char m_level1Page[25][40];

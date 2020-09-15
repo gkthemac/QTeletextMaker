@@ -26,15 +26,35 @@ PageBase::PageBase()
 	m_pageFunction = PFLOP;
 	m_packetCoding = PC7bit;
 	// We use nullptrs to keep track of allocated packets, so initialise them this way
-	for (int i=0; i<89; i++)
+	for (int i=0; i<90; i++)
 		m_packets[i] = nullptr;
 }
 
 PageBase::~PageBase()
 {
-	for (int i=0; i<89; i++)
+	for (int i=0; i<90; i++)
 		if (m_packets[i] != nullptr)
 			delete m_packets[i];
+}
+
+QByteArray PageBase::packet(int packetNumber, int designationCode) const
+{
+	int packetArrayIndex = packetNumber;
+
+	if (packetNumber >= 26)
+		packetArrayIndex += (packetNumber - 26) * 16 + designationCode;
+	if (m_packets[packetArrayIndex] == nullptr)
+		return QByteArray(); // Blank result
+	return *m_packets[packetArrayIndex];
+}
+
+bool PageBase::packetNeeded(int packetNumber, int designationCode) const
+{
+	int packetArrayIndex = packetNumber;
+
+	if (packetNumber >= 26)
+		packetArrayIndex += (packetNumber - 26) * 16 + designationCode;
+	return m_packets[packetArrayIndex] != nullptr;
 }
 
 bool PageBase::setPacket(int packetNumber, QByteArray packetContents)
@@ -44,12 +64,27 @@ bool PageBase::setPacket(int packetNumber, QByteArray packetContents)
 
 bool PageBase::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
 {
-	int packetArrayNumber = packetNumber;
+	int packetArrayIndex = packetNumber;
+
 	if (packetNumber >= 26)
-		packetArrayNumber += (packetNumber - 26) * 16;
-	if (m_packets[packetArrayNumber] == nullptr)
-		m_packets[packetArrayNumber] = new QByteArray(40, 0x00);
-	*m_packets[packetArrayNumber] = packetContents;
+		packetArrayIndex += (packetNumber - 26) * 16 + designationCode;
+	if (m_packets[packetArrayIndex] == nullptr)
+		m_packets[packetArrayIndex] = new QByteArray(40, 0x00);
+	*m_packets[packetArrayIndex] = packetContents;
+
+	return true;
+}
+
+bool PageBase::deletePacket(int packetNumber, int designationCode)
+{
+	int packetArrayIndex = packetNumber;
+
+	if (packetNumber >= 26)
+		packetArrayIndex += (packetNumber - 26) * 16 + designationCode;
+	if (m_packets[packetArrayIndex] != nullptr) {
+		delete m_packets[packetArrayIndex];
+		m_packets[packetArrayIndex] = nullptr;
+	}
 
 	return true;
 }

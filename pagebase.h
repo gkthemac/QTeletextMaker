@@ -35,18 +35,21 @@ public:
 
 	PageBase();
 	~PageBase();
+	QByteArray packet(int, int=0) const;
+	bool packetNeeded(int, int=0) const;
 	bool setPacket(int, QByteArray);
 	bool setPacket(int, int, QByteArray);
+	bool deletePacket(int, int=0);
+
 	PageFunctionEnum pageFunction() const { return m_pageFunction; }
 	bool setPageFunction(PageFunctionEnum);
 	PacketCodingEnum packetCoding(int=0, int=0) const;
 	bool setPacketCoding(PacketCodingEnum);
-	bool packetNeeded(int, int=0) const { return true; }
 
 private:
 	PageFunctionEnum m_pageFunction;
 	PacketCodingEnum m_packetCoding;
-	QByteArray *m_packets[89]; // X/1 to X/25, plus 16 packets for X/26, another 16 for X/27, for X28 and for X/29
+	QByteArray *m_packets[90]; // X/0 to X/25, plus 16 packets for X/26, another 16 for X/27, for X28 and for X/29
 };
 
 #endif
