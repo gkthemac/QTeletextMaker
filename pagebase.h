@@ -34,19 +34,26 @@ public:
 	enum PacketCodingEnum { PC7bit, PC8bit, PC18bit, PC4bit, PC4bit7bit, PCMixed };
 
 	PageBase();
+	PageBase(const PageBase &);
 	~PageBase();
+
 	QByteArray packet(int, int=0) const;
 	bool packetNeeded(int, int=0) const;
 	bool setPacket(int, QByteArray);
 	bool setPacket(int, int, QByteArray);
 	bool deletePacket(int, int=0);
 
+	QByteArray packetArrayIndex(int) const;
+	bool packetNeededArrayIndex(int) const;
+	bool setPacketArrayIndex(int, QByteArray);
+	bool deletePacketArrayIndex(int);
+
 	bool controlBit(int bitNumber) const { return m_controlBits[bitNumber]; }
 	bool setControlBit(int, bool);
 
 	PageFunctionEnum pageFunction() const { return m_pageFunction; }
 	bool setPageFunction(PageFunctionEnum);
-	PacketCodingEnum packetCoding(int=0, int=0) const;
+	PacketCodingEnum packetCoding(int=0) const;
 	bool setPacketCoding(PacketCodingEnum);
 
 private:

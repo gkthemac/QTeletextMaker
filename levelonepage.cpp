@@ -34,6 +34,21 @@ LevelOnePage::LevelOnePage()
 	clearPage();
 }
 
+LevelOnePage::LevelOnePage(const PageBase &other)
+{
+	m_paddingX26Triplet.setAddress(41);
+	m_paddingX26Triplet.setMode(0x1e);
+	m_paddingX26Triplet.setData(0);
+	localEnhance.reserve(208);
+	clearPage();
+
+	for (int i=0; i<8; i++)
+		setControlBit(i, other.controlBit(i));
+	for (int i=0; i<90; i++)
+		if (other.packetNeededArrayIndex(i))
+			setPacketArrayIndex(i, other.packetArrayIndex(i));
+}
+
 // So far we only call clearPage() once, within the constructor
 void LevelOnePage::clearPage()
 {

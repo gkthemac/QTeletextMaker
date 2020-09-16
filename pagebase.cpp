@@ -32,6 +32,17 @@ PageBase::PageBase()
 		m_controlBits[i] = false;
 }
 
+PageBase::PageBase(const PageBase &other)
+{
+	setPageFunction(other.pageFunction());
+	setPacketCoding(other.packetCoding());
+	for (int i=0; i<8; i++)
+		setControlBit(i, other.controlBit(i));
+	for (int i=0; i<90; i++)
+		if (other.packetNeededArrayIndex(i))
+			setPacketArrayIndex(i, other.packetArrayIndex(i));
+}
+
 PageBase::~PageBase()
 {
 	for (int i=0; i<90; i++)
@@ -41,22 +52,32 @@ PageBase::~PageBase()
 
 QByteArray PageBase::packet(int packetNumber, int designationCode) const
 {
-	int packetArrayIndex = packetNumber;
+	int arrayIndex = packetNumber;
 
 	if (packetNumber >= 26)
-		packetArrayIndex += (packetNumber - 26) * 16 + designationCode;
-	if (m_packets[packetArrayIndex] == nullptr)
+		arrayIndex += (packetNumber - 26) * 16 + designationCode;
+	return packetArrayIndex(arrayIndex);
+}
+
+QByteArray PageBase::packetArrayIndex(int arrayIndex) const
+{
+	if (m_packets[arrayIndex] == nullptr)
 		return QByteArray(); // Blank result
-	return *m_packets[packetArrayIndex];
+	return *m_packets[arrayIndex];
 }
 
 bool PageBase::packetNeeded(int packetNumber, int designationCode) const
 {
-	int packetArrayIndex = packetNumber;
+	int arrayIndex = packetNumber;
 
 	if (packetNumber >= 26)
-		packetArrayIndex += (packetNumber - 26) * 16 + designationCode;
-	return m_packets[packetArrayIndex] != nullptr;
+		arrayIndex += (packetNumber - 26) * 16 + designationCode;
+	return packetNeededArrayIndex(arrayIndex);
+}
+
+bool PageBase::packetNeededArrayIndex(int arrayIndex) const
+{
+	return m_packets[arrayIndex] != nullptr;
 }
 
 bool PageBase::setPacket(int packetNumber, QByteArray packetContents)
@@ -66,26 +87,37 @@ bool PageBase::setPacket(int packetNumber, QByteArray packetContents)
 
 bool PageBase::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
 {
-	int packetArrayIndex = packetNumber;
+	int arrayIndex = packetNumber;
 
 	if (packetNumber >= 26)
-		packetArrayIndex += (packetNumber - 26) * 16 + designationCode;
-	if (m_packets[packetArrayIndex] == nullptr)
-		m_packets[packetArrayIndex] = new QByteArray(40, 0x00);
-	*m_packets[packetArrayIndex] = packetContents;
+		arrayIndex += (packetNumber - 26) * 16 + designationCode;
+	return setPacketArrayIndex(arrayIndex, packetContents);
+}
+
+bool PageBase::setPacketArrayIndex(int arrayIndex, QByteArray packetContents)
+{
+	if (m_packets[arrayIndex] == nullptr)
+		m_packets[arrayIndex] = new QByteArray(40, 0x00);
+	*m_packets[arrayIndex] = packetContents;
 
 	return true;
 }
 
 bool PageBase::deletePacket(int packetNumber, int designationCode)
 {
-	int packetArrayIndex = packetNumber;
+	int arrayIndex = packetNumber;
 
 	if (packetNumber >= 26)
-		packetArrayIndex += (packetNumber - 26) * 16 + designationCode;
-	if (m_packets[packetArrayIndex] != nullptr) {
-		delete m_packets[packetArrayIndex];
-		m_packets[packetArrayIndex] = nullptr;
+		arrayIndex += (packetNumber - 26) * 16 + designationCode;
+
+	return deletePacketArrayIndex(arrayIndex);
+}
+
+bool PageBase::deletePacketArrayIndex(int arrayIndex)
+{
+	if (m_packets[arrayIndex] != nullptr) {
+		delete m_packets[arrayIndex];
+		m_packets[arrayIndex] = nullptr;
 	}
 
 	return true;
@@ -97,7 +129,7 @@ bool PageBase::setControlBit(int bitNumber, bool active)
 	return true;
 }
 
-PageBase::PacketCodingEnum PageBase::packetCoding(int packetNumber, int designationCode) const
+PageBase::PacketCodingEnum PageBase::packetCoding(int packetNumber) const
 {
 	switch (packetNumber) {
 		case 26:

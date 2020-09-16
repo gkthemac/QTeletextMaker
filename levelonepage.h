@@ -41,6 +41,7 @@ public:
 	enum CycleTypeEnum { CTcycles, CTseconds };
 
 	LevelOnePage();
+	LevelOnePage(const PageBase &);
 
 	QByteArray packet(int, int=0);
 	bool setPacket(int, QByteArray);
