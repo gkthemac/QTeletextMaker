@@ -60,9 +60,9 @@ TeletextPageRender::~TeletextPageRender()
 	delete m_fontBitmap;
 }
 
-void TeletextPageRender::setTeletextPage(TeletextPage *newCurrentPage)
+void TeletextPageRender::setTeletextPage(LevelOnePage *newCurrentPage)
 {
-	m_teletextPage = newCurrentPage;
+	m_levelOnePage = newCurrentPage;
 	m_level1Layer.setTeletextPage(newCurrentPage);
 	updateSidePanels();
 }
@@ -103,13 +103,13 @@ void TeletextPageRender::updateSidePanels()
 	int oldLeftSidePanelColumns = m_leftSidePanelColumns;
 	int oldRightSidePanelColumns = m_rightSidePanelColumns;
 
-	if (m_renderLevel >= (3-m_teletextPage->sidePanelStatusL25()) && m_teletextPage->leftSidePanelDisplayed())
-		m_leftSidePanelColumns = (m_teletextPage->sidePanelColumns() == 0) ? 16 : m_teletextPage->sidePanelColumns();
+	if (m_renderLevel >= (3-m_levelOnePage->sidePanelStatusL25()) && m_levelOnePage->leftSidePanelDisplayed())
+		m_leftSidePanelColumns = (m_levelOnePage->sidePanelColumns() == 0) ? 16 : m_levelOnePage->sidePanelColumns();
 	else
 		m_leftSidePanelColumns = 0;
 
-	if (m_renderLevel >= (3-m_teletextPage->sidePanelStatusL25()) && m_teletextPage->rightSidePanelDisplayed())
-		m_rightSidePanelColumns = 16-m_teletextPage->sidePanelColumns();
+	if (m_renderLevel >= (3-m_levelOnePage->sidePanelStatusL25()) && m_levelOnePage->rightSidePanelDisplayed())
+		m_rightSidePanelColumns = 16-m_levelOnePage->sidePanelColumns();
 	else
 		m_rightSidePanelColumns = 0;
 
@@ -128,7 +128,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 	int originModifierC=0;
 
 	do {
-		x26Triplet = &m_teletextPage->localEnhance.at(tripletNumber);
+		x26Triplet = &m_levelOnePage->localEnhance.at(tripletNumber);
 		if (x26Triplet->isRowTriplet())
 			// Row address group
 			switch (x26Triplet->mode()) {
@@ -153,7 +153,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 					}
 					break;
 				case 0x10: // Origin modifier
-					if (m_renderLevel >= 2 && (tripletNumber+1) < m_teletextPage->localEnhance.size() && m_teletextPage->localEnhance.at(tripletNumber+1).mode() >= 0x11 && m_teletextPage->localEnhance.at(tripletNumber+1).mode() <= 0x13 && x26Triplet->address() >= 40 && x26Triplet->data() < 72) {
+					if (m_renderLevel >= 2 && (tripletNumber+1) < m_levelOnePage->localEnhance.size() && m_levelOnePage->localEnhance.at(tripletNumber+1).mode() >= 0x11 && m_levelOnePage->localEnhance.at(tripletNumber+1).mode() <= 0x13 && x26Triplet->address() >= 40 && x26Triplet->data() < 72) {
 						originModifierR = x26Triplet->address()-40;
 						originModifierC = x26Triplet->data();
 					}
@@ -168,21 +168,21 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 								break;
 							int tripletPointer = ((x26Triplet->data() >> 4) | ((x26Triplet->address() & 1) << 3)) * 13 + (x26Triplet->data() & 0x0f);
 							// Can't point to triplet beyond the end of the Local Enhancement Data
-							if ((tripletPointer+1) >= m_teletextPage->localEnhance.size())
+							if ((tripletPointer+1) >= m_levelOnePage->localEnhance.size())
 								break;
 							// Check if we're pointing to an actual Object Definition of the same type
-							if ((x26Triplet->mode() | 0x04) != m_teletextPage->localEnhance.at(tripletPointer).mode())
+							if ((x26Triplet->mode() | 0x04) != m_levelOnePage->localEnhance.at(tripletPointer).mode())
 								break;
 							// The Object Definition can't declare it's at triplet 13-15; only 12 triplets per packet
-							if ((m_teletextPage->localEnhance.at(tripletPointer).data() & 0x0f) > 12)
+							if ((m_levelOnePage->localEnhance.at(tripletPointer).data() & 0x0f) > 12)
 								break;
 							// Check if the Object Definition triplet is where it declares it is
-							if ((((m_teletextPage->localEnhance.at(tripletPointer).data() >> 4) | ((m_teletextPage->localEnhance.at(tripletPointer).address() & 1) << 3)) * 13 + (m_teletextPage->localEnhance.at(tripletPointer).data() & 0x0f)) != tripletPointer)
+							if ((((m_levelOnePage->localEnhance.at(tripletPointer).data() >> 4) | ((m_levelOnePage->localEnhance.at(tripletPointer).address() & 1) << 3)) * 13 + (m_levelOnePage->localEnhance.at(tripletPointer).data() & 0x0f)) != tripletPointer)
 								break;
 							// Is the object required at the current presentation Level?
-							if (m_renderLevel == 2 && (m_teletextPage->localEnhance.at(tripletPointer).address() & 0x08) == 0x00)
+							if (m_renderLevel == 2 && (m_levelOnePage->localEnhance.at(tripletPointer).address() & 0x08) == 0x00)
 								break;
-							if (m_renderLevel == 3 && (m_teletextPage->localEnhance.at(tripletPointer).address() & 0x10) == 0x00)
+							if (m_renderLevel == 3 && (m_levelOnePage->localEnhance.at(tripletPointer).address() & 0x10) == 0x00)
 								break;
 							EnhanceLayer *newLayer = new EnhanceLayer;
 							m_textLayer.push_back(newLayer);
@@ -229,7 +229,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 				enhanceLayer->enhanceMap.insert((activePosition.row() << 8) | activePosition.column(), ((x26Triplet->mode() | 0x20) << 8) | x26Triplet->data());
 		}
 		tripletNumber++;
-	} while (!terminatorFound && tripletNumber < m_teletextPage->localEnhance.size());
+	} while (!terminatorFound && tripletNumber < m_levelOnePage->localEnhance.size());
 }
 
 void TeletextPageRender::decodePage()
@@ -249,14 +249,14 @@ void TeletextPageRender::decodePage()
 		m_textLayer.pop_back();
 	}
 
-	renderedFullScreenColour = (m_renderLevel >= 2) ? m_teletextPage->defaultScreenColour() : 0;
-	downwardsFullRowColour = (m_renderLevel >= 2) ? m_teletextPage->defaultRowColour() : 0;
+	renderedFullScreenColour = (m_renderLevel >= 2) ? m_levelOnePage->defaultScreenColour() : 0;
+	downwardsFullRowColour = (m_renderLevel >= 2) ? m_levelOnePage->defaultRowColour() : 0;
 	setFullScreenColour(renderedFullScreenColour);
 	for (int r=0; r<25; r++)
 		setFullRowColour(r ,downwardsFullRowColour);
 
 	m_textLayer[1]->enhanceMap.clear();
-	if (m_renderLevel == 0 || m_teletextPage->localEnhance.empty())
+	if (m_renderLevel == 0 || m_levelOnePage->localEnhance.empty())
 		return;
 
 	m_textLayer[1]->setFullScreenColour(-1);
@@ -321,14 +321,14 @@ void TeletextPageRender::renderPage(int r)
 			return;
 		int charWidth = resultAttributes.display.doubleWidth ? 24 : 12;
 		int charHeight = resultAttributes.display.doubleHeight ? 20 : 10;
-		bool transparentBackground = (m_teletextPage->controlBit(1) || m_teletextPage->controlBit(2) || m_mix) && !resultAttributes.display.boxingWindow;
+		bool transparentBackground = (m_levelOnePage->controlBit(1) || m_levelOnePage->controlBit(2) || m_mix) && !resultAttributes.display.boxingWindow;
 		// bool transparentForeground = false;
 		if (transparentBackground) {
 			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
 			pixmapPainter.eraseRect(c*12, r*10, charWidth, charHeight);
 			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 		}
-		if ((m_teletextPage->controlBit(1) || m_teletextPage->controlBit(2)) && !resultAttributes.display.boxingWindow) {
+		if ((m_levelOnePage->controlBit(1) || m_levelOnePage->controlBit(2)) && !resultAttributes.display.boxingWindow) {
 			// Outside a boxed area
 			resultCharacter = { 0x20, 0, 0 };
 			underlined = false;
@@ -378,7 +378,7 @@ void TeletextPageRender::renderPage(int r)
 			if (layerCharacter.code != 0x00)
 				resultCharacter = layerCharacter;
 			if (l == 0) {
-//				m_cell[r][c].level1Mosaic = (resultCharacter.set == 24 || resultCharacter.set == 25) && m_teletextPage->character(r, c) >= 0x20;
+//				m_cell[r][c].level1Mosaic = (resultCharacter.set == 24 || resultCharacter.set == 25) && m_levelOnePage->character(r, c) >= 0x20;
 				m_cell[r][c].level1Mosaic = (resultCharacter.set == 24 || resultCharacter.set == 25);
 				if (!m_cell[r][c].level1Mosaic)
 					level1CharSet = resultCharacter.set;
@@ -395,16 +395,16 @@ void TeletextPageRender::renderPage(int r)
 			if (layerApplyAttributes.applyForeColour) {
 				resultAttributes.foreColour = layerApplyAttributes.attribute.foreColour;
 				if (l == 0 && m_renderLevel >= 2)
-					resultAttributes.foreColour |= m_foregroundRemap[m_teletextPage->colourTableRemap()];
+					resultAttributes.foreColour |= m_foregroundRemap[m_levelOnePage->colourTableRemap()];
 			}
 			if (layerApplyAttributes.applyBackColour) {
 				resultAttributes.backColour = layerApplyAttributes.attribute.backColour;
 				if (l == 0) {
 					if (m_renderLevel >= 2)
 						if (resultAttributes.backColour == 0x20)
-							resultAttributes.backColour = (c > 39 || m_teletextPage->blackBackgroundSubst()) ? m_fullRowColour[r] : m_backgroundRemap[m_teletextPage->colourTableRemap()];
+							resultAttributes.backColour = (c > 39 || m_levelOnePage->blackBackgroundSubst()) ? m_fullRowColour[r] : m_backgroundRemap[m_levelOnePage->colourTableRemap()];
 						else
-							resultAttributes.backColour |= m_backgroundRemap[m_teletextPage->colourTableRemap()];
+							resultAttributes.backColour |= m_backgroundRemap[m_levelOnePage->colourTableRemap()];
 					else
 						if (resultAttributes.backColour == 0x20)
 							resultAttributes.backColour = 0x00;
@@ -474,19 +474,19 @@ void TeletextPageRender::renderPage(int r)
 		m_cell[r][c].rightHalf = applyRightHalf;
 
 		if (!resultAttributes.display.invert) {
-			foreQColour = CLUTtoQColor(m_teletextPage->CLUT(resultAttributes.foreColour, m_renderLevel));
-			backQColour = CLUTtoQColor(m_teletextPage->CLUT(resultAttributes.backColour, m_renderLevel));
+			foreQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.foreColour, m_renderLevel));
+			backQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.backColour, m_renderLevel));
 		} else {
-			foreQColour = CLUTtoQColor(m_teletextPage->CLUT(resultAttributes.backColour, m_renderLevel));
-			backQColour = CLUTtoQColor(m_teletextPage->CLUT(resultAttributes.foreColour, m_renderLevel));
+			foreQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.backColour, m_renderLevel));
+			backQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.foreColour, m_renderLevel));
 		}
 
 		renderCharacter();
 
-		if (m_showCodes && c < 40 && m_teletextPage->character(r, c)<0x20 && !m_level1Layer.isRowBottomHalf(r) && !m_cell[r][c].bottomHalf) {
+		if (m_showCodes && c < 40 && m_levelOnePage->character(r, c)<0x20 && !m_level1Layer.isRowBottomHalf(r) && !m_cell[r][c].bottomHalf) {
 			pixmapPainter.setBackground(QBrush(QColor(0, 0, 0, 128)));
 			pixmapPainter.setPen(QColor(255, 255, 255, 224));
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap, (m_teletextPage->character(r, c)+32)*12, 250, 12, 10);
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap, (m_levelOnePage->character(r, c)+32)*12, 250, 12, 10);
 		}
 
 		if (resultAttributes.display.doubleHeight)
@@ -557,11 +557,11 @@ void TeletextPageRender::renderPage(int r)
 				underlined = false;
 			}
 			if (!resultAttributes.display.invert) {
-				foreQColour = CLUTtoQColor(m_teletextPage->CLUT(resultAttributes.foreColour, m_renderLevel));
-				backQColour = CLUTtoQColor(m_teletextPage->CLUT(resultAttributes.backColour, m_renderLevel));
+				foreQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.foreColour, m_renderLevel));
+				backQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.backColour, m_renderLevel));
 			} else {
-				foreQColour = CLUTtoQColor(m_teletextPage->CLUT(resultAttributes.backColour, m_renderLevel));
-				backQColour = CLUTtoQColor(m_teletextPage->CLUT(resultAttributes.foreColour, m_renderLevel));
+				foreQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.backColour, m_renderLevel));
+				backQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.foreColour, m_renderLevel));
 			}
 			if (resultAttributes.flash.ratePhase == 0) {
 				// 1Hz flash
@@ -629,12 +629,12 @@ void TeletextPageRender::updateFlashRequired(int newFlashRequired)
 
 inline void TeletextPageRender::setFullScreenColour(int newColour)
 {
-	if (m_mix || m_teletextPage->controlBit(1) || m_teletextPage->controlBit(2)) {
+	if (m_mix || m_levelOnePage->controlBit(1) || m_levelOnePage->controlBit(2)) {
 		m_finalFullScreenQColor = QColor(0, 0, 0, 0);
 		emit fullScreenColourChanged(QColor(0, 0, 0, 0));
 		return;
 	}
-	QColor newFullScreenQColor = CLUTtoQColor(m_teletextPage->CLUT(newColour, m_renderLevel));
+	QColor newFullScreenQColor = CLUTtoQColor(m_levelOnePage->CLUT(newColour, m_renderLevel));
 	m_finalFullScreenColour = newColour;
 	if (m_finalFullScreenQColor != newFullScreenQColor) {
 		m_finalFullScreenQColor = newFullScreenQColor;
@@ -644,12 +644,12 @@ inline void TeletextPageRender::setFullScreenColour(int newColour)
 
 inline void TeletextPageRender::setFullRowColour(int row, int newColour)
 {
-	if (m_mix || m_teletextPage->controlBit(1) || m_teletextPage->controlBit(2)) {
+	if (m_mix || m_levelOnePage->controlBit(1) || m_levelOnePage->controlBit(2)) {
 		m_fullRowQColor[row] = QColor(0, 0, 0, 0);
 		emit fullRowColourChanged(row, QColor(0, 0, 0, 0));
 		return;
 	}
-	QColor newFullRowQColor = CLUTtoQColor(m_teletextPage->CLUT(newColour, m_renderLevel));
+	QColor newFullRowQColor = CLUTtoQColor(m_levelOnePage->CLUT(newColour, m_renderLevel));
 	m_fullRowColour[row] = newColour;
 	if (m_fullRowQColor[row] != newFullRowQColor) {
 		m_fullRowQColor[row] = newFullRowQColor;
@@ -657,7 +657,7 @@ inline void TeletextPageRender::setFullRowColour(int row, int newColour)
 	}
 }
 
-void TextLayer::setTeletextPage(TeletextPage *newCurrentPage) { m_teletextPage = newCurrentPage; }
+void TextLayer::setTeletextPage(LevelOnePage *newCurrentPage) { m_levelOnePage = newCurrentPage; }
 void TextLayer::setFullScreenColour(int newColour) { m_layerFullScreenColour = newColour; }
 
 void TextLayer::setFullRowColour(int r, int newColour, bool newDownwards)
@@ -835,7 +835,7 @@ void Level1Layer::updateRowCache(int r)
 	bool doubleHeightAttrFound = false;
 
 	for (int c=0; c<40; c++) {
-		unsigned char charCode = m_teletextPage->character(r, c);
+		unsigned char charCode = m_levelOnePage->character(r, c);
 		// Set at spacing attributes
 		switch (charCode) {
 			case 0x0c: // Normal size
@@ -916,11 +916,11 @@ textCharacter Level1Layer::character(int r, int c)
 		updateRowCache(r);
 	if (c > 39 || m_rowHeight[r] == RHbottomhalf)
 		return { 0x20, 0 };
-	result.code = m_teletextPage->character(r, c);
-	if (m_teletextPage->secondCharSet() != 0xf && m_attributeCache[c].escSwitch)
-		result.set = g0CharacterMap.value(((m_teletextPage->secondCharSet() << 3) | m_teletextPage->secondNOS()), 0);
+	result.code = m_levelOnePage->character(r, c);
+	if (m_levelOnePage->secondCharSet() != 0xf && m_attributeCache[c].escSwitch)
+		result.set = g0CharacterMap.value(((m_levelOnePage->secondCharSet() << 3) | m_levelOnePage->secondNOS()), 0);
 	else
-		result.set = g0CharacterMap.value(((m_teletextPage->defaultCharSet() << 3) | m_teletextPage->defaultNOS()), 0);
+		result.set = g0CharacterMap.value(((m_levelOnePage->defaultCharSet() << 3) | m_levelOnePage->defaultNOS()), 0);
 	if (result.code < 0x20) {
 		result.code = m_attributeCache[c].held ? m_attributeCache[c].holdChar : 0x20;
 		if (m_attributeCache[c].held && c > 0)
@@ -965,7 +965,7 @@ void Level1Layer::attributes(int r, int c, applyAttributes *layerApplyAttributes
 		return;
 	if (c > 0) {
 		// Set-after
-		characterCode = m_teletextPage->character(r, c-1);
+		characterCode = m_levelOnePage->character(r, c-1);
 		switch (characterCode) {
 			case 0x00 ... 0x07: // Alphanumeric + Foreground colour
 			case 0x10 ... 0x17: // Mosaic + Foreground colour
@@ -979,13 +979,13 @@ void Level1Layer::attributes(int r, int c, applyAttributes *layerApplyAttributes
 				layerApplyAttributes->attribute.flash.ratePhase = 0;
 				break;
 			case 0x0a: // End box
-				if (m_teletextPage->character(r, c) == 0x0a) {
+				if (m_levelOnePage->character(r, c) == 0x0a) {
 					layerApplyAttributes->applyBoxingOnly = true;
 					layerApplyAttributes->attribute.display.boxingWindow = false;
 				}
 				break;
 			case 0x0b: // Start box
-				if (m_teletextPage->character(r, c) == 0x0b) {
+				if (m_levelOnePage->character(r, c) == 0x0b) {
 					layerApplyAttributes->applyBoxingOnly = true;
 					layerApplyAttributes->attribute.display.boxingWindow = true;
 				}
@@ -1008,7 +1008,7 @@ void Level1Layer::attributes(int r, int c, applyAttributes *layerApplyAttributes
 		}
 	}
 	// Set-at
-	characterCode = m_teletextPage->character(r, c);
+	characterCode = m_levelOnePage->character(r, c);
 	switch (characterCode) {
 		case 0x09: // Steady
 			layerApplyAttributes->applyFlash = true;

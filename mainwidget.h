@@ -81,7 +81,7 @@ protected:
 
 private:
 	TeletextDocument* m_teletextDocument;
-	TeletextPage* m_teletextPage;
+	LevelOnePage* m_levelOnePage;
 	bool m_insertMode, m_grid;
 	QBasicTimer m_flashTimer;
 	int m_flashTiming, m_flashPhase;

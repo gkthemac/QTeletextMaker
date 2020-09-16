@@ -40,7 +40,7 @@ public:
 	void loadDocument(QFile *);
 	void saveDocument(QTextStream *);
 	int numberOfSubPages() const { return m_subPages.size(); }
-	TeletextPage* currentSubPage() const { return m_subPages[m_currentSubPageIndex]; }
+	LevelOnePage* currentSubPage() const { return m_subPages[m_currentSubPageIndex]; }
 	int currentSubPageIndex() const { return m_currentSubPageIndex; }
 	void selectSubPageIndex(int, bool=false);
 	void selectSubPageNext();
@@ -75,7 +75,7 @@ private:
 	bool m_empty;
 	int m_pageNumber, m_currentSubPageIndex;
 	int m_fastTextLink[6];
-	std::vector<TeletextPage *> m_subPages;
+	std::vector<LevelOnePage *> m_subPages;
 	QUndoStack *m_undoStack;
 	int m_cursorRow, m_cursorColumn;
 };

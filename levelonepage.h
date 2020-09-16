@@ -33,14 +33,14 @@
 QColor CLUTtoQColor(int myColour);
 
 // If we inherit from QObject then we can't copy construct, so "make a new subpage that's a copy of this one" wouldn't work
-class TeletextPage : public PageBase //: public QObject
+class LevelOnePage : public PageBase //: public QObject
 {
 	//Q_OBJECT
 
 public:
 	enum CycleTypeEnum { CTcycles, CTseconds };
 
-	TeletextPage();
+	LevelOnePage();
 
 	QByteArray packet(int, int=0);
 	bool setPacket(int, QByteArray);

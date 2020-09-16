@@ -39,8 +39,8 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 	this->resize(QSize(480, 250));
 	this->setAttribute(Qt::WA_NoSystemBackground);
 	m_teletextDocument = new TeletextDocument();
-	m_teletextPage = m_teletextDocument->currentSubPage();
-	m_pageRender.setTeletextPage(m_teletextPage);
+	m_levelOnePage = m_teletextDocument->currentSubPage();
+	m_pageRender.setTeletextPage(m_levelOnePage);
 	m_insertMode = false;
 	m_grid = false;
 	setFocusPolicy(Qt::StrongFocus);
@@ -61,8 +61,8 @@ TeletextWidget::~TeletextWidget()
 
 void TeletextWidget::subPageSelected()
 {
-	m_teletextPage = m_teletextDocument->currentSubPage();
-	m_pageRender.setTeletextPage(m_teletextPage);
+	m_levelOnePage = m_teletextDocument->currentSubPage();
+	m_pageRender.setTeletextPage(m_levelOnePage);
 	refreshPage();
 }
 
@@ -140,7 +140,7 @@ void TeletextWidget::toggleGrid(bool gridOn)
 
 void TeletextWidget::setControlBit(int bitNumber, bool active)
 {
-	m_teletextPage->setControlBit(bitNumber, active);
+	m_levelOnePage->setControlBit(bitNumber, active);
 	if (bitNumber == 1 || bitNumber == 2) {
 		m_pageRender.decodePage();
 		m_pageRender.renderPage();
@@ -149,56 +149,56 @@ void TeletextWidget::setControlBit(int bitNumber, bool active)
 
 void TeletextWidget::setDefaultCharSet(int newDefaultCharSet)
 {
-	m_teletextPage->setDefaultCharSet(newDefaultCharSet);
+	m_levelOnePage->setDefaultCharSet(newDefaultCharSet);
 }
 
 void TeletextWidget::setDefaultNOS(int newDefaultNOS)
 {
-	m_teletextPage->setDefaultNOS(newDefaultNOS);
+	m_levelOnePage->setDefaultNOS(newDefaultNOS);
 }
 
 void TeletextWidget::setDefaultScreenColour(int newColour)
 {
-	m_teletextPage->setDefaultScreenColour(newColour);
+	m_levelOnePage->setDefaultScreenColour(newColour);
 	m_pageRender.decodePage();
 	m_pageRender.renderPage();
 }
 
 void TeletextWidget::setDefaultRowColour(int newColour)
 {
-	m_teletextPage->setDefaultRowColour(newColour);
+	m_levelOnePage->setDefaultRowColour(newColour);
 	m_pageRender.decodePage();
 	m_pageRender.renderPage();
 }
 
 void TeletextWidget::setColourTableRemap(int newMap)
 {
-	m_teletextPage->setColourTableRemap(newMap);
+	m_levelOnePage->setColourTableRemap(newMap);
 	m_pageRender.decodePage();
 	m_pageRender.renderPage();
 }
 
 void TeletextWidget::setBlackBackgroundSubst(bool substOn)
 {
-	m_teletextPage->setBlackBackgroundSubst(substOn);
+	m_levelOnePage->setBlackBackgroundSubst(substOn);
 	m_pageRender.decodePage();
 	m_pageRender.renderPage();
 }
 
 void TeletextWidget::setSidePanelWidths(int newLeftSidePanelColumns, int newRightSidePanelColumns)
 {
-	m_teletextPage->setLeftSidePanelDisplayed(newLeftSidePanelColumns != 0);
-	m_teletextPage->setRightSidePanelDisplayed(newRightSidePanelColumns != 0);
+	m_levelOnePage->setLeftSidePanelDisplayed(newLeftSidePanelColumns != 0);
+	m_levelOnePage->setRightSidePanelDisplayed(newRightSidePanelColumns != 0);
 	if (newLeftSidePanelColumns)
-		m_teletextPage->setSidePanelColumns((newLeftSidePanelColumns == 16) ? 0 : newLeftSidePanelColumns);
+		m_levelOnePage->setSidePanelColumns((newLeftSidePanelColumns == 16) ? 0 : newLeftSidePanelColumns);
 	else
-		m_teletextPage->setSidePanelColumns((newRightSidePanelColumns == 0) ? 0 : 16-newRightSidePanelColumns);
+		m_levelOnePage->setSidePanelColumns((newRightSidePanelColumns == 0) ? 0 : 16-newRightSidePanelColumns);
 	m_pageRender.updateSidePanels();
 }
 
 void TeletextWidget::setSidePanelAtL35Only(bool newSidePanelAtL35Only)
 {
-	m_teletextPage->setSidePanelStatusL25(!newSidePanelAtL35Only);
+	m_levelOnePage->setSidePanelStatusL25(!newSidePanelAtL35Only);
 	m_pageRender.updateSidePanels();
 }
 
@@ -214,7 +214,7 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 		char keyPressed = *qPrintable(event->text());
 //		if (attributes[cursorRow][cursorColumn].mosaics && (keyPressed < 0x40 || keyPressed > 0x5f) && (((keyPressed >= '1' && keyPressed <= '9') && (event->modifiers() & Qt::KeypadModifier)) || (keyPressed >= 'a' && keyPressed <= 'z'))) {
 		if (m_pageRender.level1MosaicAttribute(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) && (keyPressed < 0x40 || keyPressed > 0x5f) && (((keyPressed >= '1' && keyPressed <= '9') && (event->modifiers() & Qt::KeypadModifier)) || (keyPressed >= 'a' && keyPressed <= 'z'))) {
-			if (!(m_teletextPage->character(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) & 0x20))
+			if (!(m_levelOnePage->character(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) & 0x20))
 				setCharacter(0x20);
 			switch (event->key()) {
 				case Qt::Key_Q:

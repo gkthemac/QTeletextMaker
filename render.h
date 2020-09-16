@@ -99,7 +99,7 @@ class TextLayer
 public:
 //	TextLayer(TeletextPage* thePage) : currentPage(thePage) { };
 	virtual ~TextLayer() = default;
-	void setTeletextPage(TeletextPage*);
+	void setTeletextPage(LevelOnePage *);
 	virtual textCharacter character(int, int) =0;
 	virtual void attributes(int, int, applyAttributes *) =0;
 	virtual int fullScreenColour() const =0;
@@ -113,7 +113,7 @@ public:
 	QMultiMap<int, int> enhanceMap;
 
 protected:
-	TeletextPage* m_teletextPage;
+	LevelOnePage* m_levelOnePage;
 	int m_layerFullScreenColour=-1;
 	int m_layerFullRowColour[25];
 	bool m_layerFullRowDownwards[25];
@@ -184,7 +184,7 @@ public:
 	void decodePage();
 	void renderPage();
 	void renderPage(int r);
-	void setTeletextPage(TeletextPage*);
+	void setTeletextPage(LevelOnePage *);
 	void updateSidePanels();
 	void buildEnhanceMap(TextLayer *, int=0);
 	QPixmap* pagePixmap(int i) const { return m_pagePixmap[i]; };
@@ -224,7 +224,7 @@ protected:
 
 private:
 	textCell m_cell[25][72];
-	TeletextPage* m_teletextPage;
+	LevelOnePage* m_levelOnePage;
 	int m_flashRequired;
 	int m_fullRowColour[25];
 	QColor m_fullRowQColor[25];

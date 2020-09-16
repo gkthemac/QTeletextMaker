@@ -32,7 +32,7 @@ TeletextDocument::TeletextDocument()
 	for (int i=0; i<6; i++)
 		m_fastTextLink[i] = 0x8ff;
 	m_empty = true;
-	m_subPages.push_back(new TeletextPage);
+	m_subPages.push_back(new LevelOnePage);
 	m_currentSubPageIndex = 0;
 	m_undoStack = new QUndoStack(this);
 	m_cursorRow = 1;
@@ -51,9 +51,9 @@ void TeletextDocument::loadDocument(QFile *inFile)
 	bool firstSubPageFound = false;
 	int cycleCommandsFound = 0;
 	int mostRecentCycleValue = -1;
-	TeletextPage::CycleTypeEnum mostRecentCycleType;
+	LevelOnePage::CycleTypeEnum mostRecentCycleType;
 	
-	TeletextPage* loadingPage = m_subPages[0];
+	LevelOnePage* loadingPage = m_subPages[0];
 
 	for (;;) {
 		inLine = inFile->readLine(160).trimmed();
@@ -69,7 +69,7 @@ void TeletextDocument::loadDocument(QFile *inFile)
 			// When second and subsequent PN commands are found, firstSubPageFound==true at this point
 			// This assumes that PN is the first command of a new subpage...
 			if (firstSubPageFound) {
-				m_subPages.push_back(new TeletextPage);
+				m_subPages.push_back(new LevelOnePage);
 				loadingPage = m_subPages.back();
 			}
 			m_pageNumber = pageNumberRead;
@@ -100,7 +100,7 @@ void TeletextDocument::loadDocument(QFile *inFile)
 				// House-keep CT command values, in case it's the only one within multiple subpages
 				mostRecentCycleValue = cycleValueRead;
 				loadingPage->setCycleValue(cycleValueRead);
-				mostRecentCycleType = inLine.endsWith("C") ? TeletextPage::CTcycles : TeletextPage::CTseconds;
+				mostRecentCycleType = inLine.endsWith("C") ? LevelOnePage::CTcycles : LevelOnePage::CTseconds;
 				loadingPage->setCycleType(mostRecentCycleType);
 			}
 		}
@@ -181,12 +181,12 @@ void TeletextDocument::selectSubPagePrevious()
 
 void TeletextDocument::insertSubPage(int beforeSubPageIndex, bool copySubPage)
 {
-	TeletextPage *insertedSubPage;
+	LevelOnePage *insertedSubPage;
 
 	if (copySubPage)
-		insertedSubPage = new TeletextPage(*m_subPages.at(beforeSubPageIndex));
+		insertedSubPage = new LevelOnePage(*m_subPages.at(beforeSubPageIndex));
 	else
-		insertedSubPage = new TeletextPage;
+		insertedSubPage = new LevelOnePage;
 	if (beforeSubPageIndex == m_subPages.size())
 		m_subPages.push_back(insertedSubPage);
 	else

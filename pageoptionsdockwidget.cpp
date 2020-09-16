@@ -91,7 +91,7 @@ PageOptionsDockWidget::PageOptionsDockWidget(TeletextWidget *parent): QDockWidge
 	m_cycleTypeCombo->addItem("cycles");
 	m_cycleTypeCombo->addItem("seconds");
 	pageCycleLayout->addWidget(m_cycleTypeCombo);
-	connect(m_cycleTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) { m_parentMainWidget->document()->currentSubPage()->setCycleType(index == 0 ? TeletextPage::CTcycles : TeletextPage::CTseconds); } );
+	connect(m_cycleTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) { m_parentMainWidget->document()->currentSubPage()->setCycleType(index == 0 ? LevelOnePage::CTcycles : LevelOnePage::CTseconds); } );
 
 	subPageOptionsLayout->addLayout(pageCycleLayout);
 
@@ -169,7 +169,7 @@ void PageOptionsDockWidget::updateWidgets()
 	m_cycleValueSpinBox->setValue(m_parentMainWidget->document()->currentSubPage()->cycleValue());
 	m_cycleValueSpinBox->blockSignals(false);
 	m_cycleTypeCombo->blockSignals(true);
-	m_cycleTypeCombo->setCurrentIndex(m_parentMainWidget->document()->currentSubPage()->cycleType() == TeletextPage::CTseconds);
+	m_cycleTypeCombo->setCurrentIndex(m_parentMainWidget->document()->currentSubPage()->cycleType() == LevelOnePage::CTseconds);
 	m_cycleTypeCombo->blockSignals(false);
 	for (int i=0; i<=7; i++) {
 		m_controlBitsAct[i]->blockSignals(true);

@@ -25,7 +25,7 @@
 
 #include "levelonepage.h"
 
-TeletextPage::TeletextPage()
+LevelOnePage::LevelOnePage()
 {
 	m_paddingX26Triplet.setAddress(41);
 	m_paddingX26Triplet.setMode(0x1e);
@@ -35,7 +35,7 @@ TeletextPage::TeletextPage()
 }
 
 // So far we only call clearPage() once, within the constructor
-void TeletextPage::clearPage()
+void LevelOnePage::clearPage()
 {
 	for (int r=0; r<25; r++)
 		for (int c=0; c<40; c++)
@@ -61,7 +61,7 @@ void TeletextPage::clearPage()
 //	If clearPage() is called outside constructor, we need to implement localEnhance.clear();
 }
 
-QByteArray TeletextPage::packet(int packetNumber, int designationCode)
+QByteArray LevelOnePage::packet(int packetNumber, int designationCode)
 {
 	QByteArray result(40, 0x00);
 
@@ -132,7 +132,7 @@ QByteArray TeletextPage::packet(int packetNumber, int designationCode)
 	return PageBase::packet(packetNumber, designationCode);
 }
 
-bool TeletextPage::setPacket(int packetNumber, QByteArray packetContents)
+bool LevelOnePage::setPacket(int packetNumber, QByteArray packetContents)
 {
 	if (packetNumber <= 24) {
 		for (int c=0; c<40; c++)
@@ -143,7 +143,7 @@ bool TeletextPage::setPacket(int packetNumber, QByteArray packetContents)
 	return PageBase::setPacket(packetNumber, packetContents);
 }
 
-bool TeletextPage::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
+bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
 {
 	if (packetNumber == 26) {
 		// Preallocate entries in the localEnhance list to hold our incoming triplets.
@@ -201,7 +201,7 @@ bool TeletextPage::setPacket(int packetNumber, int designationCode, QByteArray p
 	return PageBase::setPacket(packetNumber, designationCode, packetContents);
 }
 
-bool TeletextPage::packetNeeded(int packetNumber, int designationCode) const
+bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 {
 	if (packetNumber <= 24) {
 		for (int c=0; c<40; c++)
@@ -234,7 +234,7 @@ bool TeletextPage::packetNeeded(int packetNumber, int designationCode) const
 	return PageBase::packetNeeded(packetNumber, designationCode);
 }
 
-void TeletextPage::loadPagePacket(QByteArray &inLine)
+void LevelOnePage::loadPagePacket(QByteArray &inLine)
 {
 	bool lineNumberOk;
 	int lineNumber, secondCommaPosition;
@@ -271,7 +271,7 @@ void TeletextPage::loadPagePacket(QByteArray &inLine)
 	}
 }
 
-void TeletextPage::savePage(QTextStream *outStream, int pageNumber, int subPageNumber)
+void LevelOnePage::savePage(QTextStream *outStream, int pageNumber, int subPageNumber)
 {
 	auto writePacketsWithDesignationCodes=[&](int packetNumber)
 	{
@@ -313,7 +313,7 @@ void TeletextPage::savePage(QTextStream *outStream, int pageNumber, int subPageN
 		}
 }
 
-int TeletextPage::controlBitsToPS() const
+int LevelOnePage::controlBitsToPS() const
 {
 	//TODO map page language for regions other than 0
 	int pageStatus = 0x8000 | (m_controlBits[0] << 14) | ((m_defaultNOS & 1) << 9) | ((m_defaultNOS & 2) << 7) | ((m_defaultNOS & 4) << 5);
@@ -322,7 +322,7 @@ int TeletextPage::controlBitsToPS() const
 	return pageStatus;
 }
 
-QString TeletextPage::exportURLHash(QString pageHash)
+QString LevelOnePage::exportURLHash(QString pageHash)
 {
 	int hashDigits[1167]={0};
 	int totalBits, charBit;
@@ -378,28 +378,28 @@ QString TeletextPage::exportURLHash(QString pageHash)
 	return pageHash;
 }
 
-/* void TeletextPage::setSubPageNumber(int newSubPageNumber) { m_subPageNumber = newSubPageNumber; } */
-void TeletextPage::setControlBit(int bitNumber, bool active) { m_controlBits[bitNumber] = active; }
-void TeletextPage::setCycleValue(int newValue) { m_cycleValue = newValue; };
-void TeletextPage::setCycleType(CycleTypeEnum newType) { m_cycleType = newType; }
-void TeletextPage::setDefaultCharSet(int newDefaultCharSet) { m_defaultCharSet = newDefaultCharSet; }
-void TeletextPage::setDefaultNOS(int newDefaultNOS) { m_defaultNOS = newDefaultNOS; }
+/* void LevelOnePage::setSubPageNumber(int newSubPageNumber) { m_subPageNumber = newSubPageNumber; } */
+void LevelOnePage::setControlBit(int bitNumber, bool active) { m_controlBits[bitNumber] = active; }
+void LevelOnePage::setCycleValue(int newValue) { m_cycleValue = newValue; };
+void LevelOnePage::setCycleType(CycleTypeEnum newType) { m_cycleType = newType; }
+void LevelOnePage::setDefaultCharSet(int newDefaultCharSet) { m_defaultCharSet = newDefaultCharSet; }
+void LevelOnePage::setDefaultNOS(int newDefaultNOS) { m_defaultNOS = newDefaultNOS; }
 
-void TeletextPage::setSecondCharSet(int newSecondCharSet)
+void LevelOnePage::setSecondCharSet(int newSecondCharSet)
 {
 	m_secondCharSet = newSecondCharSet;
 	if (m_secondCharSet == 0xf)
 		m_secondNOS = 0x7;
 }
 
-void TeletextPage::setSecondNOS(int newSecondNOS) { m_secondNOS = newSecondNOS; }
-void TeletextPage::setCharacter(int row, int column, unsigned char newCharacter) { m_level1Page[row][column] = newCharacter; }
-void TeletextPage::setDefaultScreenColour(int newDefaultScreenColour) { m_defaultScreenColour = newDefaultScreenColour; }
-void TeletextPage::setDefaultRowColour(int newDefaultRowColour) { m_defaultRowColour = newDefaultRowColour; }
-void TeletextPage::setColourTableRemap(int newColourTableRemap) { m_colourTableRemap = newColourTableRemap; }
-void TeletextPage::setBlackBackgroundSubst(bool newBlackBackgroundSubst) { m_blackBackgroundSubst = newBlackBackgroundSubst; }
+void LevelOnePage::setSecondNOS(int newSecondNOS) { m_secondNOS = newSecondNOS; }
+void LevelOnePage::setCharacter(int row, int column, unsigned char newCharacter) { m_level1Page[row][column] = newCharacter; }
+void LevelOnePage::setDefaultScreenColour(int newDefaultScreenColour) { m_defaultScreenColour = newDefaultScreenColour; }
+void LevelOnePage::setDefaultRowColour(int newDefaultRowColour) { m_defaultRowColour = newDefaultRowColour; }
+void LevelOnePage::setColourTableRemap(int newColourTableRemap) { m_colourTableRemap = newColourTableRemap; }
+void LevelOnePage::setBlackBackgroundSubst(bool newBlackBackgroundSubst) { m_blackBackgroundSubst = newBlackBackgroundSubst; }
 
-int TeletextPage::CLUT(int index, int renderLevel) const
+int LevelOnePage::CLUT(int index, int renderLevel) const
 {
 	if (renderLevel == 2)
 		return index>=16 ? m_CLUT[index] : defaultCLUT[index];
@@ -407,13 +407,13 @@ int TeletextPage::CLUT(int index, int renderLevel) const
 		return renderLevel==3 ? m_CLUT[index] : defaultCLUT[index];
 }
 
-void TeletextPage::setCLUT(int index, int newColour) { m_CLUT[index] = newColour; }
-void TeletextPage::setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed) { m_leftSidePanelDisplayed = newLeftSidePanelDisplayed; }
-void TeletextPage::setRightSidePanelDisplayed(bool newRightSidePanelDisplayed) { m_rightSidePanelDisplayed = newRightSidePanelDisplayed; }
-void TeletextPage::setSidePanelColumns(int newSidePanelColumns) { m_sidePanelColumns = newSidePanelColumns; }
-void TeletextPage::setSidePanelStatusL25(bool newSidePanelStatusL25) { m_sidePanelStatusL25 = newSidePanelStatusL25; }
+void LevelOnePage::setCLUT(int index, int newColour) { m_CLUT[index] = newColour; }
+void LevelOnePage::setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed) { m_leftSidePanelDisplayed = newLeftSidePanelDisplayed; }
+void LevelOnePage::setRightSidePanelDisplayed(bool newRightSidePanelDisplayed) { m_rightSidePanelDisplayed = newRightSidePanelDisplayed; }
+void LevelOnePage::setSidePanelColumns(int newSidePanelColumns) { m_sidePanelColumns = newSidePanelColumns; }
+void LevelOnePage::setSidePanelStatusL25(bool newSidePanelStatusL25) { m_sidePanelStatusL25 = newSidePanelStatusL25; }
 
-QString TeletextPage::colourHash(int whichCLUT)
+QString LevelOnePage::colourHash(int whichCLUT)
 {
 	QString resultHash;
 
