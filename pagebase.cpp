@@ -28,6 +28,8 @@ PageBase::PageBase()
 	// We use nullptrs to keep track of allocated packets, so initialise them this way
 	for (int i=0; i<90; i++)
 		m_packets[i] = nullptr;
+	for (int i=0; i<8; i++)
+		m_controlBits[i] = false;
 }
 
 PageBase::~PageBase()
@@ -86,6 +88,12 @@ bool PageBase::deletePacket(int packetNumber, int designationCode)
 		m_packets[packetArrayIndex] = nullptr;
 	}
 
+	return true;
+}
+
+bool PageBase::setControlBit(int bitNumber, bool active)
+{
+	m_controlBits[bitNumber] = active;
 	return true;
 }
 

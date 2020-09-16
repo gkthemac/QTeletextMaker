@@ -53,8 +53,6 @@ public:
 	QString exportURLHash(QString);
 
 /*	void setSubPageNumber(int); */
-	bool controlBit(int bitNumber) const { return m_controlBits[bitNumber]; }
-	void setControlBit(int, bool);
 	int cycleValue() const { return m_cycleValue; };
 	void setCycleValue(int);
 	CycleTypeEnum cycleType() const { return m_cycleType; };
@@ -96,7 +94,6 @@ protected:
 private:
 	unsigned char m_level1Page[25][40];
 /*	int m_subPageNumber; */
-	bool m_controlBits[8];
 	int m_cycleValue;
 	CycleTypeEnum m_cycleType;
 	int m_defaultCharSet, m_defaultNOS, m_secondCharSet, m_secondNOS;

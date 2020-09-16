@@ -40,8 +40,6 @@ void LevelOnePage::clearPage()
 	for (int r=0; r<25; r++)
 		for (int c=0; c<40; c++)
 			m_level1Page[r][c] = 0x20;
-	for (int i=0; i<8; i++)
-		m_controlBits[i] = false;
 /*	m_subPageNumber = 0x0000; */
 	m_cycleValue = 8;
 	m_cycleType = CTseconds;
@@ -316,9 +314,9 @@ void LevelOnePage::savePage(QTextStream *outStream, int pageNumber, int subPageN
 int LevelOnePage::controlBitsToPS() const
 {
 	//TODO map page language for regions other than 0
-	int pageStatus = 0x8000 | (m_controlBits[0] << 14) | ((m_defaultNOS & 1) << 9) | ((m_defaultNOS & 2) << 7) | ((m_defaultNOS & 4) << 5);
+	int pageStatus = 0x8000 | (controlBit(0) << 14) | ((m_defaultNOS & 1) << 9) | ((m_defaultNOS & 2) << 7) | ((m_defaultNOS & 4) << 5);
 	for (int i=1; i<8; i++)
-		pageStatus |= m_controlBits[i] << (i-1);
+		pageStatus |= controlBit(i) << (i-1);
 	return pageStatus;
 }
 
@@ -379,7 +377,6 @@ QString LevelOnePage::exportURLHash(QString pageHash)
 }
 
 /* void LevelOnePage::setSubPageNumber(int newSubPageNumber) { m_subPageNumber = newSubPageNumber; } */
-void LevelOnePage::setControlBit(int bitNumber, bool active) { m_controlBits[bitNumber] = active; }
 void LevelOnePage::setCycleValue(int newValue) { m_cycleValue = newValue; };
 void LevelOnePage::setCycleType(CycleTypeEnum newType) { m_cycleType = newType; }
 void LevelOnePage::setDefaultCharSet(int newDefaultCharSet) { m_defaultCharSet = newDefaultCharSet; }
