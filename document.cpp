@@ -33,6 +33,7 @@ TeletextDocument::TeletextDocument()
 		m_fastTextLink[i] = 0x8ff;
 	m_empty = true;
 	m_subPages.push_back(new LevelOnePage);
+	m_subPages[0]->setPageNumber(m_pageNumber);
 	m_currentSubPageIndex = 0;
 	m_undoStack = new QUndoStack(this);
 	m_cursorRow = 1;
@@ -70,6 +71,7 @@ void TeletextDocument::loadDocument(QFile *inFile)
 			// This assumes that PN is the first command of a new subpage...
 			if (firstSubPageFound) {
 				m_subPages.push_back(new LevelOnePage);
+				m_subPages.back()->setPageNumber(m_pageNumber);
 				loadingPage = m_subPages.back();
 			}
 			m_pageNumber = pageNumberRead;
@@ -187,6 +189,7 @@ void TeletextDocument::insertSubPage(int beforeSubPageIndex, bool copySubPage)
 		insertedSubPage = new LevelOnePage(*m_subPages.at(beforeSubPageIndex));
 	else
 		insertedSubPage = new LevelOnePage;
+	insertedSubPage->setPageNumber(m_pageNumber);
 	if (beforeSubPageIndex == m_subPages.size())
 		m_subPages.push_back(insertedSubPage);
 	else
@@ -204,8 +207,11 @@ void TeletextDocument::setPageNumber(QString newPageNumberString)
 	// The LineEdit should check if a valid hex number was entered, but just in case...
 	bool newPageNumberOk;
 	int newPageNumberRead = newPageNumberString.toInt(&newPageNumberOk, 16);
-	if (newPageNumberOk && newPageNumberRead >= 0x100 && newPageNumberRead <= 0x8fe)
+	if (newPageNumberOk && newPageNumberRead >= 0x100 && newPageNumberRead <= 0x8fe) {
 		m_pageNumber = newPageNumberRead;
+		for (auto &subPage : m_subPages)
+			subPage->setPageNumber(newPageNumberRead);
+	}
 }
 
 void TeletextDocument::setDescription(QString newDescription)
