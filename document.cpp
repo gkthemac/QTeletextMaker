@@ -207,10 +207,26 @@ void TeletextDocument::setPageNumber(QString newPageNumberString)
 	// The LineEdit should check if a valid hex number was entered, but just in case...
 	bool newPageNumberOk;
 	int newPageNumberRead = newPageNumberString.toInt(&newPageNumberOk, 16);
-	if (newPageNumberOk && newPageNumberRead >= 0x100 && newPageNumberRead <= 0x8fe) {
-		m_pageNumber = newPageNumberRead;
-		for (auto &subPage : m_subPages)
-			subPage->setPageNumber(newPageNumberRead);
+	if ((!newPageNumberOk) || newPageNumberRead < 0x100 || newPageNumberRead > 0x8fe)
+		return;
+
+	// If the magazine number was changed, we'll need to update the relative magazine numbers in X/27
+	int oldMagazine = (m_pageNumber & 0xf00);
+	int newMagazine = (newPageNumberRead & 0xf00);
+	// Fix magazine 0 to 8
+	if (oldMagazine == 0x800)
+		oldMagazine = 0x000;
+	if (newMagazine == 0x800)
+		newMagazine = 0x000;
+	int magazineFlip = oldMagazine ^ newMagazine;
+
+	m_pageNumber = newPageNumberRead;
+
+	for (auto &subPage : m_subPages) {
+		subPage->setPageNumber(newPageNumberRead);
+		if (magazineFlip)
+			for (int i=0; i<8; i++)
+				subPage->setComposeLinkPageNumber(i, subPage->composeLinkPageNumber(i) ^ magazineFlip);
 	}
 }
 
@@ -224,8 +240,10 @@ void TeletextDocument::setFastTextLink(int linkNumber, QString newPageNumberStri
 	// The LineEdit should check if a valid hex number was entered, but just in case...
 	bool newPageNumberOk;
 	int newPageNumberRead = newPageNumberString.toInt(&newPageNumberOk, 16);
-	if (newPageNumberOk && newPageNumberRead >= 0x100 && newPageNumberRead <= 0x8ff)
-		m_fastTextLink[linkNumber] = newPageNumberRead;
+	if ((!newPageNumberOk) || newPageNumberRead < 0x100 || newPageNumberRead > 0x8ff)
+		return;
+
+	m_fastTextLink[linkNumber] = newPageNumberRead;
 }
 
 void TeletextDocument::cursorUp()

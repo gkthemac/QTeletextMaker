@@ -86,6 +86,17 @@ public:
 	void setSidePanelColumns(int);
 	bool sidePanelStatusL25() const { return m_sidePanelStatusL25; }
 	void setSidePanelStatusL25(bool);
+	int composeLinkFunction(int linkNumber) const { return m_composeLink[linkNumber].function; }
+	void setComposeLinkFunction(int, int);
+	bool composeLinkLevel2p5(int linkNumber) const { return m_composeLink[linkNumber].level2p5; }
+	void setComposeLinkLevel2p5(int, bool);
+	bool composeLinkLevel3p5(int linkNumber) const { return m_composeLink[linkNumber].level3p5; }
+	void setComposeLinkLevel3p5(int, bool);
+	int composeLinkPageNumber(int linkNumber) const { return m_composeLink[linkNumber].pageNumber; }
+	void setComposeLinkPageNumber(int, int);
+	int composeLinkSubPageCodes(int linkNumber) const { return m_composeLink[linkNumber].subPageCodes; }
+	void setComposeLinkSubPageCodes(int, int);
+
 	QString colourHash(int);
 	QList<X26Triplet> localEnhance;
 
@@ -101,6 +112,12 @@ private:
 	int m_defaultScreenColour, m_defaultRowColour, m_colourTableRemap, m_sidePanelColumns;
 	bool m_blackBackgroundSubst, m_leftSidePanelDisplayed, m_rightSidePanelDisplayed, m_sidePanelStatusL25;
 	int m_CLUT[32];
+	struct composeLink {
+		int function;
+		bool level2p5, level3p5;
+		int pageNumber, subPageCodes;
+	} m_composeLink[8];
+
 	X26Triplet m_paddingX26Triplet;
 
 	const int defaultCLUT[32] = {

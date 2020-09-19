@@ -6,6 +6,7 @@ Features
 - Rendering of teletext pages in Levels 1, 1.5, 2.5 and 3.5
 - Rendering of Local Objects and side panels.
 - Interactive X/26 Local Enhancement Data triplet editor.
+- Editing of X/27/4 and X/27/5 compositional links to enhancement data pages.
 - Palette editor.
 - Configurable zoom.
 - View teletext pages in 4:3, 16:9 pillar-box and 16:9 stretch aspect ratios.

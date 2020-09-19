@@ -55,6 +55,11 @@ void LevelOnePage::clearPage()
 	for (int r=0; r<25; r++)
 		for (int c=0; c<40; c++)
 			m_level1Page[r][c] = 0x20;
+	for (int i=0; i<8; i++) {
+		setControlBit(i, false);
+		m_composeLink[i] = { (i<4) ? i : 0, false, i>=4, 0x0ff, 0x0000 };
+	}
+
 /*	m_subPageNumber = 0x0000; */
 	m_cycleValue = 8;
 	m_cycleType = CTseconds;
@@ -119,7 +124,23 @@ QByteArray LevelOnePage::packet(int packetNumber, int designationCode)
 		return result;
 	}
 
-	// TODO packet 27
+	// TODO packet 27/0
+
+	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
+		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
+			int pageLinkNumber = i+(designationCode == 4 ? 0 : 6);
+
+			result[i*6+1] = (m_composeLink[pageLinkNumber].level3p5 << 3) | (m_composeLink[pageLinkNumber].level2p5 << 2) | m_composeLink[pageLinkNumber].function;
+			result[i*6+2] = ((m_composeLink[pageLinkNumber].pageNumber & 0x100) >> 3) | 0x10 | (m_composeLink[pageLinkNumber].pageNumber & 0x00f);
+			result[i*6+3] = ((m_composeLink[pageLinkNumber].pageNumber & 0x0f0) >> 2) | ((m_composeLink[pageLinkNumber].pageNumber & 0x600) >> 9);
+
+			result[i*6+4] = ((m_composeLink[pageLinkNumber].subPageCodes & 0x000f) << 2);
+			result[i*6+5] = ((m_composeLink[pageLinkNumber].subPageCodes & 0x03f0) >> 4);
+			result[i*6+6] = ((m_composeLink[pageLinkNumber].subPageCodes & 0xfc00) >> 10);
+		}
+
+		return result;
+	}
 
 	if (packetNumber == 28 && (designationCode == 0 || designationCode == 4)) {
 		int CLUToffset = (designationCode == 0) ? 16 : 0;
@@ -184,7 +205,26 @@ bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray p
 		return true;
 	}
 
-	// TODO packet 27
+	// TODO packet 27/0
+
+	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
+		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
+			int pageLinkNumber = i+(designationCode == 4 ? 0 : 6);
+			int pageFunction = packetContents.at(i*6+1) & 0x03;
+			if (i >= 4)
+				m_composeLink[pageLinkNumber].function = pageFunction;
+			else if (i != pageFunction)
+				qDebug("X/27/4 link number %d fixed at function %d. Attempted to set to %d.", pageLinkNumber, pageLinkNumber, pageFunction);
+
+			m_composeLink[pageLinkNumber].level2p5 = packetContents.at(i*6+1) & 0x04;
+			m_composeLink[pageLinkNumber].level3p5 = packetContents.at(i*6+1) & 0x08;
+
+			m_composeLink[pageLinkNumber].pageNumber = ((packetContents.at(i*6+3) & 0x03) << 9) | ((packetContents.at(i*6+2) & 0x20) << 3) | ((packetContents.at(i*6+3) & 0x3c) << 2) | (packetContents.at(i*6+2) & 0x0f);
+
+			m_composeLink[pageLinkNumber].subPageCodes = (packetContents.at(i*6+4) >> 2) | (packetContents.at(i*6+5) << 4) | (packetContents.at(i*6+6) << 10);
+		}
+		return true;
+	}
 
 	if (packetNumber == 28 && (designationCode == 0 || designationCode == 4)) {
 		int CLUToffset = (designationCode == 0) ? 16 : 0;
@@ -226,7 +266,16 @@ bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 	if (packetNumber == 26)
 		return ((localEnhance.size()+12) / 13) > designationCode;
 
-	// TODO packet 27
+	// TODO packet 27/0
+
+	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
+		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
+			int pageLinkNumber = i+(designationCode == 4 ? 0 : 6);
+			if ((m_composeLink[pageLinkNumber].pageNumber & 0x0ff) != 0x0ff)
+				return true;
+		}
+		return false;
+	}
 
 	if (packetNumber == 28) {
 		if (designationCode == 0) {
@@ -424,6 +473,31 @@ void LevelOnePage::setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed) { m
 void LevelOnePage::setRightSidePanelDisplayed(bool newRightSidePanelDisplayed) { m_rightSidePanelDisplayed = newRightSidePanelDisplayed; }
 void LevelOnePage::setSidePanelColumns(int newSidePanelColumns) { m_sidePanelColumns = newSidePanelColumns; }
 void LevelOnePage::setSidePanelStatusL25(bool newSidePanelStatusL25) { m_sidePanelStatusL25 = newSidePanelStatusL25; }
+
+void LevelOnePage::setComposeLinkFunction(int linkNumber, int newFunction)
+{
+	m_composeLink[linkNumber].function = newFunction;
+}
+
+void LevelOnePage::setComposeLinkLevel2p5(int linkNumber, bool newRequired)
+{
+	m_composeLink[linkNumber].level2p5 = newRequired;
+}
+
+void LevelOnePage::setComposeLinkLevel3p5(int linkNumber, bool newRequired)
+{
+	m_composeLink[linkNumber].level3p5 = newRequired;
+}
+
+void LevelOnePage::setComposeLinkPageNumber(int linkNumber, int newPageNumber)
+{
+	m_composeLink[linkNumber].pageNumber = newPageNumber;
+}
+
+void LevelOnePage::setComposeLinkSubPageCodes(int linkNumber, int newSubPageCodes)
+{
+	m_composeLink[linkNumber].subPageCodes = newSubPageCodes;
+}
 
 QString LevelOnePage::colourHash(int whichCLUT)
 {
