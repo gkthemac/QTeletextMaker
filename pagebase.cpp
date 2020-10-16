@@ -43,6 +43,8 @@ PageBase::PageBase(const PageBase &other)
 	for (int i=0; i<90; i++)
 		if (other.packetNeededArrayIndex(i))
 			setPacketArrayIndex(i, other.packetArrayIndex(i));
+		else
+			m_packets[i] = nullptr;
 }
 
 PageBase::~PageBase()
