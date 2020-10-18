@@ -55,9 +55,10 @@ By checking "raw values" it is also possible to view and edit the raw Address, M
 The full behaviour of X/26 enhancement triplets can be found in section 12.3 of the [Enhanced Teletext specification ETS 300 706](https://web.archive.org/web/20160326062859/https://www.phecap.nl/download/enhenced-teletext-specs.pdf).
 
 ### Setting the Active Position
-The Active Position, whether set explicitly by a row or column triplet, can only be moved in screen address order i.e. from left to right within a row and then from top to bottom across rows. In other words:
+The Active Position, whether set explicitly by a "Set Active Position" triplet or by a row or column triplet, can only be moved in screen address order i.e. from left to right within a row and then from top to bottom across rows. In other words:
 - The Active Position can never be moved up to a lesser numbered row.
 - The Active Position can never be moved left *within the same row* to a lesser numbered column, but it can be moved left at the same time as it is moved down to a greater numbered row.
+
 If this rule is not followed then triplets in earlier screen addresses will be ignored.
 
 ### Objects
