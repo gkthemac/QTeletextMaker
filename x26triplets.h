@@ -23,17 +23,20 @@
 class X26Triplet
 {
 public:
-//	X26Triplet() {}
+	X26Triplet() {}
 //	X26Triplet(const X26Triplet &other);
 
 //	X26Triplet &operator=(const X26Triplet &other);
 
-	int address() const { return myTriplet.m_address; }
-	int mode() const { return myTriplet.m_mode; }
-	int data() const { return myTriplet.m_data; }
-	int addressRow() const { return (myTriplet.m_address == 40) ? 24 : myTriplet.m_address-40; }
-	int addressColumn() const { return (myTriplet.m_address); }
-	bool isRowTriplet() const { return (myTriplet.m_address >= 40); }
+	X26Triplet(int, int, int);
+
+	int address() const { return m_address; }
+	int mode() const { return m_mode; }
+	int modeExt() const { return (m_address >= 40) ? m_mode : (m_mode | 0x20); }
+	int data() const { return m_data; }
+	int addressRow() const { return (m_address == 40) ? 24 :m_address-40; }
+	int addressColumn() const { return (m_address); }
+	bool isRowTriplet() const { return (m_address >= 40); }
 
 	void setAddress(int);
 	void setMode(int);
@@ -42,11 +45,8 @@ public:
 	void setAddressColumn(int);
 
 private:
-	struct x26TripletStruct {
-		int m_address;
-		int m_mode;
-		int m_data;
-	} myTriplet;
+	int m_address, m_mode, m_data;
+
 };
 
 #endif

@@ -19,8 +19,34 @@
 
 #include "x26triplets.h"
 
-void X26Triplet::setAddress(int newAddress) { myTriplet.m_address = newAddress; }
-void X26Triplet::setMode(int newMode) { myTriplet.m_mode = newMode; }
-void X26Triplet::setData(int newData) { myTriplet.m_data = newData; }
-void X26Triplet::setAddressRow(int newAddressRow) { myTriplet.m_address = (newAddressRow == 24) ? 40 : newAddressRow+40; }
-void X26Triplet::setAddressColumn(int newAddressColumn) { myTriplet.m_address = newAddressColumn; }
+X26Triplet::X26Triplet(int address, int mode, int data)
+{
+	m_address = address;
+	m_mode = mode;
+	m_data = data;
+}
+
+void X26Triplet::setAddress(int address)
+{
+	m_address = address;
+}
+
+void X26Triplet::setMode(int mode)
+{
+	m_mode = mode;
+}
+
+void X26Triplet::setData(int data)
+{
+	m_data = data;
+}
+
+void X26Triplet::setAddressRow(int addressRow)
+{
+	m_address = (addressRow == 24) ? 40 : addressRow+40;
+}
+
+void X26Triplet::setAddressColumn(int addressColumn)
+{
+	m_address = addressColumn;
+}
