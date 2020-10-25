@@ -38,6 +38,7 @@ TeletextDocument::TeletextDocument()
 	m_undoStack = new QUndoStack(this);
 	m_cursorRow = 1;
 	m_cursorColumn = 0;
+	m_selectionSubPage = nullptr;
 }
 
 TeletextDocument::~TeletextDocument()
@@ -283,6 +284,23 @@ void TeletextDocument::moveCursor(int newCursorRow, int newCursorColumn)
 	m_cursorRow = newCursorRow;
 	m_cursorColumn = newCursorColumn;
 	emit cursorMoved();
+}
+
+void TeletextDocument::setSelection(int topRow, int leftColumn, int bottomRow, int rightColumn)
+{
+	if (m_selectionTopRow != topRow || m_selectionBottomRow != bottomRow || m_selectionLeftColumn != leftColumn || m_selectionRightColumn != rightColumn) {
+		m_selectionSubPage = currentSubPage();
+		m_selectionTopRow = topRow;
+		m_selectionBottomRow = bottomRow;
+		m_selectionLeftColumn = leftColumn;
+		m_selectionRightColumn = rightColumn;
+		emit selectionMoved();
+	}
+}
+
+void TeletextDocument::cancelSelection()
+{
+	m_selectionSubPage = nullptr;
 }
 
 

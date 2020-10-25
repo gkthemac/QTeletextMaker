@@ -61,9 +61,19 @@ public:
 	void cursorLeft();
 	void cursorRight();
 	void moveCursor(int, int);
+	int selectionTopRow() const { return m_selectionTopRow; }
+	int selectionBottomRow() const { return m_selectionBottomRow; }
+	int selectionLeftColumn() const { return m_selectionLeftColumn; }
+	int selectionRightColumn() const { return m_selectionRightColumn; }
+	int selectionWidth() const { return m_selectionRightColumn - m_selectionLeftColumn + 1; }
+	int selectionHeight() const { return m_selectionBottomRow - m_selectionTopRow + 1; }
+	bool selectionActive() const { return m_selectionSubPage == currentSubPage(); }
+	void setSelection(int, int, int, int);
+	void cancelSelection();
 
 signals:
 	void cursorMoved();
+	void selectionMoved();
 	void colourChanged(int);
 	void contentsChange(int);
 	void aboutToChangeSubPage();
@@ -77,7 +87,8 @@ private:
 	int m_fastTextLink[6];
 	std::vector<LevelOnePage *> m_subPages;
 	QUndoStack *m_undoStack;
-	int m_cursorRow, m_cursorColumn;
+	int m_cursorRow, m_cursorColumn, m_selectionTopRow, m_selectionBottomRow, m_selectionLeftColumn, m_selectionRightColumn;
+	LevelOnePage *m_selectionSubPage;
 };
 
 

@@ -22,6 +22,7 @@
 #include <QKeyEvent>
 #include <QMenu>
 #include <QPainter>
+#include <QPair>
 #include <QUndoCommand>
 #include <QWidget>
 #include <vector>
@@ -42,6 +43,7 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 	m_levelOnePage = m_teletextDocument->currentSubPage();
 	m_pageRender.setTeletextPage(m_levelOnePage);
 	m_insertMode = false;
+	m_selectionInProgress = false;
 	m_grid = false;
 	setFocusPolicy(Qt::StrongFocus);
 	m_flashTiming = m_flashPhase = 0;
@@ -50,6 +52,7 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 	connect(m_teletextDocument, &TeletextDocument::subPageSelected, this, &TeletextWidget::subPageSelected);
 	connect(m_teletextDocument, &TeletextDocument::contentsChange, this, &TeletextWidget::refreshRow);
 	connect(m_teletextDocument, &TeletextDocument::refreshNeeded, this, &TeletextWidget::refreshPage);
+	connect(m_teletextDocument, &TeletextDocument::selectionMoved, this, QOverload<>::of(&TeletextWidget::update));
 }
 
 TeletextWidget::~TeletextWidget()
@@ -91,6 +94,11 @@ void TeletextWidget::paintEvent(QPaintEvent *event)
 		widgetPainter.drawPixmap(480+m_pageRender.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(m_flashPhase), 480, 0, m_pageRender.rightSidePanelColumns()*12, 250);
 	if (this->hasFocus())
 		widgetPainter.fillRect((m_teletextDocument->cursorColumn()+m_pageRender.leftSidePanelColumns())*12, m_teletextDocument->cursorRow()*10, 12, 10, QColor(128, 128, 128, 192));
+	if (m_teletextDocument->selectionActive()) {
+		widgetPainter.setPen(QPen(QColor(192, 192, 192, 224), 1, Qt::DashLine));
+		widgetPainter.setBrush(QBrush(QColor(255, 255, 255, 64)));
+		widgetPainter.drawRect((m_teletextDocument->selectionLeftColumn()+m_pageRender.leftSidePanelColumns())*12, m_teletextDocument->selectionTopRow()*10, m_teletextDocument->selectionWidth()*12-1, m_teletextDocument->selectionHeight()*10-1);
+	}
 }
 
 void TeletextWidget::updateFlashTimer(int newFlashTimer)
@@ -329,27 +337,62 @@ void TeletextWidget::backspaceEvent()
 	m_teletextDocument->undoStack()->push(backspaceCommand);
 }
 
-void TeletextWidget::cursorToMouse(QPoint mousePosition)
+QPair<int, int> TeletextWidget::mouseToRowAndColumn(const QPoint &mousePosition)
 {
-	int newCursorRow = mousePosition.y() / 10;
-	int newCursorColumn = mousePosition.x() / 12 - m_pageRender.leftSidePanelColumns();
-	if (newCursorRow < 1)
-		newCursorRow = 1;
-	if (newCursorRow > 24)
-		newCursorRow = 24;
-	if (newCursorColumn < 0)
-		newCursorColumn = 0;
-	if (newCursorColumn > 39)
-		newCursorColumn = 39;
-	m_teletextDocument->moveCursor(newCursorRow, newCursorColumn);
+	int row = mousePosition.y() / 10;
+	int column = mousePosition.x() / 12 - m_pageRender.leftSidePanelColumns();
+	if (row < 1)
+		row = 1;
+	if (row > 24)
+		row = 24;
+	if (column < 0)
+		column = 0;
+	if (column > 39)
+		column = 39;
+	return qMakePair(row, column);
 }
 
 void TeletextWidget::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::LeftButton) {
-		cursorToMouse(event->pos());
+		m_teletextDocument->cancelSelection();
+		QPair<int, int> position = mouseToRowAndColumn(event->pos());
+		m_teletextDocument->moveCursor(position.first, position.second);
 		update();
 	}
+}
+
+void TeletextWidget::mouseMoveEvent(QMouseEvent *event)
+{
+	if (event->buttons() & Qt::LeftButton) {
+		QPair<int, int> position = mouseToRowAndColumn(event->pos());
+		if (m_selectionInProgress || position.first != m_teletextDocument->cursorRow() || position.second != m_teletextDocument->cursorColumn()) {
+			int topRow, bottomRow, leftColumn, rightColumn;
+
+			m_selectionInProgress = true;
+			if (m_teletextDocument->cursorRow() < position.first) {
+				topRow = m_teletextDocument->cursorRow();
+				bottomRow = position.first;
+			} else {
+				topRow = position.first;
+				bottomRow = m_teletextDocument->cursorRow();
+			}
+			if (m_teletextDocument->cursorColumn() < position.second) {
+				leftColumn = m_teletextDocument->cursorColumn();
+				rightColumn = position.second;
+			} else {
+				leftColumn = position.second;
+				rightColumn = m_teletextDocument->cursorColumn();
+			}
+			m_teletextDocument->setSelection(topRow, leftColumn, bottomRow, rightColumn);
+		}
+	}
+}
+
+void TeletextWidget::mouseReleaseEvent(QMouseEvent *event)
+{
+	if (event->button() == Qt::LeftButton)
+		m_selectionInProgress = false;
 }
 
 void TeletextWidget::focusInEvent(QFocusEvent *event)

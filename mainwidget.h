@@ -22,6 +22,7 @@
 
 #include <QBasicTimer>
 #include <QFrame>
+#include <QPair>
 #include <QTextStream>
 #include <vector>
 
@@ -74,6 +75,8 @@ protected:
 	void paintEvent(QPaintEvent *event) override;
 	void keyPressEvent(QKeyEvent *event) override;
 	void mousePressEvent(QMouseEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
+	void mouseReleaseEvent(QMouseEvent *event) override;
 	void focusInEvent(QFocusEvent *event) override;
 	void focusOutEvent(QFocusEvent *event) override;
 
@@ -82,7 +85,7 @@ protected:
 private:
 	TeletextDocument* m_teletextDocument;
 	LevelOnePage* m_levelOnePage;
-	bool m_insertMode, m_grid;
+	bool m_insertMode, m_grid, m_selectionInProgress;
 	QBasicTimer m_flashTimer;
 	int m_flashTiming, m_flashPhase;
 
@@ -90,7 +93,7 @@ private:
 
 	void calculateDimensions();
 
-	void cursorToMouse(QPoint mousePosition);
+	QPair<int, int> mouseToRowAndColumn(const QPoint &);
 };
 
 #endif
