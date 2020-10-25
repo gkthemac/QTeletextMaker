@@ -95,13 +95,10 @@ private:
 class OverwriteCharacterCommand : public QUndoCommand
 {
 public:
-//	enum { Id = 1 };
-
 	OverwriteCharacterCommand(TeletextDocument *, unsigned char, QUndoCommand *parent = 0);
 
-	void undo() override;
 	void redo() override;
-//	int id() const override { return Id; }
+	void undo() override;
 
 private:
 	TeletextDocument *m_teletextDocument;
@@ -116,8 +113,8 @@ public:
 
 	ToggleMosaicBitCommand(TeletextDocument *, unsigned char, QUndoCommand *parent = 0);
 
-	void undo() override;
 	void redo() override;
+	void undo() override;
 	bool mergeWith(const QUndoCommand *) override;
 	int id() const override { return Id; }
 
@@ -130,13 +127,10 @@ private:
 class BackspaceCommand : public QUndoCommand
 {
 public:
-//	enum { Id = 3 };
-
 	BackspaceCommand(TeletextDocument *, QUndoCommand *parent = 0);
 
-	void undo() override;
 	void redo() override;
-//	int id() const override { return Id; }
+	void undo() override;
 
 private:
 	TeletextDocument *m_teletextDocument;
@@ -149,8 +143,8 @@ class InsertSubPageCommand : public QUndoCommand
 public:
 	InsertSubPageCommand(TeletextDocument *, bool, bool, QUndoCommand *parent = 0);
 
-	void undo() override;
 	void redo() override;
+	void undo() override;
 
 private:
 	TeletextDocument *m_teletextDocument;
@@ -163,8 +157,8 @@ class SetColourCommand : public QUndoCommand
 public:
 	SetColourCommand(TeletextDocument *, int, int, QUndoCommand *parent = 0);
 
-	void undo() override;
 	void redo() override;
+	void undo() override;
 
 private:
 	TeletextDocument *m_teletextDocument;
@@ -176,8 +170,8 @@ class ResetCLUTCommand : public QUndoCommand
 public:
 	ResetCLUTCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
 
-	void undo() override;
 	void redo() override;
+	void undo() override;
 
 private:
 	TeletextDocument *m_teletextDocument;

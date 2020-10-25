@@ -314,21 +314,21 @@ OverwriteCharacterCommand::OverwriteCharacterCommand(TeletextDocument *teletextD
 	m_newCharacter = newCharacter;
 }
 
-void OverwriteCharacterCommand::undo()
-{
-	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_oldCharacter);
-	m_teletextDocument->moveCursor(m_row, m_column);
-	setText(QObject::tr("overwrite char"));
-	emit m_teletextDocument->contentsChange(m_row);
-}
-
 void OverwriteCharacterCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_newCharacter);
 	m_teletextDocument->moveCursor(m_row, m_column);
 	m_teletextDocument->cursorRight();
+	setText(QObject::tr("overwrite char"));
+	emit m_teletextDocument->contentsChange(m_row);
+}
+
+void OverwriteCharacterCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_oldCharacter);
+	m_teletextDocument->moveCursor(m_row, m_column);
 	setText(QObject::tr("overwrite char"));
 	emit m_teletextDocument->contentsChange(m_row);
 }
@@ -347,19 +347,19 @@ ToggleMosaicBitCommand::ToggleMosaicBitCommand(TeletextDocument *teletextDocumen
 		m_newCharacter = m_oldCharacter ^ bitToToggle;
 }
 
-void ToggleMosaicBitCommand::undo()
+void ToggleMosaicBitCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_oldCharacter);
+	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_newCharacter);
 	m_teletextDocument->moveCursor(m_row, m_column);
 	setText(QObject::tr("mosaic"));
 	emit m_teletextDocument->contentsChange(m_row);
 }
 
-void ToggleMosaicBitCommand::redo()
+void ToggleMosaicBitCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_newCharacter);
+	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_oldCharacter);
 	m_teletextDocument->moveCursor(m_row, m_column);
 	setText(QObject::tr("mosaic"));
 	emit m_teletextDocument->contentsChange(m_row);
@@ -375,6 +375,7 @@ bool ToggleMosaicBitCommand::mergeWith(const QUndoCommand *command)
 	return true;
 }
 
+
 BackspaceCommand::BackspaceCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
 {
 	m_teletextDocument = teletextDocument;
@@ -389,21 +390,21 @@ BackspaceCommand::BackspaceCommand(TeletextDocument *teletextDocument, QUndoComm
 	m_deletedCharacter = teletextDocument->currentSubPage()->character(m_row, m_column);
 }
 
+void BackspaceCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, 0x20);
+	m_teletextDocument->moveCursor(m_row, m_column);
+	setText(QObject::tr("backspace"));
+	emit m_teletextDocument->contentsChange(m_row);
+}
+
 void BackspaceCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_deletedCharacter);
 	m_teletextDocument->moveCursor(m_row, m_column);
 	m_teletextDocument->cursorRight();
-	setText(QObject::tr("backspace"));
-	emit m_teletextDocument->contentsChange(m_row);
-}
-
-void BackspaceCommand::redo()
-{
-	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, 0x20);
-	m_teletextDocument->moveCursor(m_row, m_column);
 	setText(QObject::tr("backspace"));
 	emit m_teletextDocument->contentsChange(m_row);
 }
@@ -416,17 +417,17 @@ InsertSubPageCommand::InsertSubPageCommand(TeletextDocument *teletextDocument, b
 	m_copySubPage = copySubPage;
 }
 
-void InsertSubPageCommand::undo()
+void InsertSubPageCommand::redo()
 {
-	m_teletextDocument->deleteSubPage(m_newSubPageIndex);
-	//TODO should we always wrench to "subpage viewed when we inserted"? Or just if subpage viewed is being deleted?
+	m_teletextDocument->insertSubPage(m_newSubPageIndex, m_copySubPage);
 	m_teletextDocument->selectSubPageIndex(m_newSubPageIndex, true);
 	setText(QObject::tr("insert subpage"));
 }
 
-void InsertSubPageCommand::redo()
+void InsertSubPageCommand::undo()
 {
-	m_teletextDocument->insertSubPage(m_newSubPageIndex, m_copySubPage);
+	m_teletextDocument->deleteSubPage(m_newSubPageIndex);
+	//TODO should we always wrench to "subpage viewed when we inserted"? Or just if subpage viewed is being deleted?
 	m_teletextDocument->selectSubPageIndex(m_newSubPageIndex, true);
 	setText(QObject::tr("insert subpage"));
 }
@@ -441,19 +442,19 @@ SetColourCommand::SetColourCommand(TeletextDocument *teletextDocument, int colou
 	m_newColour = newColour;
 }
 
-void SetColourCommand::undo()
+void SetColourCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCLUT(m_colourIndex, m_oldColour);
+	m_teletextDocument->currentSubPage()->setCLUT(m_colourIndex, m_newColour);
 	emit m_teletextDocument->colourChanged(m_colourIndex);
 	setText(QObject::tr("colour change"));
 	emit m_teletextDocument->refreshNeeded();
 }
 
-void SetColourCommand::redo()
+void SetColourCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCLUT(m_colourIndex, m_newColour);
+	m_teletextDocument->currentSubPage()->setCLUT(m_colourIndex, m_oldColour);
 	emit m_teletextDocument->colourChanged(m_colourIndex);
 	setText(QObject::tr("colour change"));
 	emit m_teletextDocument->refreshNeeded();
@@ -469,22 +470,22 @@ ResetCLUTCommand::ResetCLUTCommand(TeletextDocument *teletextDocument, int colou
 		m_oldColourEntry[i&7] = teletextDocument->currentSubPage()->CLUT(i);
 }
 
-void ResetCLUTCommand::undo()
+void ResetCLUTCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	for (int i=m_colourTable*8; i<m_colourTable*8+8; i++) {
-		m_teletextDocument->currentSubPage()->setCLUT(i, m_oldColourEntry[i&7]);
+		m_teletextDocument->currentSubPage()->setCLUT(i, m_teletextDocument->currentSubPage()->CLUT(i, 0));
 		emit m_teletextDocument->colourChanged(i);
 	}
 	setText(QObject::tr("CLUT %1 reset").arg(m_colourTable));
 	emit m_teletextDocument->refreshNeeded();
 }
 
-void ResetCLUTCommand::redo()
+void ResetCLUTCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	for (int i=m_colourTable*8; i<m_colourTable*8+8; i++) {
-		m_teletextDocument->currentSubPage()->setCLUT(i, m_teletextDocument->currentSubPage()->CLUT(i, 0));
+		m_teletextDocument->currentSubPage()->setCLUT(i, m_oldColourEntry[i&7]);
 		emit m_teletextDocument->colourChanged(i);
 	}
 	setText(QObject::tr("CLUT %1 reset").arg(m_colourTable));
