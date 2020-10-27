@@ -152,6 +152,35 @@ private:
 	bool m_copySubPage;
 };
 
+class InsertRowCommand : public QUndoCommand
+{
+public:
+	InsertRowCommand(TeletextDocument *, bool, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+
+private:
+	TeletextDocument *m_teletextDocument;
+	int m_subPageIndex, m_row;
+	bool m_copyRow;
+	unsigned char m_deletedBottomRow[40];
+};
+
+class DeleteRowCommand : public QUndoCommand
+{
+public:
+	DeleteRowCommand(TeletextDocument *, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+
+private:
+	TeletextDocument *m_teletextDocument;
+	int m_subPageIndex, m_row;
+	unsigned char m_deletedRow[40];
+};
+
 class SetColourCommand : public QUndoCommand
 {
 public:

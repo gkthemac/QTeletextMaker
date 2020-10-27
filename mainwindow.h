@@ -63,6 +63,8 @@ private slots:
 	void updatePageWidgets();
 	void updateCursorPosition();
 
+	void insertRow(bool);
+	void deleteRow();
 	void insertSubPage(bool, bool);
 
 	void setSceneDimensions();

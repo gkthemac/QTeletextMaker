@@ -279,10 +279,12 @@ void TeletextDocument::cursorRight()
 	emit cursorMoved();
 }
 
-void TeletextDocument::moveCursor(int newCursorRow, int newCursorColumn)
+void TeletextDocument::moveCursor(int cursorRow, int cursorColumn)
 {
-	m_cursorRow = newCursorRow;
-	m_cursorColumn = newCursorColumn;
+	if (cursorRow != -1)
+		m_cursorRow = cursorRow;
+	if (cursorColumn != -1)
+		m_cursorColumn = cursorColumn;
 	emit cursorMoved();
 }
 
@@ -407,6 +409,97 @@ void BackspaceCommand::undo()
 	m_teletextDocument->cursorRight();
 	setText(QObject::tr("backspace"));
 	emit m_teletextDocument->contentsChange(m_row);
+}
+
+
+InsertRowCommand::InsertRowCommand(TeletextDocument *teletextDocument, bool copyRow, QUndoCommand *parent) : QUndoCommand(parent)
+{
+	m_teletextDocument = teletextDocument;
+	m_subPageIndex = teletextDocument->currentSubPageIndex();
+	m_row = teletextDocument->cursorRow();
+	m_copyRow = copyRow;
+}
+
+void InsertRowCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->moveCursor(m_row, -1);
+	// Store copy of the bottom row we're about to push out, for undo
+	for (int c=0; c<40; c++)
+		m_deletedBottomRow[c] = m_teletextDocument->currentSubPage()->character(23, c);
+	// Shuffle lines below the inserting row downwards without affecting the FastText row
+	for (int r=22; r>=m_row; r--)
+		for (int c=0; c<40; c++)
+			m_teletextDocument->currentSubPage()->setCharacter(r+1, c, m_teletextDocument->currentSubPage()->character(r, c));
+	if (m_copyRow)
+		setText(QObject::tr("insert copy row"));
+	else {
+		// The above shuffle leaves a duplicate of the current row, so blank it if requested
+		for (int c=0; c<40; c++)
+			m_teletextDocument->currentSubPage()->setCharacter(m_row, c, ' ');
+		setText(QObject::tr("insert blank row"));
+	}
+	emit m_teletextDocument->refreshNeeded();
+}
+
+void InsertRowCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->moveCursor(m_row, -1);
+	// Shuffle lines below the deleting row upwards without affecting the FastText row
+	for (int r=m_row; r<23; r++)
+		for (int c=0; c<40; c++)
+			m_teletextDocument->currentSubPage()->setCharacter(r, c, m_teletextDocument->currentSubPage()->character(r+1, c));
+	// Now repair the bottom row we pushed out
+	for (int c=0; c<40; c++)
+		m_teletextDocument->currentSubPage()->setCharacter(23, c, m_deletedBottomRow[c]);
+	if (m_copyRow)
+		setText(QObject::tr("insert copy row"));
+	else
+		setText(QObject::tr("insert blank row"));
+	emit m_teletextDocument->refreshNeeded();
+}
+
+
+DeleteRowCommand::DeleteRowCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
+{
+	m_teletextDocument = teletextDocument;
+	m_subPageIndex = teletextDocument->currentSubPageIndex();
+	m_row = teletextDocument->cursorRow();
+}
+
+void DeleteRowCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->moveCursor(m_row, -1);
+	// Store copy of the row we're going to delete, for undo
+	for (int c=0; c<40; c++)
+		m_deletedRow[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
+	// Shuffle lines below the deleting row upwards without affecting the FastText row
+	for (int r=m_row; r<23; r++)
+		for (int c=0; c<40; c++)
+			m_teletextDocument->currentSubPage()->setCharacter(r, c, m_teletextDocument->currentSubPage()->character(r+1, c));
+	// If we deleted the FastText row blank that row, otherwise blank the last row
+	int blankingRow = (m_row < 24) ? 23 : 24;
+		for (int c=0; c<40; c++)
+			m_teletextDocument->currentSubPage()->setCharacter(blankingRow, c, ' ');
+	setText(QObject::tr("delete row"));
+	emit m_teletextDocument->refreshNeeded();
+}
+
+void DeleteRowCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->moveCursor(m_row, -1);
+	// Shuffle lines below the inserting row downwards without affecting the FastText row
+	for (int r=22; r>=m_row; r--)
+		for (int c=0; c<40; c++)
+			m_teletextDocument->currentSubPage()->setCharacter(r+1, c, m_teletextDocument->currentSubPage()->character(r, c));
+	// Now repair the row we deleted
+	for (int c=0; c<40; c++)
+		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_deletedRow[c]);
+	setText(QObject::tr("delete row"));
+	emit m_teletextDocument->refreshNeeded();
 }
 
 

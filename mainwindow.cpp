@@ -324,6 +324,20 @@ void MainWindow::createActions()
 */
 #endif // !QT_NO_CLIPBOARD
 
+	QAction *insertBlankRowAct = editMenu->addAction(tr("Insert blank row"));
+	insertBlankRowAct->setStatusTip(tr("Insert a blank row at the cursor position"));
+	connect(insertBlankRowAct, &QAction::triggered, [=]() { insertRow(false); } );
+
+	QAction *insertCopyRowAct = editMenu->addAction(tr("Insert copy row"));
+	insertCopyRowAct->setStatusTip(tr("Insert a row that's a copy of the row at the cursor position"));
+	connect(insertCopyRowAct, &QAction::triggered, [=]() { insertRow(true); } );
+
+	QAction *deleteRowAct = editMenu->addAction(tr("Delete row"));
+	deleteRowAct->setStatusTip(tr("Delete the row at the cursor position"));
+	connect(deleteRowAct, &QAction::triggered, this, &MainWindow::deleteRow);
+
+	editMenu->addSeparator();
+
 	QAction *insertBeforeAct = editMenu->addAction(tr("&Insert subpage before"));
 	insertBeforeAct->setStatusTip(tr("Insert a blank subpage before this subpage"));
 	connect(insertBeforeAct, &QAction::triggered, [=]() { insertSubPage(false, false); });
@@ -536,6 +550,20 @@ void MainWindow::setSceneDimensions()
 		m_fullRowLeftRectItem[r]->setRect(0, topBottomBorders[m_viewBorder]+r*10, m_textWidget->x()+1, 10);
 		m_fullRowRightRectItem[r]->setRect(m_textWidget->x()+m_textWidget->width()-1, topBottomBorders[m_viewBorder]+r*10, m_textWidget->x()+1, 10);
 	}
+}
+
+void MainWindow::insertRow(bool copyRow)
+{
+	if (m_textWidget->document()->cursorRow() == 24)
+		return;
+	QUndoCommand *insertRowCommand = new InsertRowCommand(m_textWidget->document(), copyRow);
+	m_textWidget->document()->undoStack()->push(insertRowCommand);
+}
+
+void MainWindow::deleteRow()
+{
+	QUndoCommand *deleteRowCommand = new DeleteRowCommand(m_textWidget->document());
+	m_textWidget->document()->undoStack()->push(deleteRowCommand);
 }
 
 void MainWindow::insertSubPage(bool afterCurrentSubPage, bool copyCurrentSubPage)
