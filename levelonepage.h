@@ -86,6 +86,8 @@ public:
 	void setSidePanelColumns(int);
 	bool sidePanelStatusL25() const { return m_sidePanelStatusL25; }
 	void setSidePanelStatusL25(bool);
+	int fastTextLinkPageNumber(int linkNumber) const { return m_fastTextLink[linkNumber].pageNumber; }
+	void setFastTextLinkPageNumber(int, int);
 	int composeLinkFunction(int linkNumber) const { return m_composeLink[linkNumber].function; }
 	void setComposeLinkFunction(int, int);
 	bool composeLinkLevel2p5(int linkNumber) const { return m_composeLink[linkNumber].level2p5; }
@@ -112,6 +114,10 @@ private:
 	int m_defaultScreenColour, m_defaultRowColour, m_colourTableRemap, m_sidePanelColumns;
 	bool m_blackBackgroundSubst, m_leftSidePanelDisplayed, m_rightSidePanelDisplayed, m_sidePanelStatusL25;
 	int m_CLUT[32];
+	struct fastTextLink {
+		int pageNumber;
+		int subPageNumber;
+	} m_fastTextLink[6];
 	struct composeLink {
 		int function;
 		bool level2p5, level3p5;

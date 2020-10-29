@@ -59,6 +59,8 @@ void LevelOnePage::clearPage()
 		setControlBit(i, false);
 		m_composeLink[i] = { (i<4) ? i : 0, false, i>=4, 0x0ff, 0x0000 };
 	}
+	for (int i=0; i<6; i++)
+		m_fastTextLink[i] = { 0x0ff, 0x37f7 };
 
 /*	m_subPageNumber = 0x0000; */
 	m_cycleValue = 8;
@@ -124,7 +126,20 @@ QByteArray LevelOnePage::packet(int packetNumber, int designationCode)
 		return result;
 	}
 
-	// TODO packet 27/0
+	if (packetNumber == 27 && designationCode == 0) {
+		for (int i=0; i<6; i++) {
+			result[i*6+1] = m_fastTextLink[i].pageNumber & 0x00f;
+			result[i*6+2] = (m_fastTextLink[i].pageNumber & 0x0f0) >> 4;
+			result[i*6+3] = m_fastTextLink[i].subPageNumber & 0x000f;
+			result[i*6+4] = ((m_fastTextLink[i].subPageNumber & 0x0070) >> 4) | ((m_fastTextLink[i].pageNumber & 0x100) >> 8);
+			result[i*6+5] = (m_fastTextLink[i].subPageNumber & 0x0f00) >> 8;
+			result[i*6+6] = ((m_fastTextLink[i].subPageNumber & 0x3000) >> 12) | ((m_fastTextLink[i].pageNumber & 0x600) >> 7);
+		}
+		result[43] = 0xf;
+		result[44] = result[45] = 0;
+
+		return result;
+	}
 
 	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
 		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
@@ -205,7 +220,18 @@ bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray p
 		return true;
 	}
 
-	// TODO packet 27/0
+	if (packetNumber == 27 && designationCode == 0) {
+		for (int i=0; i<6; i++) {
+			int relativeMagazine = (packetContents.at(i*6+4) >> 3) | ((packetContents.at(i*6+6) & 0xc) >> 1);
+			int pageNumber = (packetContents.at(i*6+2) << 4) | packetContents.at(i*6+1);
+			m_fastTextLink[i].pageNumber = (relativeMagazine << 8) | pageNumber;
+			m_fastTextLink[i].subPageNumber = packetContents.at(i*6+3) | ((packetContents.at(i*6+4) & 0x7) << 4) | (packetContents.at(i*6+5) << 8) | ((packetContents.at(i*6+6) & 0x3) << 12);
+			// TODO remove this warning when we can preserve FastText subpage links
+			if (m_fastTextLink[i].subPageNumber != 0x3f7f)
+				qDebug("FastText link %d has custom subPageNumber %x - will NOT be saved!", i, m_fastTextLink[i].subPageNumber);
+		}
+		return true;
+	}
 
 	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
 		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
@@ -266,7 +292,18 @@ bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 	if (packetNumber == 26)
 		return ((localEnhance.size()+12) / 13) > designationCode;
 
-	// TODO packet 27/0
+	// FIXME don't save this raw packet yet as TeletextDocument::savePage currently uses fastTextLinkPageNumber
+	// to put the FL commands into the .tti file
+	// When we separate out loading and saving into its own cpp file, that will then become responsible for
+	// converting this packet into an FL command itself
+
+/*	if (packetNumber == 27 && designationCode == 0) {
+		for (int i=0; i<6; i++)
+			if ((m_fastTextLink[i].pageNumber & 0x0ff) != 0xff)
+				return true;
+
+		return false;
+	}*/
 
 	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
 		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
@@ -473,6 +510,11 @@ void LevelOnePage::setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed) { m
 void LevelOnePage::setRightSidePanelDisplayed(bool newRightSidePanelDisplayed) { m_rightSidePanelDisplayed = newRightSidePanelDisplayed; }
 void LevelOnePage::setSidePanelColumns(int newSidePanelColumns) { m_sidePanelColumns = newSidePanelColumns; }
 void LevelOnePage::setSidePanelStatusL25(bool newSidePanelStatusL25) { m_sidePanelStatusL25 = newSidePanelStatusL25; }
+
+void LevelOnePage::setFastTextLinkPageNumber(int linkNumber, int pageNumber)
+{
+	m_fastTextLink[linkNumber].pageNumber = pageNumber;
+}
 
 void LevelOnePage::setComposeLinkFunction(int linkNumber, int newFunction)
 {

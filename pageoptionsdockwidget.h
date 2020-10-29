@@ -46,6 +46,7 @@ private:
 	QLineEdit *m_fastTextEdit[6];
 
 	void addRegionList(QComboBox *);
+	void setFastTextLinkPageNumber(int, const QString &);
 	void setDefaultRegion();
 	void setDefaultNOS();
 	void setSecondRegion();

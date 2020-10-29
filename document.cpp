@@ -29,8 +29,6 @@ TeletextDocument::TeletextDocument()
 {
 	m_pageNumber = 0x198;
 	m_description.clear();
-	for (int i=0; i<6; i++)
-		m_fastTextLink[i] = 0x8ff;
 	m_empty = true;
 	m_subPages.push_back(new LevelOnePage);
 	m_subPages[0]->setPageNumber(m_pageNumber);
@@ -114,8 +112,14 @@ void TeletextDocument::loadDocument(QFile *inFile)
 			if (flLine.count(',') == 5)
 				for (int i=0; i<6; i++) {
 					fastTextLinkRead = flLine.section(',', i, i).toInt(&fastTextLinkOk, 16);
-					if (fastTextLinkOk)
-						m_fastTextLink[i] = fastTextLinkRead == 0 ? 0x8ff : fastTextLinkRead;
+					if (fastTextLinkOk) {
+						if (fastTextLinkRead == 0)
+							fastTextLinkRead = 0x8ff;
+						// Stored as page link with relative magazine number, convert from absolute page number that was read
+						fastTextLinkRead ^= m_pageNumber & 0x700;
+						fastTextLinkRead &= 0x7ff; // Fixes magazine 8 to 0
+						loadingPage->setFastTextLinkPageNumber(i, fastTextLinkRead);
+					}
 				}
 		}
 		if (inLine.startsWith("OL,"))
@@ -141,10 +145,16 @@ void TeletextDocument::saveDocument(QTextStream *outStream)
 
 	for (auto &subPage : m_subPages) {
 		subPage->savePage(outStream, m_pageNumber, subPageNumber++);
-		if (m_fastTextLink[0] != 0x8ff) {
+		if (subPage->fastTextLinkPageNumber(0) != 0x8ff) {
 			*outStream << "FL,";
 			for (int i=0; i<6; i++) {
-				*outStream << QString("%1").arg(m_fastTextLink[i], 3, 16, QChar('0'));
+				// Stored as page link with relative magazine number, convert to absolute page number for display
+				int absoluteLinkPageNumber = subPage->fastTextLinkPageNumber(i) ^ (m_pageNumber & 0x700);
+				// Fix magazine 0 to 8
+				if ((absoluteLinkPageNumber & 0x700) == 0x000)
+					absoluteLinkPageNumber |= 0x800;
+
+				*outStream << QString("%1").arg(absoluteLinkPageNumber, 3, 16, QChar('0'));
 				if (i<5)
 					*outStream << ',';
 			}
@@ -203,17 +213,18 @@ void TeletextDocument::deleteSubPage(int subPageToDelete)
 	m_subPages.erase(m_subPages.begin()+subPageToDelete);
 }
 
-void TeletextDocument::setPageNumber(QString newPageNumberString)
+void TeletextDocument::setPageNumber(QString pageNumberString)
 {
 	// The LineEdit should check if a valid hex number was entered, but just in case...
-	bool newPageNumberOk;
-	int newPageNumberRead = newPageNumberString.toInt(&newPageNumberOk, 16);
-	if ((!newPageNumberOk) || newPageNumberRead < 0x100 || newPageNumberRead > 0x8fe)
+	bool pageNumberOk;
+	int pageNumberRead = pageNumberString.toInt(&pageNumberOk, 16);
+	if ((!pageNumberOk) || pageNumberRead < 0x100 || pageNumberRead > 0x8fe)
 		return;
 
-	// If the magazine number was changed, we'll need to update the relative magazine numbers in X/27
+	// If the magazine number was changed, we need to update the relative magazine numbers in FastText
+	// and page enhancement links
 	int oldMagazine = (m_pageNumber & 0xf00);
-	int newMagazine = (newPageNumberRead & 0xf00);
+	int newMagazine = (pageNumberRead & 0xf00);
 	// Fix magazine 0 to 8
 	if (oldMagazine == 0x800)
 		oldMagazine = 0x000;
@@ -221,13 +232,16 @@ void TeletextDocument::setPageNumber(QString newPageNumberString)
 		newMagazine = 0x000;
 	int magazineFlip = oldMagazine ^ newMagazine;
 
-	m_pageNumber = newPageNumberRead;
+	m_pageNumber = pageNumberRead;
 
 	for (auto &subPage : m_subPages) {
-		subPage->setPageNumber(newPageNumberRead);
-		if (magazineFlip)
+		subPage->setPageNumber(pageNumberRead);
+		if (magazineFlip) {
+			for (int i=0; i<6; i++)
+				subPage->setFastTextLinkPageNumber(i, subPage->fastTextLinkPageNumber(i) ^ magazineFlip);
 			for (int i=0; i<8; i++)
 				subPage->setComposeLinkPageNumber(i, subPage->composeLinkPageNumber(i) ^ magazineFlip);
+		}
 	}
 }
 
@@ -236,15 +250,10 @@ void TeletextDocument::setDescription(QString newDescription)
 	m_description = newDescription;
 }
 
-void TeletextDocument::setFastTextLink(int linkNumber, QString newPageNumberString)
+void TeletextDocument::setFastTextLinkPageNumberOnAllSubPages(int linkNumber, int pageNumber)
 {
-	// The LineEdit should check if a valid hex number was entered, but just in case...
-	bool newPageNumberOk;
-	int newPageNumberRead = newPageNumberString.toInt(&newPageNumberOk, 16);
-	if ((!newPageNumberOk) || newPageNumberRead < 0x100 || newPageNumberRead > 0x8ff)
-		return;
-
-	m_fastTextLink[linkNumber] = newPageNumberRead;
+	for (auto &subPage : m_subPages)
+		subPage->setFastTextLinkPageNumber(linkNumber, pageNumber);
 }
 
 void TeletextDocument::cursorUp()

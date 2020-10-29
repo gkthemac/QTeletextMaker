@@ -51,8 +51,7 @@ public:
 	void setPageNumber(QString);
 	QString description() const { return m_description; }
 	void setDescription(QString);
-	int fastTextLink(int linkNumber) const { return m_fastTextLink[linkNumber]; }
-	void setFastTextLink(int, QString);
+	void setFastTextLinkPageNumberOnAllSubPages(int, int);
 	QUndoStack *undoStack() const { return m_undoStack; }
 	int cursorRow() const { return m_cursorRow; }
 	int cursorColumn() const { return m_cursorColumn; }
@@ -84,7 +83,6 @@ private:
 	QString m_description;
 	bool m_empty;
 	int m_pageNumber, m_currentSubPageIndex;
-	int m_fastTextLink[6];
 	std::vector<LevelOnePage *> m_subPages;
 	QUndoStack *m_undoStack;
 	int m_cursorRow, m_cursorColumn, m_selectionTopRow, m_selectionBottomRow, m_selectionLeftColumn, m_selectionRightColumn;

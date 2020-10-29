@@ -69,7 +69,7 @@ PageOptionsDockWidget::PageOptionsDockWidget(TeletextWidget *parent): QDockWidge
 		m_fastTextEdit[i]->setInputMask("DHH");
 		//TODO restrict first digit of page number to 1-8
 		fastTextLayout->addWidget(m_fastTextEdit[i], 1, i, 1, 1);
-		connect(m_fastTextEdit[i], &QLineEdit::textEdited, [=](QString value) { m_parentMainWidget->document()->setFastTextLink(i, value); } );
+		connect(m_fastTextEdit[i], &QLineEdit::textEdited, [=](QString value) { setFastTextLinkPageNumber(i, value); } );
 	}
 
 	pageOptionsLayout->addLayout(fastTextLayout);
@@ -161,8 +161,13 @@ void PageOptionsDockWidget::updateWidgets()
 	m_pageDescriptionEdit->setText(m_parentMainWidget->document()->description());
 	m_pageDescriptionEdit->blockSignals(false);
 	for (int i=0; i<6; i++) {
+		// Stored as page link with relative magazine number, convert to absolute page number for display
+		int absoluteLinkPageNumber = m_parentMainWidget->document()->currentSubPage()->fastTextLinkPageNumber(i) ^ (m_parentMainWidget->document()->pageNumber() & 0x700);
+		// Fix magazine 0 to 8
+		if ((absoluteLinkPageNumber & 0x700) == 0x000)
+			absoluteLinkPageNumber |= 0x800;
 		m_fastTextEdit[i]->blockSignals(true);
-		m_fastTextEdit[i]->setText(QString::number(m_parentMainWidget->document()->fastTextLink(i), 16).toUpper());
+		m_fastTextEdit[i]->setText(QString::number(absoluteLinkPageNumber, 16).toUpper());
 		m_fastTextEdit[i]->blockSignals(false);
 	}
 	m_cycleValueSpinBox->blockSignals(true);
@@ -190,6 +195,23 @@ void PageOptionsDockWidget::updateWidgets()
 	updateSecondNOSOptions();
 	m_secondNOSCombo->setCurrentIndex(m_secondNOSCombo->findData((m_parentMainWidget->document()->currentSubPage()->secondCharSet() << 3) | m_parentMainWidget->document()->currentSubPage()->secondNOS()));
 	m_secondNOSCombo->blockSignals(false);
+}
+
+void PageOptionsDockWidget::setFastTextLinkPageNumber(int linkNumber, const QString &pageNumberString)
+{
+	// The LineEdit should check if a valid hex number was entered, but just in case...
+	bool pageNumberOk;
+	int pageNumberRead = pageNumberString.toInt(&pageNumberOk, 16);
+	if ((!pageNumberOk) || pageNumberRead < 0x100 || pageNumberRead > 0x8ff)
+		return;
+
+	// Stored as page link with relative magazine number, convert from absolute page number that was entered
+	pageNumberRead ^= (m_parentMainWidget->document()->pageNumber() & 0x700);
+	pageNumberRead &= 0x7ff; // Fixes magazine 8 to 0
+
+	// TODO bring in option to allow different FastText links per subpage
+//	m_parentMainWidget->document()->currentSubPage()->setFastTextLinkPageNumber(linkNumber, pageNumberRead);
+	m_parentMainWidget->document()->setFastTextLinkPageNumberOnAllSubPages(linkNumber, pageNumberRead);
 }
 
 void PageOptionsDockWidget::updateDefaultNOSOptions()
