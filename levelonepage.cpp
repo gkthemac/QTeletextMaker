@@ -363,6 +363,17 @@ void LevelOnePage::loadPagePacket(QByteArray &inLine)
 			setPacket(lineNumber, inLine);
 		} else {
 			int designationCode = inLine.at(0) & 0x3f;
+			if (inLine.size() < 40)
+				// OL is too short!
+				if (lineNumber == 26) {
+					// For a too-short enhancement triplets OL, first trim the line down to nearest whole triplet
+					inLine.resize((inLine.size() / 3 * 3) + 1);
+					// Then use "dummy" enhancement triplets to extend the line to the proper length
+					for (int i=inLine.size(); i<40; i+=3)
+						inLine.append("i^@"); // Address 41, Mode 0x1e, Data 0
+				} else
+					// For other triplet OLs and Hamming 8/4 OLs, just pad with zero data
+					inLine.leftJustified(40, '@');
 			for (int i=1; i<=39; i++)
 				inLine[i] = inLine.at(i) & 0x3f;
 			setPacket(lineNumber, designationCode, inLine);
