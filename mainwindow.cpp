@@ -284,11 +284,18 @@ void MainWindow::createActions()
 	QToolBar *editToolBar = addToolBar(tr("Edit"));
 	editToolBar->setObjectName("editToolBar");
 
+	const QIcon undoIcon = QIcon::fromTheme("edit-undo", QIcon(":/images/undo.png"));
 	QAction *undoAction = m_textWidget->document()->undoStack()->createUndoAction(this, tr("&Undo"));
+	undoAction->setIcon(undoIcon);
 	editMenu->addAction(undoAction);
+	editToolBar->addAction(undoAction);
 	undoAction->setShortcuts(QKeySequence::Undo);
+
+	const QIcon redoIcon = QIcon::fromTheme("edit-redo", QIcon(":/images/redo.png"));
 	QAction *redoAction = m_textWidget->document()->undoStack()->createRedoAction(this, tr("&Redo"));
+	redoAction->setIcon(redoIcon);
 	editMenu->addAction(redoAction);
+	editToolBar->addAction(redoAction);
 	redoAction->setShortcuts(QKeySequence::Redo);
 
 	editMenu->addSeparator();
