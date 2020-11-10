@@ -2,6 +2,7 @@ QT += widgets
 requires(qtConfig(filedialog))
 
 HEADERS       = document.h \
+                levelonecommands.h \
                 levelonepage.h \
                 mainwidget.h \
                 mainwindow.h \
@@ -14,6 +15,7 @@ HEADERS       = document.h \
                 x26model.h \
                 x26triplets.h
 SOURCES       = document.cpp \
+                levelonecommands.cpp \
                 levelonepage.cpp \
                 main.cpp \
                 mainwidget.cpp \

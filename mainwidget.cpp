@@ -31,6 +31,7 @@
 #include "mainwidget.h"
 
 #include "document.h"
+#include "levelonecommands.h"
 #include "levelonepage.h"
 #include "render.h"
 #include "x26triplets.h"

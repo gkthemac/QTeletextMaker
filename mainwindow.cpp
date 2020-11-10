@@ -32,6 +32,7 @@
 
 #include "mainwindow.h"
 
+#include "levelonecommands.h"
 #include "mainwidget.h"
 #include "pageenhancementsdockwidget.h"
 #include "pageoptionsdockwidget.h"
