@@ -26,12 +26,13 @@ int main(int argc, char *argv[])
 {
 	Q_INIT_RESOURCE(qteletextmaker);
 	QApplication app(argc, argv);
-	QCoreApplication::setApplicationName("QTeletextMaker");
-	QCoreApplication::setOrganizationName("gkmac.co.uk");
-	QCoreApplication::setOrganizationDomain("gkmac.co.uk");
-	QCoreApplication::setApplicationVersion("0.1-alpha");
+	QApplication::setApplicationName("QTeletextMaker");
+	QApplication::setApplicationDisplayName(QApplication::applicationName());
+	QApplication::setOrganizationName("gkmac.co.uk");
+	QApplication::setOrganizationDomain("gkmac.co.uk");
+	QApplication::setApplicationVersion("0.1-alpha");
 	QCommandLineParser parser;
-	parser.setApplicationDescription(QCoreApplication::applicationName());
+	parser.setApplicationDescription(QApplication::applicationName());
 	parser.addHelpOption();
 	parser.addVersionOption();
 	parser.addPositionalArgument("file", "The file(s) to open.");
