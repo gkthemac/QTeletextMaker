@@ -143,7 +143,7 @@ void TeletextDocument::saveDocument(QTextStream *outStream)
 
 	for (auto &subPage : m_subPages) {
 		subPage->savePage(outStream, m_pageNumber, subPageNumber++);
-		if (subPage->fastTextLinkPageNumber(0) != 0x8ff) {
+		if ((subPage->fastTextLinkPageNumber(0) & 0x0ff) != 0x0ff) {
 			*outStream << "FL,";
 			for (int i=0; i<6; i++) {
 				// Stored as page link with relative magazine number, convert to absolute page number for display
