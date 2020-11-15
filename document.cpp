@@ -31,7 +31,6 @@ TeletextDocument::TeletextDocument()
 	m_description.clear();
 	m_empty = true;
 	m_subPages.push_back(new LevelOnePage);
-	m_subPages[0]->setPageNumber(m_pageNumber);
 	m_currentSubPageIndex = 0;
 	m_undoStack = new QUndoStack(this);
 	m_cursorRow = 1;
@@ -70,7 +69,6 @@ void TeletextDocument::loadDocument(QFile *inFile)
 			// This assumes that PN is the first command of a new subpage...
 			if (firstSubPageFound) {
 				m_subPages.push_back(new LevelOnePage);
-				m_subPages.back()->setPageNumber(m_pageNumber);
 				loadingPage = m_subPages.back();
 			}
 			m_pageNumber = pageNumberRead;
@@ -200,7 +198,6 @@ void TeletextDocument::insertSubPage(int beforeSubPageIndex, bool copySubPage)
 		insertedSubPage = new LevelOnePage(*m_subPages.at(beforeSubPageIndex));
 	else
 		insertedSubPage = new LevelOnePage;
-	insertedSubPage->setPageNumber(m_pageNumber);
 	if (beforeSubPageIndex == m_subPages.size())
 		m_subPages.push_back(insertedSubPage);
 	else
@@ -234,14 +231,12 @@ void TeletextDocument::setPageNumber(QString pageNumberString)
 
 	m_pageNumber = pageNumberRead;
 
-	for (auto &subPage : m_subPages) {
-		subPage->setPageNumber(pageNumberRead);
+	for (auto &subPage : m_subPages)
 		if (magazineFlip) {
 			for (int i=0; i<6; i++)
 				subPage->setFastTextLinkPageNumber(i, subPage->fastTextLinkPageNumber(i) ^ magazineFlip);
 			for (int i=0; i<8; i++)
 				subPage->setComposeLinkPageNumber(i, subPage->composeLinkPageNumber(i) ^ magazineFlip);
-		}
 	}
 }
 

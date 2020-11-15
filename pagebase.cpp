@@ -23,7 +23,6 @@
 
 PageBase::PageBase()
 {
-	m_pageNumber = 0x8ff;
 	m_pageFunction = PFLOP;
 	m_packetCoding = PC7bit;
 	// We use nullptrs to keep track of allocated packets, so initialise them this way
@@ -35,7 +34,6 @@ PageBase::PageBase()
 
 PageBase::PageBase(const PageBase &other)
 {
-	setPageNumber(other.pageNumber());
 	setPageFunction(other.pageFunction());
 	setPacketCoding(other.packetCoding());
 	for (int i=0; i<8; i++)
@@ -53,12 +51,6 @@ PageBase::~PageBase()
 		if (m_packets[i] != nullptr)
 			delete m_packets[i];
 }
-
-void PageBase::setPageNumber(int newPageNumber)
-{
-	m_pageNumber = newPageNumber;
-}
-
 QByteArray PageBase::packet(int packetNumber, int designationCode) const
 {
 	int arrayIndex = packetNumber;

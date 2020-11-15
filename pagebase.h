@@ -37,9 +37,6 @@ public:
 	PageBase(const PageBase &);
 	~PageBase();
 
-	int pageNumber() const { return m_pageNumber; }
-	void setPageNumber(int);
-
 	QByteArray packet(int, int=0) const;
 	bool packetNeeded(int, int=0) const;
 	bool setPacket(int, QByteArray);
@@ -60,7 +57,6 @@ public:
 	bool setPacketCoding(PacketCodingEnum);
 
 private:
-	int m_pageNumber;
 	bool m_controlBits[8];
 	PageFunctionEnum m_pageFunction;
 	PacketCodingEnum m_packetCoding;
