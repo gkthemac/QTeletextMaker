@@ -28,11 +28,6 @@ class PageBase //: public QObject
 	//Q_OBJECT
 
 public:
-	// Available Page Functions according to 9.4.2.1 of the spec
-	enum PageFunctionEnum { PFLOP, PFData, PFGPOP, PFPOP, PFGDRCS, PFDRCS, PFMOT, PFMIP, PFBTT, PFAIT, PFMPT, PFMPTEX, PFTriggers };
-	// Available Page Codings of X/1 to X/25 according to 9.4.2.1 of the spec
-	enum PacketCodingEnum { PC7bit, PC8bit, PC18bit, PC4bit, PC4bit7bit, PCMixed };
-
 	PageBase();
 	PageBase(const PageBase &);
 	~PageBase();
@@ -51,15 +46,8 @@ public:
 	bool controlBit(int bitNumber) const { return m_controlBits[bitNumber]; }
 	bool setControlBit(int, bool);
 
-	PageFunctionEnum pageFunction() const { return m_pageFunction; }
-	bool setPageFunction(PageFunctionEnum);
-	PacketCodingEnum packetCoding(int=0) const;
-	bool setPacketCoding(PacketCodingEnum);
-
 private:
 	bool m_controlBits[8];
-	PageFunctionEnum m_pageFunction;
-	PacketCodingEnum m_packetCoding;
 	QByteArray *m_packets[90]; // X/0 to X/25, plus 16 packets for X/26, another 16 for X/27, for X28 and for X/29
 };
 

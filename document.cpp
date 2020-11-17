@@ -29,6 +29,8 @@ TeletextDocument::TeletextDocument()
 {
 	m_pageNumber = 0x198;
 	m_description.clear();
+	m_pageFunction = PFLevelOnePage;
+	m_packetCoding = Coding7bit;
 	m_empty = true;
 	m_subPages.push_back(new LevelOnePage);
 	m_currentSubPageIndex = 0;
@@ -43,6 +45,18 @@ TeletextDocument::~TeletextDocument()
 	for (auto &subPage : m_subPages)
 		delete(subPage);
 }
+
+/*
+void TeletextDocument::setPageFunction(PageFunctionEnum newPageFunction)
+{
+	m_pageFunction = newPageFunction;
+}
+
+void TeletextDocument::setPacketCoding(PacketCodingEnum newPacketEncoding)
+{
+	m_packetCoding = newPacketEncoding;
+}
+*/
 
 void TeletextDocument::loadDocument(QFile *inFile)
 {

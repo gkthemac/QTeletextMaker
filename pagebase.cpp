@@ -23,8 +23,6 @@
 
 PageBase::PageBase()
 {
-	m_pageFunction = PFLOP;
-	m_packetCoding = PC7bit;
 	// We use nullptrs to keep track of allocated packets, so initialise them this way
 	for (int i=0; i<90; i++)
 		m_packets[i] = nullptr;
@@ -34,8 +32,6 @@ PageBase::PageBase()
 
 PageBase::PageBase(const PageBase &other)
 {
-	setPageFunction(other.pageFunction());
-	setPacketCoding(other.packetCoding());
 	for (int i=0; i<8; i++)
 		setControlBit(i, other.controlBit(i));
 	for (int i=0; i<90; i++)
@@ -127,30 +123,5 @@ bool PageBase::deletePacketArrayIndex(int arrayIndex)
 bool PageBase::setControlBit(int bitNumber, bool active)
 {
 	m_controlBits[bitNumber] = active;
-	return true;
-}
-
-PageBase::PacketCodingEnum PageBase::packetCoding(int packetNumber) const
-{
-	switch (packetNumber) {
-		case 26:
-		case 28:
-			return PC18bit;
-		case 27:
-			return PC4bit;
-		default:
-			return m_packetCoding;
-	}
-}
-
-bool PageBase::setPageFunction(PageBase::PageFunctionEnum newPageFunction)
-{
-	m_pageFunction = newPageFunction;
-	return true;
-}
-
-bool PageBase::setPacketCoding(PageBase::PacketCodingEnum newPacketEncoding)
-{
-	m_packetCoding = newPacketEncoding;
 	return true;
 }

@@ -32,10 +32,21 @@ class TeletextDocument : public QObject
 	Q_OBJECT
 
 public:
+	// Available Page Functions according to 9.4.2.1 of the spec
+	enum PageFunctionEnum { PFLevelOnePage, PFDataBroadcasting, PFGlobalPOP, PFNormalPOP, PFGlobalDRCS, PFNormalDRCS, PFMOT, PFMIP, PFBasicTOPTable, PFAdditionalInformationTable, PFMultiPageTable, PFMultiPageExtensionTable, PFTriggerMessages };
+	// Available Page Codings of X/1 to X/25 according to 9.4.2.1 of the spec
+	enum PacketCodingEnum { Coding7bit, Coding8bit, Coding18bit, Coding4bit, Coding4bitThen7bit, CodingPerPacket };
+
 	TeletextDocument();
 	~TeletextDocument();
 	bool isEmpty() const { return m_empty; }
 	void setModified(bool);
+
+	PageFunctionEnum pageFunction() const { return m_pageFunction; }
+//	void setPageFunction(PageFunctionEnum);
+	PacketCodingEnum packetCoding() const { return m_packetCoding; }
+//	void setPacketCoding(PacketCodingEnum);
+
 	void loadDocument(QFile *);
 	void saveDocument(QTextStream *);
 	int numberOfSubPages() const { return m_subPages.size(); }
@@ -82,6 +93,8 @@ private:
 	QString m_description;
 	bool m_empty;
 	int m_pageNumber, m_currentSubPageIndex;
+	PageFunctionEnum m_pageFunction;
+	PacketCodingEnum m_packetCoding;
 	std::vector<LevelOnePage *> m_subPages;
 	QUndoStack *m_undoStack;
 	int m_cursorRow, m_cursorColumn, m_selectionTopRow, m_selectionBottomRow, m_selectionLeftColumn, m_selectionRightColumn;
