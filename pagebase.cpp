@@ -26,13 +26,13 @@ PageBase::PageBase()
 	// We use nullptrs to keep track of allocated packets, so initialise them this way
 	for (int i=0; i<90; i++)
 		m_packets[i] = nullptr;
-	for (int i=0; i<8; i++)
+	for (int i=PageBase::C4ErasePage; i<=PageBase::C11SerialMagazine; i++)
 		m_controlBits[i] = false;
 }
 
 PageBase::PageBase(const PageBase &other)
 {
-	for (int i=0; i<8; i++)
+	for (int i=PageBase::C4ErasePage; i<=PageBase::C11SerialMagazine; i++)
 		setControlBit(i, other.controlBit(i));
 	for (int i=0; i<90; i++)
 		if (other.packetNeededArrayIndex(i))

@@ -321,14 +321,14 @@ void TeletextPageRender::renderPage(int r)
 			return;
 		int charWidth = resultAttributes.display.doubleWidth ? 24 : 12;
 		int charHeight = resultAttributes.display.doubleHeight ? 20 : 10;
-		bool transparentBackground = (m_levelOnePage->controlBit(1) || m_levelOnePage->controlBit(2) || m_mix) && !resultAttributes.display.boxingWindow;
+		bool transparentBackground = (m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle) || m_mix) && !resultAttributes.display.boxingWindow;
 		// bool transparentForeground = false;
 		if (transparentBackground) {
 			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
 			pixmapPainter.eraseRect(c*12, r*10, charWidth, charHeight);
 			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 		}
-		if ((m_levelOnePage->controlBit(1) || m_levelOnePage->controlBit(2)) && !resultAttributes.display.boxingWindow) {
+		if ((m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) && !resultAttributes.display.boxingWindow) {
 			// Outside a boxed area
 			resultCharacter = { 0x20, 0, 0 };
 			underlined = false;
@@ -629,7 +629,7 @@ void TeletextPageRender::updateFlashRequired(int newFlashRequired)
 
 inline void TeletextPageRender::setFullScreenColour(int newColour)
 {
-	if (m_mix || m_levelOnePage->controlBit(1) || m_levelOnePage->controlBit(2)) {
+	if (m_mix || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
 		m_finalFullScreenQColor = QColor(0, 0, 0, 0);
 		emit fullScreenColourChanged(QColor(0, 0, 0, 0));
 		return;
@@ -644,7 +644,7 @@ inline void TeletextPageRender::setFullScreenColour(int newColour)
 
 inline void TeletextPageRender::setFullRowColour(int row, int newColour)
 {
-	if (m_mix || m_levelOnePage->controlBit(1) || m_levelOnePage->controlBit(2)) {
+	if (m_mix || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
 		m_fullRowQColor[row] = QColor(0, 0, 0, 0);
 		emit fullRowColourChanged(row, QColor(0, 0, 0, 0));
 		return;

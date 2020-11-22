@@ -42,7 +42,7 @@ LevelOnePage::LevelOnePage(const PageBase &other)
 	localEnhance.reserve(208);
 	clearPage();
 
-	for (int i=0; i<8; i++)
+	for (int i=PageBase::C4ErasePage; i<=PageBase::C11SerialMagazine; i++)
 		setControlBit(i, other.controlBit(i));
 	for (int i=0; i<90; i++)
 		if (other.packetNeededArrayIndex(i))
@@ -426,8 +426,8 @@ void LevelOnePage::savePage(QTextStream *outStream, int pageNumber, int subPageN
 int LevelOnePage::controlBitsToPS() const
 {
 	//TODO map page language for regions other than 0
-	int pageStatus = 0x8000 | (controlBit(0) << 14) | ((m_defaultNOS & 1) << 9) | ((m_defaultNOS & 2) << 7) | ((m_defaultNOS & 4) << 5);
-	for (int i=1; i<8; i++)
+	int pageStatus = 0x8000 | (controlBit(PageBase::C4ErasePage) << 14) | ((m_defaultNOS & 1) << 9) | ((m_defaultNOS & 2) << 7) | ((m_defaultNOS & 4) << 5);
+	for (int i=C5Newsflash; i<=C11SerialMagazine; i++)
 		pageStatus |= controlBit(i) << (i-1);
 	return pageStatus;
 }

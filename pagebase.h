@@ -28,6 +28,8 @@ class PageBase //: public QObject
 	//Q_OBJECT
 
 public:
+	enum ControlBitsEnum { C4ErasePage, C5Newsflash, C6Subtitle, C7SuppressHeader, C8Update, C9InterruptedSequence, C10InhibitDisplay, C11SerialMagazine };
+
 	PageBase();
 	PageBase(const PageBase &);
 	~PageBase();

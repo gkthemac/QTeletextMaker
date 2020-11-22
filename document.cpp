@@ -99,8 +99,8 @@ void TeletextDocument::loadDocument(QFile *inFile)
 			bool pageStatusOk;
 			int pageStatusRead = inLine.mid(3, 4).toInt(&pageStatusOk, 16);
 			if (pageStatusOk) {
-				loadingPage->setControlBit(0, pageStatusRead & 0x4000);
-				for (int i=1, pageStatusBit=0x0001; i<8; i++, pageStatusBit<<=1)
+				loadingPage->setControlBit(PageBase::C4ErasePage, pageStatusRead & 0x4000);
+				for (int i=PageBase::C5Newsflash, pageStatusBit=0x0001; i<=PageBase::C11SerialMagazine; i++, pageStatusBit<<=1)
 					loadingPage->setControlBit(i, pageStatusRead & pageStatusBit);
 				loadingPage->setDefaultNOS(((pageStatusRead & 0x0200) >> 9) | ((pageStatusRead & 0x0100) >> 7) | ((pageStatusRead & 0x0080) >> 5));
 			}
