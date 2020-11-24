@@ -22,6 +22,8 @@
 
 #include <QBasicTimer>
 #include <QFrame>
+#include <QGraphicsProxyWidget>
+#include <QGraphicsScene>
 #include <QPair>
 #include <QTextStream>
 #include <vector>
@@ -94,6 +96,24 @@ private:
 	void calculateDimensions();
 
 	QPair<int, int> mouseToRowAndColumn(const QPoint &);
+};
+
+class LevelOneScene : public QGraphicsScene
+{
+	Q_OBJECT
+
+public:
+	LevelOneScene(QWidget *, QObject *parent = nullptr);
+	void setDimensions(int, int, int);
+
+public slots:
+	void setFullScreenColour(const QColor &);
+	void setFullRowColour(int, const QColor &);
+
+private:
+	QGraphicsRectItem *m_fullScreenTopRectItem, *m_fullScreenBottomRectItem;
+	QGraphicsRectItem *m_fullRowLeftRectItem[25], *m_fullRowRightRectItem[25];
+	QGraphicsProxyWidget *m_levelOneProxyWidget;
 };
 
 #endif

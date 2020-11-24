@@ -19,6 +19,9 @@
 
 #include <QBitmap>
 #include <QFrame>
+#include <QGraphicsItem>
+#include <QGraphicsProxyWidget>
+#include <QGraphicsScene>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QPainter>
@@ -404,4 +407,66 @@ void TeletextWidget::focusInEvent(QFocusEvent *event)
 void TeletextWidget::focusOutEvent(QFocusEvent *event)
 {
 	QFrame::focusOutEvent(event);
+}
+
+
+LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphicsScene(parent)
+{
+	setSceneRect(0, 0, 600, 288);
+	m_fullScreenTopRectItem = new QGraphicsRectItem(0, 0, 600, 19);
+	m_fullScreenTopRectItem->setPen(Qt::NoPen);
+	m_fullScreenTopRectItem->setBrush(QBrush(QColor(0, 0, 0)));
+	addItem(m_fullScreenTopRectItem);
+	m_fullScreenBottomRectItem = new QGraphicsRectItem(0, 269, 600, 19);
+	m_fullScreenBottomRectItem->setPen(Qt::NoPen);
+	m_fullScreenBottomRectItem->setBrush(QBrush(QColor(0, 0, 0)));
+	addItem(m_fullScreenBottomRectItem);
+
+	for (int r=0; r<25; r++) {
+		m_fullRowLeftRectItem[r] = new QGraphicsRectItem(0, 19+r*10, 60, 10);
+		m_fullRowLeftRectItem[r]->setPen(Qt::NoPen);
+		m_fullRowLeftRectItem[r]->setBrush(QBrush(QColor(0, 0, 0)));
+		addItem(m_fullRowLeftRectItem[r]);
+		m_fullRowRightRectItem[r] = new QGraphicsRectItem(540, 19+r*10, 60, 10);
+		m_fullRowRightRectItem[r]->setPen(Qt::NoPen);
+		m_fullRowRightRectItem[r]->setBrush(QBrush(QColor(0, 0, 0)));
+		addItem(m_fullRowRightRectItem[r]);
+	}
+
+	m_levelOneProxyWidget = addWidget(levelOneWidget);
+	m_levelOneProxyWidget->setPos(60, 19);
+	m_levelOneProxyWidget->setAutoFillBackground(false);
+}
+
+void LevelOneScene::setDimensions(int sceneWidth, int sceneHeight, int widgetWidth)
+{
+	setSceneRect(0, 0, sceneWidth, sceneHeight);
+
+	// Assume widget height is always 250
+	int topBottomBorders = (sceneHeight-250) / 2;
+	// Ideally we'd use m_levelOneProxyWidget->size() to discover the widget width ourselves
+	// but this causes a stubborn segfault, so we have to receive the widgetWidth as a parameter
+	int leftRightBorders = (sceneWidth-widgetWidth) / 2;
+
+	m_levelOneProxyWidget->setPos(leftRightBorders, topBottomBorders);
+
+	m_fullScreenTopRectItem->setRect(0, 0, sceneWidth, topBottomBorders);
+	m_fullScreenBottomRectItem->setRect(0, 250+topBottomBorders, sceneWidth, topBottomBorders);
+
+	for (int r=0; r<25; r++) {
+		m_fullRowLeftRectItem[r]->setRect(0, topBottomBorders+r*10, leftRightBorders+1, 10);
+		m_fullRowRightRectItem[r]->setRect(sceneWidth-leftRightBorders-1, topBottomBorders+r*10, leftRightBorders+1, 10);
+	}
+}
+
+void LevelOneScene::setFullScreenColour(const QColor &newColor)
+{
+	m_fullScreenTopRectItem->setBrush(QBrush(newColor));
+	m_fullScreenBottomRectItem->setBrush(QBrush(newColor));
+}
+
+void LevelOneScene::setFullRowColour(int row, const QColor &newColor)
+{
+	m_fullRowLeftRectItem[row]->setBrush(QBrush(newColor));
+	m_fullRowRightRectItem[row]->setBrush(QBrush(newColor));
 }

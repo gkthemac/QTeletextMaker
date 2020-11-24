@@ -74,9 +74,6 @@ private slots:
 	void zoomOut();
 	void zoomReset();
 
-	void updateFullScreenRectItems(QColor);
-	void updateFullRowRectItems(int, QColor);
-
 private:
 	enum { m_MaxRecentFiles = 10 };
 
@@ -97,11 +94,8 @@ private:
 	MainWindow *findMainWindow(const QString &fileName) const;
 
 	TeletextWidget *m_textWidget;
-	QGraphicsScene *m_textScene;
-	QGraphicsProxyWidget *m_textProxyWidget;
+	LevelOneScene *m_textScene;
 	QGraphicsView *m_textView;
-	QGraphicsRectItem *m_fullScreenTopRectItem, *m_fullScreenBottomRectItem;
-	QGraphicsRectItem *m_fullRowLeftRectItem[25], *m_fullRowRightRectItem[25];
 
 	int m_viewBorder, m_viewAspectRatio, m_viewZoom;
 	PageOptionsDockWidget *m_pageOptionsDockWidget;

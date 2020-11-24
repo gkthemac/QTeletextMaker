@@ -152,31 +152,7 @@ void MainWindow::init()
 
 	readSettings();
 
-	m_textScene = new QGraphicsScene(this);
-	m_textScene->setSceneRect(0, 0, 600, 288);
-	m_fullScreenTopRectItem = new QGraphicsRectItem(0, 0, 600, 19);
-	m_fullScreenTopRectItem->setPen(Qt::NoPen);
-	m_fullScreenTopRectItem->setBrush(QBrush(QColor(0, 0, 0)));
-	m_textScene->addItem(m_fullScreenTopRectItem);
-	m_fullScreenBottomRectItem = new QGraphicsRectItem(0, 269, 600, 19);
-	m_fullScreenBottomRectItem->setPen(Qt::NoPen);
-	m_fullScreenBottomRectItem->setBrush(QBrush(QColor(0, 0, 0)));
-	m_textScene->addItem(m_fullScreenBottomRectItem);
-
-	for (int r=0; r<25; r++) {
-		m_fullRowLeftRectItem[r] = new QGraphicsRectItem(0, 19+r*10, 60, 10);
-		m_fullRowLeftRectItem[r]->setPen(Qt::NoPen);
-		m_fullRowLeftRectItem[r]->setBrush(QBrush(QColor(0, 0, 0)));
-		m_textScene->addItem(m_fullRowLeftRectItem[r]);
-		m_fullRowRightRectItem[r] = new QGraphicsRectItem(540, 19+r*10, 60, 10);
-		m_fullRowRightRectItem[r]->setPen(Qt::NoPen);
-		m_fullRowRightRectItem[r]->setBrush(QBrush(QColor(0, 0, 0)));
-		m_textScene->addItem(m_fullRowRightRectItem[r]);
-	}
-
-	m_textProxyWidget = m_textScene->addWidget(m_textWidget);
-	m_textProxyWidget->setPos(60, 19);
-	m_textProxyWidget->setAutoFillBackground(false);
+	m_textScene = new LevelOneScene(m_textWidget, this);
 
 	m_textView = new QGraphicsView(this);
 	m_textView->setScene(m_textScene);
@@ -190,24 +166,12 @@ void MainWindow::init()
 	connect(m_textWidget->document(), &TeletextDocument::aboutToChangeSubPage, m_x26DockWidget, &X26DockWidget::unloadX26List);
 	connect(m_textWidget->document(), &TeletextDocument::subPageSelected, this, &MainWindow::updatePageWidgets);
 	connect(m_textWidget, &TeletextWidget::sizeChanged, this, &MainWindow::setSceneDimensions);
-	connect(m_textWidget->pageRender(), &TeletextPageRender::fullScreenColourChanged, this, &MainWindow::updateFullScreenRectItems);
-	connect(m_textWidget->pageRender(), &TeletextPageRender::fullRowColourChanged, this, &MainWindow::updateFullRowRectItems);
+	connect(m_textWidget->pageRender(), &TeletextPageRender::fullScreenColourChanged, m_textScene, &LevelOneScene::setFullScreenColour);
+	connect(m_textWidget->pageRender(), &TeletextPageRender::fullRowColourChanged, m_textScene, &LevelOneScene::setFullRowColour);
 
 	setUnifiedTitleAndToolBarOnMac(true);
 
 	updatePageWidgets();
-}
-
-void MainWindow::updateFullScreenRectItems(QColor newColor)
-{
-	m_fullScreenTopRectItem->setBrush(QBrush(newColor));
-	m_fullScreenBottomRectItem->setBrush(QBrush(newColor));
-}
-
-void MainWindow::updateFullRowRectItems(int row, QColor newColor)
-{
-	m_fullRowLeftRectItem[row]->setBrush(QBrush(newColor));
-	m_fullRowRightRectItem[row]->setBrush(QBrush(newColor));
 }
 
 void MainWindow::tile(const QMainWindow *previous)
@@ -392,8 +356,8 @@ void MainWindow::createActions()
 	m_borderActs[0]->setStatusTip(tr("View with no border"));
 	m_borderActs[1] = borderSubMenu->addAction(tr("Minimal"));
 	m_borderActs[1]->setStatusTip(tr("View with minimal border"));
-	m_borderActs[2] = borderSubMenu->addAction(tr("Full"));
-	m_borderActs[2]->setStatusTip(tr("View with full overscan border"));
+	m_borderActs[2] = borderSubMenu->addAction(tr("Full TV"));
+	m_borderActs[2]->setStatusTip(tr("View with full TV overscan border"));
 
 	QMenu *aspectRatioSubMenu = viewMenu->addMenu(tr("Aspect ratio"));
 	m_aspectRatioActs[0] = aspectRatioSubMenu->addAction(tr("4:3"));
@@ -538,31 +502,22 @@ void MainWindow::setSceneDimensions()
 {
 	const float aspectRatioHorizontalScaling[4] = { 0.6, 0.6, 0.8, 0.5 };
 	const int topBottomBorders[3] = { 0, 10, 19 };
-	const int leftRightBorders[3][2] = { { 0, 0 }, { 24, 72 }, { 77, 183 } };
+	const int pillarBoxSizes[3] = { 672, 720, 854 };
+	const int leftRightBorders[3] = { 0, 24, 77 };
 	int newSceneWidth;
 
-	int newViewAspectRatio = m_viewAspectRatio; // In case we need to narrow the characters to fit wide side panels in 4:3
-	if (m_viewBorder == 0)
-		newSceneWidth = m_textWidget->width();
+	if (m_viewAspectRatio == 1)
+		// 16:9 pillar box aspect ratio, fixed horizontal size whatever the widget width is
+		newSceneWidth = pillarBoxSizes[m_viewBorder];
+	else if (m_viewBorder == 2)
+		// "Full TV" border, semi-fixed horizontal size to TV width
+		// Side panel width over 13 columns will cause this to widen a little
+		newSceneWidth = qMax(640, m_textWidget->width());
 	else
-		newSceneWidth = 480+leftRightBorders[m_viewBorder][newViewAspectRatio == 1]*2;
+		newSceneWidth = m_textWidget->width() + leftRightBorders[m_viewBorder]*2;
 
-	//FIXME find a better way of narrowing characters to squeeze in side panels
-	if (m_viewAspectRatio != 1 && m_textWidget->width() > 576)
-		newViewAspectRatio = 3;
-
-	m_textScene->setSceneRect(0, 0, newSceneWidth, 250+topBottomBorders[m_viewBorder]*2);
-	m_fullScreenTopRectItem->setRect(0, 0, newSceneWidth, topBottomBorders[m_viewBorder]);
-	m_fullScreenBottomRectItem->setRect(0, 250+topBottomBorders[m_viewBorder], newSceneWidth, topBottomBorders[m_viewBorder]);
-	m_textView->setTransform(QTransform((1+(float)m_viewZoom/2)*aspectRatioHorizontalScaling[newViewAspectRatio], 0, 0, 1+(float)m_viewZoom/2, 0, 0));
-	if (m_viewBorder == 0)
-		m_textProxyWidget->setPos(0, 0);
-	else
-		m_textProxyWidget->setPos(leftRightBorders[m_viewBorder][newViewAspectRatio == 1]-(m_textWidget->width()-480)/2, topBottomBorders[m_viewBorder]);
-	for (int r=0; r<25; r++) {
-		m_fullRowLeftRectItem[r]->setRect(0, topBottomBorders[m_viewBorder]+r*10, m_textWidget->x()+1, 10);
-		m_fullRowRightRectItem[r]->setRect(m_textWidget->x()+m_textWidget->width()-1, topBottomBorders[m_viewBorder]+r*10, m_textWidget->x()+1, 10);
-	}
+	m_textScene->setDimensions(newSceneWidth, 250+topBottomBorders[m_viewBorder]*2, m_textWidget->width());
+	m_textView->setTransform(QTransform((1+(float)m_viewZoom/2)*aspectRatioHorizontalScaling[m_viewAspectRatio], 0, 0, 1+(float)m_viewZoom/2, 0, 0));
 }
 
 void MainWindow::insertRow(bool copyRow)
