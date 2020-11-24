@@ -4,6 +4,7 @@ requires(qtConfig(filedialog))
 HEADERS       = document.h \
                 levelonecommands.h \
                 levelonepage.h \
+                loadsave.h \
                 mainwidget.h \
                 mainwindow.h \
                 pagebase.h \
@@ -17,6 +18,7 @@ HEADERS       = document.h \
 SOURCES       = document.cpp \
                 levelonecommands.cpp \
                 levelonepage.cpp \
+                loadsave.cpp \
                 main.cpp \
                 mainwidget.cpp \
                 mainwindow.cpp \

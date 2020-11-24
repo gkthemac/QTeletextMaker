@@ -48,8 +48,8 @@ public:
 //	void setPacketCoding(PacketCodingEnum);
 
 	void loadDocument(QFile *);
-	void saveDocument(QTextStream *);
 	int numberOfSubPages() const { return m_subPages.size(); }
+	LevelOnePage* subPage(int p) const { return m_subPages[p]; }
 	LevelOnePage* currentSubPage() const { return m_subPages[m_currentSubPageIndex]; }
 	int currentSubPageIndex() const { return m_currentSubPageIndex; }
 	void selectSubPageIndex(int, bool=false);

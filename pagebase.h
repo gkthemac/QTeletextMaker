@@ -28,7 +28,7 @@ class PageBase //: public QObject
 	//Q_OBJECT
 
 public:
-	enum ControlBitsEnum { C4ErasePage, C5Newsflash, C6Subtitle, C7SuppressHeader, C8Update, C9InterruptedSequence, C10InhibitDisplay, C11SerialMagazine };
+	enum ControlBitsEnum { C4ErasePage, C5Newsflash, C6Subtitle, C7SuppressHeader, C8Update, C9InterruptedSequence, C10InhibitDisplay, C11SerialMagazine, C12NOS, C13NOS, C14NOS };
 
 	PageBase();
 	PageBase(const PageBase &);
@@ -49,7 +49,7 @@ public:
 	bool setControlBit(int, bool);
 
 private:
-	bool m_controlBits[8];
+	bool m_controlBits[11];
 	QByteArray *m_packets[90]; // X/0 to X/25, plus 16 packets for X/26, another 16 for X/27, for X28 and for X/29
 };
 

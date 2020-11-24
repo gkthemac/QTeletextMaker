@@ -24,6 +24,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QRadioButton>
+#include <QSaveFile>
 #include <QScreen>
 #include <QSettings>
 #include <QStatusBar>
@@ -33,6 +34,7 @@
 #include "mainwindow.h"
 
 #include "levelonecommands.h"
+#include "loadsave.h"
 #include "mainwidget.h"
 #include "pageenhancementsdockwidget.h"
 #include "pageoptionsdockwidget.h"
@@ -762,17 +764,22 @@ void MainWindow::openRecentFile()
 
 bool MainWindow::saveFile(const QString &fileName)
 {
-	QFile file(fileName);
-	if (!file.open(QFile::WriteOnly | QFile::Text)) {
-		QMessageBox::warning(this, tr("QTeletextMaker"), tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
+	QString errorMessage;
+
+	QApplication::setOverrideCursor(Qt::WaitCursor);
+	QSaveFile file(fileName);
+	if (file.open(QFile::WriteOnly | QFile::Text)) {
+		saveTTI(file, *m_textWidget->document());
+		if (!file.commit())
+			errorMessage = tr("Cannot write file %1:\n%2.") .arg(QDir::toNativeSeparators(fileName), file.errorString());
+	} else
+		errorMessage = tr("Cannot open file %1 for writing:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString());
+	QApplication::restoreOverrideCursor();
+
+	if (!errorMessage.isEmpty()) {
+		QMessageBox::warning(this, tr("QTeletextMaker"), errorMessage);
 		return false;
 	}
-
-	QTextStream out(&file);
-	out.setCodec("ISO-8859-1");
-	QApplication::setOverrideCursor(Qt::WaitCursor);
-	m_textWidget->document()->saveDocument(&out);
-	QApplication::restoreOverrideCursor();
 
 	setCurrentFile(fileName);
 	statusBar()->showMessage(tr("File saved"), 2000);

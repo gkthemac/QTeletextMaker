@@ -147,34 +147,6 @@ void TeletextDocument::loadDocument(QFile *inFile)
 	subPageSelected();
 }
 
-void TeletextDocument::saveDocument(QTextStream *outStream)
-{
-	if (!m_description.isEmpty())
-		*outStream << "DE," << m_description << endl;
-	//TODO DS and SP commands
-
-	int subPageNumber = m_subPages.size()>1;
-
-	for (auto &subPage : m_subPages) {
-		subPage->savePage(outStream, m_pageNumber, subPageNumber++);
-		if ((subPage->fastTextLinkPageNumber(0) & 0x0ff) != 0x0ff) {
-			*outStream << "FL,";
-			for (int i=0; i<6; i++) {
-				// Stored as page link with relative magazine number, convert to absolute page number for display
-				int absoluteLinkPageNumber = subPage->fastTextLinkPageNumber(i) ^ (m_pageNumber & 0x700);
-				// Fix magazine 0 to 8
-				if ((absoluteLinkPageNumber & 0x700) == 0x000)
-					absoluteLinkPageNumber |= 0x800;
-
-				*outStream << QString("%1").arg(absoluteLinkPageNumber, 3, 16, QChar('0'));
-				if (i<5)
-					*outStream << ',';
-			}
-			*outStream << endl;
-		}
-	}
-}
-
 void TeletextDocument::selectSubPageIndex(int newSubPageIndex, bool forceRefresh)
 {
 	// forceRefresh overrides "beyond the last subpage" check, so inserting a subpage after the last one still shows - dangerous workaround?

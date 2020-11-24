@@ -42,7 +42,7 @@ LevelOnePage::LevelOnePage(const PageBase &other)
 	localEnhance.reserve(208);
 	clearPage();
 
-	for (int i=PageBase::C4ErasePage; i<=PageBase::C11SerialMagazine; i++)
+	for (int i=PageBase::C4ErasePage; i<=PageBase::C14NOS; i++)
 		setControlBit(i, other.controlBit(i));
 	for (int i=0; i<90; i++)
 		if (other.packetNeededArrayIndex(i))
@@ -55,12 +55,12 @@ void LevelOnePage::clearPage()
 	for (int r=0; r<25; r++)
 		for (int c=0; c<40; c++)
 			m_level1Page[r][c] = 0x20;
-	for (int i=0; i<8; i++) {
+	for (int i=C4ErasePage; i<=C14NOS; i++)
 		setControlBit(i, false);
+	for (int i=0; i<8; i++)
 		m_composeLink[i] = { (i<4) ? i : 0, false, i>=4, 0x0ff, 0x0000 };
-	}
 	for (int i=0; i<6; i++)
-		m_fastTextLink[i] = { 0x0ff, 0x37f7 };
+		m_fastTextLink[i] = { 0x0ff, 0x3f7f };
 
 /*	m_subPageNumber = 0x0000; */
 	m_cycleValue = 8;
@@ -256,7 +256,8 @@ bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray p
 		int CLUToffset = (designationCode == 0) ? 16 : 0;
 
 		m_defaultCharSet = ((packetContents.at(2) >> 4) & 0x3) | ((packetContents.at(3) << 2) & 0xc);
-		m_defaultNOS = (packetContents.at(2) >> 1) & 0x7;
+		// Don't set m_defaultNOS directly as we need to keep control bits in subclass in sync
+		setDefaultNOS((packetContents.at(2) >> 1) & 0x7);
 		m_secondCharSet = ((packetContents.at(3) >> 5) & 0x1) | ((packetContents.at(4) << 1) & 0xe);
 		m_secondNOS = (packetContents.at(3) >> 2) & 0x7;
 
@@ -292,18 +293,13 @@ bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 	if (packetNumber == 26)
 		return ((localEnhance.size()+12) / 13) > designationCode;
 
-	// FIXME don't save this raw packet yet as TeletextDocument::savePage currently uses fastTextLinkPageNumber
-	// to put the FL commands into the .tti file
-	// When we separate out loading and saving into its own cpp file, that will then become responsible for
-	// converting this packet into an FL command itself
-
-/*	if (packetNumber == 27 && designationCode == 0) {
+	if (packetNumber == 27 && designationCode == 0) {
 		for (int i=0; i<6; i++)
 			if ((m_fastTextLink[i].pageNumber & 0x0ff) != 0xff)
 				return true;
 
 		return false;
-	}*/
+	}
 
 	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
 		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
@@ -363,7 +359,7 @@ void LevelOnePage::loadPagePacket(QByteArray &inLine)
 			setPacket(lineNumber, inLine);
 		} else {
 			int designationCode = inLine.at(0) & 0x3f;
-			if (inLine.size() < 40)
+			if (inLine.size() < 40) {
 				// OL is too short!
 				if (lineNumber == 26) {
 					// For a too-short enhancement triplets OL, first trim the line down to nearest whole triplet
@@ -374,53 +370,12 @@ void LevelOnePage::loadPagePacket(QByteArray &inLine)
 				} else
 					// For other triplet OLs and Hamming 8/4 OLs, just pad with zero data
 					inLine.leftJustified(40, '@');
+			}
 			for (int i=1; i<=39; i++)
 				inLine[i] = inLine.at(i) & 0x3f;
 			setPacket(lineNumber, designationCode, inLine);
 		}
 	}
-}
-
-void LevelOnePage::savePage(QTextStream *outStream, int pageNumber, int subPageNumber)
-{
-	auto writePacketsWithDesignationCodes=[&](int packetNumber)
-	{
-		for (int i=0; i<=16; i++)
-			if (packetNeeded(packetNumber, i)) {
-				QByteArray outLine = packet(packetNumber, i);
-
-				*outStream << QString("OL,%1,").arg(packetNumber);
-				outLine[0] = i | 0x40;
-				for (int c=1; c<outLine.size(); c++)
-					outLine[c] = outLine.at(c) | 0x40;
-				*outStream << outLine << endl;
-			}
-	};
-
-	*outStream << QString("PN,%1%2").arg(pageNumber, 3, 16, QChar('0')).arg(subPageNumber & 0xff, 2, 16, QChar('0')) << endl;
-	*outStream << QString("SC,%1").arg(subPageNumber, 4, 16, QChar('0')) << endl;
-	*outStream << QString("PS,%1").arg(0x8000 | controlBitsToPS(), 4, 16, QChar('0')) << endl;
-	*outStream << QString("CT,%1,%2").arg(m_cycleValue).arg(m_cycleType==CTcycles ? 'C' : 'T') << endl;
-	// TODO RE and maybe FLOF?
-
-	// BUG FL commands may clash with X/27/0 packets that specify links manually (e.g. with subcodes)
-	writePacketsWithDesignationCodes(27);
-	writePacketsWithDesignationCodes(28);
-	writePacketsWithDesignationCodes(26);
-
-	for (int r=1; r<25; r++)
-		if (packetNeeded(r)) {
-			QByteArray outLine = packet(r);
-
-			*outStream << QString("OL,%1,").arg(r);
-			for (int c=0; c<outLine.size(); c++)
-				if (outLine.at(c) < 0x20) {
-					outLine[c] = outLine.at(c) | 0x40;
-					outLine.insert(c, 0x1b);
-					c++;
-				}
-			*outStream << outLine << endl;
-		}
 }
 
 int LevelOnePage::controlBitsToPS() const
@@ -492,7 +447,14 @@ QString LevelOnePage::exportURLHash(QString pageHash)
 void LevelOnePage::setCycleValue(int newValue) { m_cycleValue = newValue; };
 void LevelOnePage::setCycleType(CycleTypeEnum newType) { m_cycleType = newType; }
 void LevelOnePage::setDefaultCharSet(int newDefaultCharSet) { m_defaultCharSet = newDefaultCharSet; }
-void LevelOnePage::setDefaultNOS(int newDefaultNOS) { m_defaultNOS = newDefaultNOS; }
+
+void LevelOnePage::setDefaultNOS(int defaultNOS)
+{
+	m_defaultNOS = defaultNOS;
+	setControlBit(C12NOS, defaultNOS & 1);
+	setControlBit(C13NOS, defaultNOS & 2);
+	setControlBit(C14NOS, defaultNOS & 4);
+}
 
 void LevelOnePage::setSecondCharSet(int newSecondCharSet)
 {

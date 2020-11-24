@@ -50,7 +50,6 @@ public:
 
 	void clearPage();
 	void loadPagePacket(QByteArray &);
-	void savePage(QTextStream *, int, int);
 	QString exportURLHash(QString);
 
 /*	void setSubPageNumber(int); */
