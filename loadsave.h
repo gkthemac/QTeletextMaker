@@ -20,12 +20,15 @@
 #ifndef LOADSAVE_H
 #define LOADSAVE_H
 
+#include <QByteArray>
 #include <QSaveFile>
+#include <QString>
 
 #include "document.h"
 #include "pagebase.h"
 
 int controlBitsToPS(PageBase *);
+
 void saveTTI(QSaveFile &, const TeletextDocument &);
 
 #endif

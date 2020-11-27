@@ -81,7 +81,7 @@ void LevelOnePage::clearPage()
 //	If clearPage() is called outside constructor, we need to implement localEnhance.clear();
 }
 
-QByteArray LevelOnePage::packet(int packetNumber, int designationCode)
+QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
 {
 	QByteArray result(40, 0x00);
 
@@ -256,8 +256,7 @@ bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray p
 		int CLUToffset = (designationCode == 0) ? 16 : 0;
 
 		m_defaultCharSet = ((packetContents.at(2) >> 4) & 0x3) | ((packetContents.at(3) << 2) & 0xc);
-		// Don't set m_defaultNOS directly as we need to keep control bits in subclass in sync
-		setDefaultNOS((packetContents.at(2) >> 1) & 0x7);
+		m_defaultNOS = (packetContents.at(2) >> 1) & 0x7;
 		m_secondCharSet = ((packetContents.at(3) >> 5) & 0x1) | ((packetContents.at(4) << 1) & 0xe);
 		m_secondNOS = (packetContents.at(3) >> 2) & 0x7;
 
@@ -327,6 +326,43 @@ bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 		}
 	}
 	return PageBase::packetNeeded(packetNumber, designationCode);
+}
+
+bool LevelOnePage::controlBit(int bitNumber) const
+{
+	switch (bitNumber) {
+		case C12NOS:
+			return (m_defaultNOS & 1) == 1;
+		case C13NOS:
+			return (m_defaultNOS & 2) == 2;
+		case C14NOS:
+			return (m_defaultNOS & 4) == 4;
+		default:
+			return PageBase::controlBit(bitNumber);
+	}
+}
+
+bool LevelOnePage::setControlBit(int bitNumber, bool active)
+{
+	switch (bitNumber) {
+		case C12NOS:
+			m_defaultNOS &= 0x06;
+			if (active)
+				m_defaultNOS |= 0x01;
+			return true;
+		case C13NOS:
+			m_defaultNOS &= 0x05;
+			if (active)
+				m_defaultNOS |= 0x02;
+			return true;
+		case C14NOS:
+			m_defaultNOS &= 0x03;
+			if (active)
+				m_defaultNOS |= 0x04;
+			return true;
+		default:
+			return PageBase::setControlBit(bitNumber, active);
+	}
 }
 
 void LevelOnePage::loadPagePacket(QByteArray &inLine)
@@ -451,9 +487,6 @@ void LevelOnePage::setDefaultCharSet(int newDefaultCharSet) { m_defaultCharSet =
 void LevelOnePage::setDefaultNOS(int defaultNOS)
 {
 	m_defaultNOS = defaultNOS;
-	setControlBit(C12NOS, defaultNOS & 1);
-	setControlBit(C13NOS, defaultNOS & 2);
-	setControlBit(C14NOS, defaultNOS & 4);
 }
 
 void LevelOnePage::setSecondCharSet(int newSecondCharSet)

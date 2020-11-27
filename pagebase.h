@@ -34,19 +34,19 @@ public:
 	PageBase(const PageBase &);
 	~PageBase();
 
-	QByteArray packet(int, int=0) const;
-	bool packetNeeded(int, int=0) const;
-	bool setPacket(int, QByteArray);
-	bool setPacket(int, int, QByteArray);
-	bool deletePacket(int, int=0);
+	virtual QByteArray packet(int, int=0) const;
+	virtual bool packetNeeded(int, int=0) const;
+	virtual bool setPacket(int, QByteArray);
+	virtual bool setPacket(int, int, QByteArray);
+//	bool deletePacket(int, int=0);
+
+	virtual bool controlBit(int bitNumber) const { return m_controlBits[bitNumber]; }
+	virtual bool setControlBit(int, bool);
 
 	QByteArray packetArrayIndex(int) const;
 	bool packetNeededArrayIndex(int) const;
 	bool setPacketArrayIndex(int, QByteArray);
-	bool deletePacketArrayIndex(int);
-
-	bool controlBit(int bitNumber) const { return m_controlBits[bitNumber]; }
-	bool setControlBit(int, bool);
+//	bool deletePacketArrayIndex(int);
 
 private:
 	bool m_controlBits[11];

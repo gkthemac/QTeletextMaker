@@ -99,7 +99,7 @@ bool PageBase::setPacketArrayIndex(int arrayIndex, QByteArray packetContents)
 
 	return true;
 }
-
+/*
 bool PageBase::deletePacket(int packetNumber, int designationCode)
 {
 	int arrayIndex = packetNumber;
@@ -119,7 +119,7 @@ bool PageBase::deletePacketArrayIndex(int arrayIndex)
 
 	return true;
 }
-
+*/
 bool PageBase::setControlBit(int bitNumber, bool active)
 {
 	m_controlBits[bitNumber] = active;

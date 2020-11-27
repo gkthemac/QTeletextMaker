@@ -43,10 +43,13 @@ public:
 	LevelOnePage();
 	LevelOnePage(const PageBase &);
 
-	QByteArray packet(int, int=0);
-	bool setPacket(int, QByteArray);
-	bool setPacket(int, int, QByteArray);
-	bool packetNeeded(int, int=0) const;
+	QByteArray packet(int, int=0) const override;
+	bool packetNeeded(int, int=0) const override;
+	bool setPacket(int, QByteArray) override;
+	bool setPacket(int, int, QByteArray) override;
+
+	bool controlBit(int bitNumber) const override;
+	bool setControlBit(int, bool) override;
 
 	void clearPage();
 	void loadPagePacket(QByteArray &);

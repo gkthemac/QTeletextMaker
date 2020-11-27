@@ -19,10 +19,11 @@
 
 #include "loadsave.h"
 
+#include <QByteArray>
 #include <QSaveFile>
+#include <QString>
 
 #include "document.h"
-#include "levelonepage.h"
 #include "pagebase.h"
 
 // Used by TTI and hashstring
