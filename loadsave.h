@@ -32,7 +32,7 @@ int controlBitsToPS(PageBase *);
 
 void saveTTI(QSaveFile &, const TeletextDocument &);
 
-QByteArray rowPcketAlways(PageBase *, int);
+QByteArray rowPacketAlways(PageBase *, int);
 
 QString exportHashStringPage(LevelOnePage *);
 QString exportHashStringPackets(LevelOnePage *subPage);

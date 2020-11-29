@@ -27,7 +27,7 @@
 #include "levelonepage.h"
 #include "pagebase.h"
 
-// Used by TTI and hashstring
+// Used by saveTTI and HashString
 int controlBitsToPS(PageBase *subPage)
 {
 	// C4 Erase page is stored in bit 14
@@ -70,7 +70,7 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 			QByteArray outLine = document.subPage(p)->packet(packetNumber, designationCode);
 
 			outStream << QString("OL,%1,").arg(packetNumber);
-			// TTI stores raw values with bit 7 set, doesn't do Hamming encoding
+			// TTI stores raw values with bit 6 set, doesn't do Hamming encoding
 			outLine[0] = designationCode | 0x40;
 			for (int c=1; c<outLine.size(); c++)
 				outLine[c] = outLine.at(c) | 0x40;
