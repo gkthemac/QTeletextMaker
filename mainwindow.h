@@ -56,7 +56,8 @@ private slots:
 	void open();
 	bool save();
 	bool saveAs();
-	void exportURL();
+	void exportZXNet();
+	void exportEditTF();
 	void updateRecentFileActions();
 	void openRecentFile();
 	void about();

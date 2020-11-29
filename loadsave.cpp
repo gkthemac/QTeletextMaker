@@ -24,6 +24,7 @@
 #include <QString>
 
 #include "document.h"
+#include "levelonepage.h"
 #include "pagebase.h"
 
 // Used by TTI and hashstring
@@ -156,4 +157,87 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 
 		subPageNumber++;
 	}
+}
+
+QByteArray rowPacketAlways(PageBase *subPage, int packetNumber)
+{
+	if (subPage->packetNeeded(packetNumber))
+		return subPage->packet(packetNumber);
+	else
+		return QByteArray(40, ' ');
+}
+
+QString exportHashStringPage(LevelOnePage *subPage)
+{
+	int hashDigits[1167]={0};
+	int totalBits, charBit;
+	const char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+	QString hashString;
+
+	// TODO int editTFCharacterSet = 5;
+	bool blackForeground = false;
+
+	for (int r=0; r<25; r++) {
+		QByteArray rowPacket = rowPacketAlways(subPage, r);
+		for (int c=0; c<40; c++) {
+			if (rowPacket.at(c) == 0x00 || rowPacket.at(c) == 0x10)
+				blackForeground = true;
+			for (int b=0; b<7; b++) {
+				totalBits = (r * 40 + c) * 7 + b;
+				charBit = ((rowPacket.at(c)) >> (6 - b)) & 0x01;
+				hashDigits[totalBits / 6] |= charBit << (5 - (totalBits % 6));
+			}
+		}
+	}
+
+	hashString.append(QString("#%1:").arg(blackForeground ? 8 : 0, 1, 16));
+
+	for (int i=0; i<1167; i++)
+		hashString.append(base64[hashDigits[i]]);
+
+	return hashString;
+}
+
+QString exportHashStringPackets(LevelOnePage *subPage)
+{
+	auto colourToHexString=[&](int whichCLUT)
+	{
+		QString resultHexString;
+
+		for (int i=whichCLUT*8; i<whichCLUT*8+8; i++)
+			resultHexString.append(QString("%1").arg(subPage->CLUT(i), 3, 16, QChar('0')));
+		return resultHexString;
+	};
+
+	const char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+	QString result;
+
+	if (subPage->packetNeeded(28,0) || subPage->packetNeeded(28,4)) {
+		// X/28/0 and X/28/4 are duplicates apart from the CLUT definitions
+		// Assemble the duplicate beginning and ending of both packets
+		QString x28StringBegin, x28StringEnd;
+
+		x28StringBegin.append(QString("00%1").arg((subPage->defaultCharSet() << 3) | subPage->defaultNOS(), 2, 16, QChar('0')).toUpper());
+		x28StringBegin.append(QString("%1").arg((subPage->secondCharSet() << 3) | subPage->secondNOS(), 2, 16, QChar('0')).toUpper());
+		x28StringBegin.append(QString("%1%2%3%4").arg(subPage->leftSidePanelDisplayed(), 1, 10).arg(subPage->rightSidePanelDisplayed(), 1, 10).arg(subPage->sidePanelStatusL25(), 1, 10).arg(subPage->sidePanelColumns(), 1, 16));
+
+		x28StringEnd = QString("%1%2%3%4").arg(subPage->defaultScreenColour(), 2, 16, QChar('0')).arg(subPage->defaultRowColour(), 2, 16, QChar('0')).arg(subPage->blackBackgroundSubst(), 1, 10).arg(subPage->colourTableRemap(), 1, 10);
+
+		if (subPage->packetNeeded(28,0))
+			result.append(":X280=" + x28StringBegin + colourToHexString(2) + colourToHexString(3) + x28StringEnd);
+		if (subPage->packetNeeded(28,4))
+			result.append(":X284=" + x28StringBegin + colourToHexString(0) + colourToHexString(1) + x28StringEnd);
+	}
+
+	if (!subPage->localEnhance.isEmpty()) {
+		result.append(":X26=");
+		for (int i=0; i<subPage->localEnhance.size(); i++) {
+			result.append(base64[subPage->localEnhance.at(i).data() >> 1]);
+			result.append(base64[subPage->localEnhance.at(i).mode() | ((subPage->localEnhance.at(i).data() & 1) << 5)]);
+			result.append(base64[subPage->localEnhance.at(i).address()]);
+		}
+	}
+
+	result.append(QString(":PS=%1").arg(0x8000 | controlBitsToPS(subPage), 0, 16, QChar('0')));
+	return result;
 }

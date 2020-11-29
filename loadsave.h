@@ -25,10 +25,16 @@
 #include <QString>
 
 #include "document.h"
+#include "levelonepage.h"
 #include "pagebase.h"
 
 int controlBitsToPS(PageBase *);
 
 void saveTTI(QSaveFile &, const TeletextDocument &);
+
+QByteArray rowPcketAlways(PageBase *, int);
+
+QString exportHashStringPage(LevelOnePage *);
+QString exportHashStringPackets(LevelOnePage *subPage);
 
 #endif

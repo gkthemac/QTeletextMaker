@@ -104,9 +104,6 @@ public:
 	QString colourHash(int);
 	QList<X26Triplet> localEnhance;
 
-protected:
-	int controlBitsToPS() const;
-
 private:
 	unsigned char m_level1Page[25][40];
 /*	int m_subPageNumber; */

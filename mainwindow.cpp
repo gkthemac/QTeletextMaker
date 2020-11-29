@@ -117,9 +117,14 @@ bool MainWindow::saveAs()
 	return saveFile(fileName);
 }
 
-void MainWindow::exportURL()
+void MainWindow::exportZXNet()
 {
-	QDesktopServices::openUrl(QUrl(m_textWidget->document()->currentSubPage()->exportURLHash("http://www.zxnet.co.uk/teletext/editor/")));
+	QDesktopServices::openUrl(QUrl("http://zxnet.co.uk/teletext/editor/" + exportHashStringPage(m_textWidget->document()->currentSubPage()) + exportHashStringPackets(m_textWidget->document()->currentSubPage())));
+}
+
+void MainWindow::exportEditTF()
+{
+	QDesktopServices::openUrl(QUrl("http://edit.tf/" + exportHashStringPage(m_textWidget->document()->currentSubPage())));
 }
 
 void MainWindow::about()
@@ -239,9 +244,17 @@ void MainWindow::createActions()
 
 	setRecentFilesVisible(MainWindow::hasRecentFiles());
 
-	QAction *exportAct = fileMenu->addAction(tr("Export to zxnet.co.uk"));
-	exportAct->setStatusTip("Export URL to zxnet.co.uk online editor");
-	connect(exportAct, &QAction::triggered, this, &MainWindow::exportURL);
+	QMenu *exportHashStringSubMenu = fileMenu->addMenu(tr("Export to online editor"));
+
+	QAction *exportZXNetAct = exportHashStringSubMenu->addAction(tr("Open in zxnet.co.uk"));
+	exportZXNetAct->setStatusTip("Export and open page in zxnet.co.uk online editor");
+	connect(exportZXNetAct, &QAction::triggered, this, &MainWindow::exportZXNet);
+
+	QAction *exportEditTFAct = exportHashStringSubMenu->addAction(tr("Open in edit.tf"));
+	exportEditTFAct->setStatusTip("Export and open page in edit.tf online editor");
+	connect(exportEditTFAct, &QAction::triggered, this, &MainWindow::exportEditTF);
+
+	fileMenu->addSeparator();
 
 	QAction *closeAct = fileMenu->addAction(tr("&Close"), this, &QWidget::close);
 	closeAct->setShortcut(tr("Ctrl+W"));
