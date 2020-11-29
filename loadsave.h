@@ -21,12 +21,16 @@
 #define LOADSAVE_H
 
 #include <QByteArray>
+#include <QFile>
 #include <QSaveFile>
 #include <QString>
+#include <QTextStream>
 
 #include "document.h"
 #include "levelonepage.h"
 #include "pagebase.h"
+
+void loadTTI(QFile *inFile, TeletextDocument *document);
 
 int controlBitsToPS(PageBase *);
 

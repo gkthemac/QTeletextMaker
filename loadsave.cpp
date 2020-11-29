@@ -20,12 +20,145 @@
 #include "loadsave.h"
 
 #include <QByteArray>
+#include <QFile>
 #include <QSaveFile>
 #include <QString>
+#include <QTextStream>
 
 #include "document.h"
 #include "levelonepage.h"
 #include "pagebase.h"
+
+void loadTTI(QFile *inFile, TeletextDocument *document)
+{
+	QByteArray inLine;
+	bool firstSubPageAlreadyFound = false;
+	int cycleCommandsFound = 0;
+	int mostRecentCycleValue = -1;
+	LevelOnePage::CycleTypeEnum mostRecentCycleType;
+
+	LevelOnePage* loadingPage = document->subPage(0);
+
+	for (;;) {
+		inLine = inFile->readLine(160).trimmed();
+		if (inLine.isEmpty())
+			break;
+		if (inLine.startsWith("DE,"))
+			document->setDescription(QString(inLine.remove(0, 3)));
+		if (inLine.startsWith("PN,")) {
+			// When second and subsequent PN commands are found, firstSubPageAlreadyFound==true at this point
+			// This assumes that PN is the first command of a new subpage...
+			if (firstSubPageAlreadyFound) {
+				document->insertSubPage(document->numberOfSubPages(), false);
+				loadingPage = document->subPage(document->numberOfSubPages()-1);
+			} else {
+				document->setPageNumber(inLine.mid(3,3));
+				firstSubPageAlreadyFound = true;
+			}
+		}
+/*		if (lineType == "SC,") {
+			bool subPageNumberOk;
+			int subPageNumberRead = inLine.mid(3, 4).toInt(&subPageNumberOk, 16);
+			if ((!subPageNumberOk) || subPageNumberRead > 0x3f7f)
+				subPageNumberRead = 0;
+			loadingPage->setSubPageNumber(subPageNumberRead);
+		}*/
+		if (inLine.startsWith("PS,")) {
+			bool pageStatusOk;
+			int pageStatusRead = inLine.mid(3, 4).toInt(&pageStatusOk, 16);
+			if (pageStatusOk) {
+				loadingPage->setControlBit(PageBase::C4ErasePage, pageStatusRead & 0x4000);
+				for (int i=PageBase::C5Newsflash, pageStatusBit=0x0001; i<=PageBase::C11SerialMagazine; i++, pageStatusBit<<=1)
+					loadingPage->setControlBit(i, pageStatusRead & pageStatusBit);
+				loadingPage->setDefaultNOS(((pageStatusRead & 0x0200) >> 9) | ((pageStatusRead & 0x0100) >> 7) | ((pageStatusRead & 0x0080) >> 5));
+			}
+		}
+		if (inLine.startsWith("CT,") && (inLine.endsWith(",C") || inLine.endsWith(",T"))) {
+			bool cycleValueOk;
+			int cycleValueRead = inLine.mid(3, inLine.size()-5).toInt(&cycleValueOk);
+			if (cycleValueOk) {
+				cycleCommandsFound++;
+				// House-keep CT command values, in case it's the only one within multiple subpages
+				mostRecentCycleValue = cycleValueRead;
+				loadingPage->setCycleValue(cycleValueRead);
+				mostRecentCycleType = inLine.endsWith("C") ? LevelOnePage::CTcycles : LevelOnePage::CTseconds;
+				loadingPage->setCycleType(mostRecentCycleType);
+			}
+		}
+		if (inLine.startsWith("FL,")) {
+			bool fastTextLinkOk;
+			int fastTextLinkRead;
+			QString flLine = QString(inLine.remove(0, 3));
+			if (flLine.count(',') == 5)
+				for (int i=0; i<6; i++) {
+					fastTextLinkRead = flLine.section(',', i, i).toInt(&fastTextLinkOk, 16);
+					if (fastTextLinkOk) {
+						if (fastTextLinkRead == 0)
+							fastTextLinkRead = 0x8ff;
+						// Stored as page link with relative magazine number, convert from absolute page number that was read
+						fastTextLinkRead ^= document->pageNumber() & 0x700;
+						fastTextLinkRead &= 0x7ff; // Fixes magazine 8 to 0
+						loadingPage->setFastTextLinkPageNumber(i, fastTextLinkRead);
+					}
+				}
+		}
+		if (inLine.startsWith("OL,")) {
+			bool lineNumberOk;
+			int lineNumber, secondCommaPosition;
+
+			secondCommaPosition = inLine.indexOf(",", 3);
+			if (secondCommaPosition != 4 && secondCommaPosition != 5)
+				continue;
+
+			lineNumber = inLine.mid(3, secondCommaPosition-3).toInt(&lineNumberOk, 10);
+			if (lineNumberOk && lineNumber>=0 && lineNumber<=29) {
+				inLine.remove(0, secondCommaPosition+1);
+				if (lineNumber <= 25) {
+					for (int c=0; c<40; c++) {
+						// trimmed() helpfully removes CRLF line endings from the just-read line for us
+						// But it also (un)helpfully removes spaces at the end of a 40 character line, so put them back
+						if (c >= inLine.size())
+							inLine.append(' ');
+						if (inLine.at(c) & 0x80)
+							inLine[c] = inLine.at(c) & 0x7f;
+						else if (inLine.at(c) == 0x10)
+							inLine[c] = 0x0d;
+						else if (inLine.at(c) == 0x1b) {
+							inLine.remove(c, 1);
+							inLine[c] = inLine.at(c) & 0xbf;
+						}
+					}
+					loadingPage->setPacket(lineNumber, inLine);
+				} else {
+					int designationCode = inLine.at(0) & 0x3f;
+					if (inLine.size() < 40) {
+						// OL is too short!
+						if (lineNumber == 26) {
+							// For a too-short enhancement triplets OL, first trim the line down to nearest whole triplet
+							inLine.resize((inLine.size() / 3 * 3) + 1);
+							// Then use "dummy" enhancement triplets to extend the line to the proper length
+							for (int i=inLine.size(); i<40; i+=3)
+								inLine.append("i^@"); // Address 41, Mode 0x1e, Data 0
+						} else
+							// For other triplet OLs and Hamming 8/4 OLs, just pad with zero data
+							for (int i=inLine.size(); i<40; i++)
+								inLine.append("@");
+					}
+					for (int i=1; i<=39; i++)
+						inLine[i] = inLine.at(i) & 0x3f;
+					loadingPage->setPacket(lineNumber, designationCode, inLine);
+				}
+			}
+		}
+	}
+	// If there's more than one subpage but only one valid CT command was found, apply it to all subpages
+	// I don't know if this is correct
+	if (cycleCommandsFound == 1 && document->numberOfSubPages()>1)
+		for (int i=0; i<document->numberOfSubPages(); i++) {
+			document->subPage(i)->setCycleValue(mostRecentCycleValue);
+			document->subPage(i)->setCycleType(mostRecentCycleType);
+		}
+}
 
 // Used by saveTTI and HashString
 int controlBitsToPS(PageBase *subPage)

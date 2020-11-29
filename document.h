@@ -20,9 +20,7 @@
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
 
-#include <QFile>
 #include <QObject>
-#include <QTextStream>
 #include <QUndoStack>
 #include <vector>
 #include "levelonepage.h"
@@ -47,7 +45,6 @@ public:
 	PacketCodingEnum packetCoding() const { return m_packetCoding; }
 //	void setPacketCoding(PacketCodingEnum);
 
-	void loadDocument(QFile *);
 	int numberOfSubPages() const { return m_subPages.size(); }
 	LevelOnePage* subPage(int p) const { return m_subPages[p]; }
 	LevelOnePage* currentSubPage() const { return m_subPages[m_currentSubPageIndex]; }

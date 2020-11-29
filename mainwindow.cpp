@@ -690,7 +690,8 @@ void MainWindow::loadFile(const QString &fileName)
 	}
 
 	QApplication::setOverrideCursor(Qt::WaitCursor);
-	m_textWidget->document()->loadDocument(&file);
+	loadTTI(&file, m_textWidget->document());
+	updatePageWidgets();
 
 	QApplication::restoreOverrideCursor();
 

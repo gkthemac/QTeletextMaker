@@ -25,7 +25,6 @@
 #include <QList>
 #include <QObject>
 #include <QString>
-#include <QTextStream>
 
 #include "pagebase.h"
 #include "x26triplets.h"
@@ -52,8 +51,6 @@ public:
 	bool setControlBit(int, bool) override;
 
 	void clearPage();
-	void loadPagePacket(QByteArray &);
-	QString exportURLHash(QString);
 
 /*	void setSubPageNumber(int); */
 	int cycleValue() const { return m_cycleValue; };

@@ -365,55 +365,6 @@ bool LevelOnePage::setControlBit(int bitNumber, bool active)
 	}
 }
 
-void LevelOnePage::loadPagePacket(QByteArray &inLine)
-{
-	bool lineNumberOk;
-	int lineNumber, secondCommaPosition;
-
-	secondCommaPosition = inLine.indexOf(",", 3);
-	if (secondCommaPosition != 4 && secondCommaPosition != 5)
-		return;
-
-	lineNumber = inLine.mid(3, secondCommaPosition-3).toInt(&lineNumberOk, 10);
-	if (lineNumberOk && lineNumber>=0 && lineNumber<=29) {
-		inLine.remove(0, secondCommaPosition+1);
-		if (lineNumber <= 25) {
-			for (int c=0; c<40; c++) {
-				// trimmed() helpfully removes CRLF line endings from the just-read line for us
-				// But it also (un)helpfully removes spaces at the end of a 40 character line, so put them back
-				if (c >= inLine.size())
-					inLine.append(' ');
-				if (inLine.at(c) & 0x80)
-					inLine[c] = inLine.at(c) & 0x7f;
-				else if (inLine.at(c) == 0x10)
-					inLine[c] = 0x0d;
-				else if (inLine.at(c) == 0x1b) {
-					inLine.remove(c, 1);
-					inLine[c] = inLine.at(c) & 0xbf;
-				}
-			}
-			setPacket(lineNumber, inLine);
-		} else {
-			int designationCode = inLine.at(0) & 0x3f;
-			if (inLine.size() < 40) {
-				// OL is too short!
-				if (lineNumber == 26) {
-					// For a too-short enhancement triplets OL, first trim the line down to nearest whole triplet
-					inLine.resize((inLine.size() / 3 * 3) + 1);
-					// Then use "dummy" enhancement triplets to extend the line to the proper length
-					for (int i=inLine.size(); i<40; i+=3)
-						inLine.append("i^@"); // Address 41, Mode 0x1e, Data 0
-				} else
-					// For other triplet OLs and Hamming 8/4 OLs, just pad with zero data
-					inLine.leftJustified(40, '@');
-			}
-			for (int i=1; i<=39; i++)
-				inLine[i] = inLine.at(i) & 0x3f;
-			setPacket(lineNumber, designationCode, inLine);
-		}
-	}
-}
-
 /* void LevelOnePage::setSubPageNumber(int newSubPageNumber) { m_subPageNumber = newSubPageNumber; } */
 void LevelOnePage::setCycleValue(int newValue) { m_cycleValue = newValue; };
 void LevelOnePage::setCycleType(CycleTypeEnum newType) { m_cycleType = newType; }
