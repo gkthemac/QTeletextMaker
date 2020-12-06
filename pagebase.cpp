@@ -47,6 +47,16 @@ PageBase::~PageBase()
 		if (m_packets[i] != nullptr)
 			delete m_packets[i];
 }
+
+bool PageBase::isEmpty() const
+{
+	for (int i=0; i<90; i++)
+		if (m_packets[i] != nullptr)
+			return false;
+
+	return true;
+}
+
 QByteArray PageBase::packet(int packetNumber, int designationCode) const
 {
 	int arrayIndex = packetNumber;

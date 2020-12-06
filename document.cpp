@@ -29,7 +29,6 @@ TeletextDocument::TeletextDocument()
 	m_description.clear();
 	m_pageFunction = PFLevelOnePage;
 	m_packetCoding = Coding7bit;
-	m_empty = true;
 	m_subPages.push_back(new LevelOnePage);
 	m_currentSubPageIndex = 0;
 	m_undoStack = new QUndoStack(this);
@@ -42,6 +41,15 @@ TeletextDocument::~TeletextDocument()
 {
 	for (auto &subPage : m_subPages)
 		delete(subPage);
+}
+
+bool TeletextDocument::isEmpty() const
+{
+	for (auto &subPage : m_subPages)
+		if (!subPage->isEmpty())
+			return false;
+
+	return true;
 }
 
 /*

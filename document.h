@@ -37,8 +37,8 @@ public:
 
 	TeletextDocument();
 	~TeletextDocument();
-	bool isEmpty() const { return m_empty; }
-	void setModified(bool);
+
+	bool isEmpty() const;
 
 	PageFunctionEnum pageFunction() const { return m_pageFunction; }
 //	void setPageFunction(PageFunctionEnum);
@@ -88,7 +88,6 @@ signals:
 
 private:
 	QString m_description;
-	bool m_empty;
 	int m_pageNumber, m_currentSubPageIndex;
 	PageFunctionEnum m_pageFunction;
 	PacketCodingEnum m_packetCoding;

@@ -81,6 +81,23 @@ void LevelOnePage::clearPage()
 //	If clearPage() is called outside constructor, we need to implement localEnhance.clear();
 }
 
+bool LevelOnePage::isEmpty() const
+{
+	if (!localEnhance.isEmpty())
+		return false;
+
+	for (int i=0; i<32; i++)
+		if (m_CLUT[i] != defaultCLUT[i])
+			return false;
+
+	for (int r=0; r<25; r++)
+		for (int c=0; c<40; c++)
+			if (m_level1Page[r][c] != 0x20)
+				return false;
+
+	return true;
+}
+
 QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
 {
 	QByteArray result(40, 0x00);

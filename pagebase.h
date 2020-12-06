@@ -34,6 +34,8 @@ public:
 	PageBase(const PageBase &);
 	~PageBase();
 
+	virtual bool isEmpty() const;
+
 	virtual QByteArray packet(int, int=0) const;
 	virtual bool packetNeeded(int, int=0) const;
 	virtual bool setPacket(int, QByteArray);

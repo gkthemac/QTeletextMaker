@@ -42,6 +42,8 @@ public:
 	LevelOnePage();
 	LevelOnePage(const PageBase &);
 
+	bool isEmpty() const override;
+
 	QByteArray packet(int, int=0) const override;
 	bool packetNeeded(int, int=0) const override;
 	bool setPacket(int, QByteArray) override;
