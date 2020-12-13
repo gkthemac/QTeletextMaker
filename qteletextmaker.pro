@@ -12,6 +12,7 @@ HEADERS       = document.h \
                 pageoptionsdockwidget.h \
                 palettedockwidget.h \
                 render.h \
+                x26commands.h \
                 x26dockwidget.h \
                 x26model.h \
                 x26triplets.h
@@ -27,6 +28,7 @@ SOURCES       = document.cpp \
                 pageoptionsdockwidget.cpp \
                 palettedockwidget.cpp \
                 render.cpp \
+                x26commands.cpp \
                 x26dockwidget.cpp \
                 x26model.cpp \
                 x26triplets.cpp

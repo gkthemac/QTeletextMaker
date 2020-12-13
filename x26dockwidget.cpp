@@ -51,11 +51,14 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	m_x26View->setModel(m_x26Model);
 	m_x26View->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
 	m_x26View->setSelectionBehavior(QAbstractItemView::SelectRows);
+	m_x26View->setSelectionMode(QAbstractItemView::SingleSelection);
 	m_x26View->setColumnWidth(0, 50);
 	m_x26View->setColumnWidth(1, 50);
 	m_x26View->setColumnWidth(2, 200);
 	m_x26View->setColumnWidth(3, 200);
 	x26Layout->addWidget(m_x26View);
+
+	connect(m_parentMainWidget->document(), &TeletextDocument::tripletCommandHighlight, this, &X26DockWidget::selectX26ListRow);
 
 	// Triplet type and mode selection, with row and column spinboxes
 	QHBoxLayout *tripletSelectLayout = new QHBoxLayout;
@@ -467,6 +470,17 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	connect(insertShortcut, &QShortcut::activated, this, &X26DockWidget::insertTriplet);
 	QShortcut* deleteShortcut = new QShortcut(QKeySequence(Qt::Key_Delete), m_x26View);
 	connect(deleteShortcut, &QShortcut::activated, this, &X26DockWidget::deleteTriplet);
+}
+
+void X26DockWidget::selectX26ListRow(int row)
+{
+	if (m_x26Model->rowCount() <= 0)
+		return;
+	if (row >= m_x26Model->rowCount())
+		row = m_x26Model->rowCount() - 1;
+
+	m_x26View->selectRow(row);
+	rowClicked(m_x26View->currentIndex());
 }
 
 void X26DockWidget::loadX26List()

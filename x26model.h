@@ -40,6 +40,12 @@ public:
 	bool removeRows(int position, int rows, const QModelIndex &index);
 //	Qt::ItemFlags flags(const QModelIndex &index) const;
 
+	// The x26commands classes manipulate the model but beginInsertRows and endInsertRows
+	// are protected methods, so we need to friend them
+	friend class InsertTripletCommand;
+	friend class DeleteTripletCommand;
+	friend class EditTripletCommand;
+
 private:
 	TeletextWidget *m_parentMainWidget;
 	bool m_listLoaded;

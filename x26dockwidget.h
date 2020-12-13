@@ -59,6 +59,7 @@ public slots:
 	void cookedColumnSpinBoxChanged(const int);
 	void cookedModeComboBoxChanged(const int);
 	void updateModelFromCookedWidget(const int, const int);
+	void selectX26ListRow(int);
 
 private:
 	QTableView *m_x26View;

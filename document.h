@@ -86,6 +86,8 @@ signals:
 	void subPageSelected();
 	void refreshNeeded();
 
+	void tripletCommandHighlight(int);
+
 private:
 	QString m_description;
 	int m_pageNumber, m_currentSubPageIndex;

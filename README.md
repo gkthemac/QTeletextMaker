@@ -26,8 +26,6 @@ Spacing attributes are only accessible through an "Insert" menu. A toolbar to in
 
 There is no visible widget for switching between subpages, use the `PageUp` and `PageDown` keys for this.
 
-Undo only undoes keypresses, insertion of spacing attributes and CLUT changes. Other changes (most notably triplet editing) can't be undone, nor will they cause the "unsaved page" dialog to appear if the editor window is closed.
-
 Keymapping between ASCII and Teletext character sets is not yet implemented e.g. in English pressing the hash key will type a pound sign instead, and in other languages the square and curly brackets keys need to be pressed to obtain the accented characters.
 
 The following X/26 enhancement triplets are not rendered by the editor, although the list is fully aware of them.
