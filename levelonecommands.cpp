@@ -236,7 +236,7 @@ void InsertSubPageCommand::undo()
 {
 	m_teletextDocument->deleteSubPage(m_newSubPageIndex);
 	//TODO should we always wrench to "subpage viewed when we inserted"? Or just if subpage viewed is being deleted?
-	m_teletextDocument->selectSubPageIndex(m_newSubPageIndex, true);
+	m_teletextDocument->selectSubPageIndex(qMin(m_newSubPageIndex, m_teletextDocument->numberOfSubPages()-1), true);
 	setText(QObject::tr("insert subpage"));
 }
 
