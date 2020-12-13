@@ -29,6 +29,7 @@
 #include <QSettings>
 #include <QStatusBar>
 #include <QToolBar>
+#include <QToolButton>
 #include <iostream>
 
 #include "mainwindow.h"
@@ -589,10 +590,32 @@ void MainWindow::zoomReset()
 
 void MainWindow::createStatusBar()
 {
-	m_cursorStatus = new QLabel("Subpage 1/1 row 1 column 1");
-	statusBar()->insertWidget(0, m_cursorStatus);
-	m_levelSelect = new QLabel("Level");
-	statusBar()->addPermanentWidget(m_levelSelect);
+	QLabel *subPageLabel = new QLabel("Subpage");
+	statusBar()->insertWidget(0, subPageLabel);
+
+	m_previousSubPageButton = new QToolButton;
+	m_previousSubPageButton->setMinimumSize(subPageLabel->height(), subPageLabel->height());
+	m_previousSubPageButton->setMaximumSize(subPageLabel->height(), subPageLabel->height());
+	m_previousSubPageButton->setAutoRaise(true);
+	m_previousSubPageButton->setArrowType(Qt::LeftArrow);
+	statusBar()->insertWidget(1, m_previousSubPageButton);
+	connect(m_previousSubPageButton, &QToolButton::clicked, m_textWidget->document(), &TeletextDocument::selectSubPagePrevious);
+
+	m_subPageLabel = new QLabel("1/1");
+	statusBar()->insertWidget(2, m_subPageLabel);
+
+	m_nextSubPageButton = new QToolButton;
+	m_nextSubPageButton->setMinimumSize(subPageLabel->height(), subPageLabel->height());
+	m_nextSubPageButton->setMaximumSize(subPageLabel->height(), subPageLabel->height());
+	m_nextSubPageButton->setAutoRaise(true);
+	m_nextSubPageButton->setArrowType(Qt::RightArrow);
+	statusBar()->insertWidget(3, m_nextSubPageButton);
+	connect(m_nextSubPageButton, &QToolButton::clicked, m_textWidget->document(), &TeletextDocument::selectSubPageNext);
+
+	m_cursorPositionLabel = new QLabel("Row 1 Column 1");
+	statusBar()->insertWidget(4, m_cursorPositionLabel);
+
+	statusBar()->addPermanentWidget(new QLabel("Level"));
 
 	QRadioButton *level1 = new QRadioButton("1");
 	QRadioButton *level15 = new QRadioButton("1.5");
@@ -838,12 +861,14 @@ MainWindow *MainWindow::findMainWindow(const QString &fileName) const
 
 void MainWindow::updateCursorPosition()
 {
-	m_cursorStatus->setText(QString("Subpage %1/%2 row %3 column %4").arg(m_textWidget->document()->currentSubPageIndex()+1).arg(m_textWidget->document()->numberOfSubPages()).arg(m_textWidget->document()->cursorRow()).arg(m_textWidget->document()->cursorColumn()));
+	m_cursorPositionLabel->setText(QString("Row %1 Column %2").arg(m_textWidget->document()->cursorRow()).arg(m_textWidget->document()->cursorColumn()));
 }
 
 void MainWindow::updatePageWidgets()
 {
-	updateCursorPosition();
+	m_subPageLabel->setText(QString("%1/%2").arg(m_textWidget->document()->currentSubPageIndex()+1).arg(m_textWidget->document()->numberOfSubPages()));
+	m_previousSubPageButton->setEnabled(!(m_textWidget->document()->currentSubPageIndex() == 0));
+	m_nextSubPageButton->setEnabled(!(m_textWidget->document()->currentSubPageIndex() == (m_textWidget->document()->numberOfSubPages()) - 1));
 	m_pageOptionsDockWidget->updateWidgets();
 	m_pageEnhancementsDockWidget->updateWidgets();
 	m_x26DockWidget->loadX26List();

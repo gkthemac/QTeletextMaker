@@ -24,8 +24,6 @@ At the moment QTeletextMaker is in pre-alpha status so many features are not fin
 
 Spacing attributes are only accessible through an "Insert" menu. A toolbar to insert spacing attributes may be added in the future.
 
-There is no visible widget for switching between subpages, use the `PageUp` and `PageDown` keys for this.
-
 Keymapping between ASCII and Teletext character sets is not yet implemented e.g. in English pressing the hash key will type a pound sign instead, and in other languages the square and curly brackets keys need to be pressed to obtain the accented characters.
 
 The following X/26 enhancement triplets are not rendered by the editor, although the list is fully aware of them.

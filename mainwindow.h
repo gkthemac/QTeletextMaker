@@ -27,6 +27,7 @@
 #include <QGraphicsView>
 #include <QMainWindow>
 #include <QLabel>
+#include <QToolButton>
 
 #include "mainwidget.h"
 #include "pageenhancementsdockwidget.h"
@@ -110,7 +111,8 @@ private:
 	QAction *m_borderActs[3];
 	QAction *m_aspectRatioActs[4];
 
-	QLabel *m_cursorStatus, *m_levelSelect;
+	QLabel *m_subPageLabel, *m_cursorPositionLabel;
+	QToolButton *m_previousSubPageButton, *m_nextSubPageButton;
 
 	QString m_curFile;
 	bool m_isUntitled;
