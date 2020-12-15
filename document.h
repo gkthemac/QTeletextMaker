@@ -54,6 +54,8 @@ public:
 	void selectSubPagePrevious();
 	void insertSubPage(int, bool);
 	void deleteSubPage(int);
+	void deleteSubPageToRecycle(int);
+	void unDeleteSubPageFromRecycle(int);
 	int pageNumber() const { return m_pageNumber; }
 	void setPageNumber(QString);
 	QString description() const { return m_description; }
@@ -94,6 +96,7 @@ private:
 	PageFunctionEnum m_pageFunction;
 	PacketCodingEnum m_packetCoding;
 	std::vector<LevelOnePage *> m_subPages;
+	std::vector<LevelOnePage *> m_recycleSubPages;
 	QUndoStack *m_undoStack;
 	int m_cursorRow, m_cursorColumn, m_selectionTopRow, m_selectionBottomRow, m_selectionLeftColumn, m_selectionRightColumn;
 	LevelOnePage *m_selectionSubPage;

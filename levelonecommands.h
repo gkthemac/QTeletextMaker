@@ -84,6 +84,19 @@ private:
 	bool m_copySubPage;
 };
 
+class DeleteSubPageCommand : public QUndoCommand
+{
+public:
+	DeleteSubPageCommand(TeletextDocument *, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+
+private:
+	TeletextDocument *m_teletextDocument;
+	int m_subPageToDelete;
+};
+
 class InsertRowCommand : public QUndoCommand
 {
 public:

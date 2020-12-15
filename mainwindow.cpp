@@ -343,6 +343,10 @@ void MainWindow::createActions()
 	insertCopyAct->setStatusTip(tr("Insert a subpage that's a copy of this subpage"));
 	connect(insertCopyAct, &QAction::triggered, [=]() { insertSubPage(false, true); });
 
+	m_deleteSubPageAction = editMenu->addAction(tr("Delete subpage"));
+	m_deleteSubPageAction->setStatusTip(tr("Delete this subpage"));
+	connect(m_deleteSubPageAction, &QAction::triggered, this, &MainWindow::deleteSubPage);
+
 	QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
 
 	QAction *revealAct = viewMenu->addAction(tr("&Reveal"));
@@ -554,6 +558,14 @@ void MainWindow::insertSubPage(bool afterCurrentSubPage, bool copyCurrentSubPage
 {
 	QUndoCommand *insertSubPageCommand = new InsertSubPageCommand(m_textWidget->document(), afterCurrentSubPage, copyCurrentSubPage);
 	m_textWidget->document()->undoStack()->push(insertSubPageCommand);
+}
+
+void MainWindow::deleteSubPage()
+{
+	if (m_textWidget->document()->numberOfSubPages() == 1)
+		return;
+
+	m_textWidget->document()->undoStack()->push(new DeleteSubPageCommand(m_textWidget->document()));
 }
 
 void MainWindow::setBorder(int newViewBorder)
@@ -869,6 +881,7 @@ void MainWindow::updatePageWidgets()
 	m_subPageLabel->setText(QString("%1/%2").arg(m_textWidget->document()->currentSubPageIndex()+1).arg(m_textWidget->document()->numberOfSubPages()));
 	m_previousSubPageButton->setEnabled(!(m_textWidget->document()->currentSubPageIndex() == 0));
 	m_nextSubPageButton->setEnabled(!(m_textWidget->document()->currentSubPageIndex() == (m_textWidget->document()->numberOfSubPages()) - 1));
+	m_deleteSubPageAction->setEnabled(m_textWidget->document()->numberOfSubPages() > 1);
 	m_pageOptionsDockWidget->updateWidgets();
 	m_pageEnhancementsDockWidget->updateWidgets();
 	m_x26DockWidget->loadX26List();

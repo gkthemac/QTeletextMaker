@@ -68,6 +68,7 @@ private slots:
 	void insertRow(bool);
 	void deleteRow();
 	void insertSubPage(bool, bool);
+	void deleteSubPage();
 
 	void setSceneDimensions();
 	void setBorder(int);
@@ -108,6 +109,7 @@ private:
 	QAction *m_recentFileActs[m_MaxRecentFiles];
 	QAction *m_recentFileSeparator;
 	QAction *m_recentFileSubMenuAct;
+	QAction *m_deleteSubPageAction;
 	QAction *m_borderActs[3];
 	QAction *m_aspectRatioActs[4];
 

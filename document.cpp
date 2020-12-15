@@ -41,6 +41,8 @@ TeletextDocument::~TeletextDocument()
 {
 	for (auto &subPage : m_subPages)
 		delete(subPage);
+	for (auto &recycleSubPage : m_recycleSubPages)
+		delete(recycleSubPage);
 }
 
 bool TeletextDocument::isEmpty() const
@@ -101,6 +103,7 @@ void TeletextDocument::insertSubPage(int beforeSubPageIndex, bool copySubPage)
 		insertedSubPage = new LevelOnePage(*m_subPages.at(beforeSubPageIndex));
 	else
 		insertedSubPage = new LevelOnePage;
+
 	if (beforeSubPageIndex == m_subPages.size())
 		m_subPages.push_back(insertedSubPage);
 	else
@@ -111,6 +114,18 @@ void TeletextDocument::deleteSubPage(int subPageToDelete)
 {
 	delete(m_subPages[subPageToDelete]);
 	m_subPages.erase(m_subPages.begin()+subPageToDelete);
+}
+
+void TeletextDocument::deleteSubPageToRecycle(int subPageToRecycle)
+{
+	m_recycleSubPages.push_back(m_subPages[subPageToRecycle]);
+	m_subPages.erase(m_subPages.begin()+subPageToRecycle);
+}
+
+void TeletextDocument::unDeleteSubPageFromRecycle(int subPage)
+{
+	m_subPages.insert(m_subPages.begin()+subPage, m_recycleSubPages.back());
+	m_recycleSubPages.pop_back();
 }
 
 void TeletextDocument::setPageNumber(QString pageNumberString)

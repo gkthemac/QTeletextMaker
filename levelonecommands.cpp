@@ -241,6 +241,25 @@ void InsertSubPageCommand::undo()
 }
 
 
+DeleteSubPageCommand::DeleteSubPageCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
+{
+	m_teletextDocument = teletextDocument;
+	m_subPageToDelete = teletextDocument->currentSubPageIndex();
+	setText(QObject::tr("delete subpage"));
+}
+
+void DeleteSubPageCommand::redo()
+{
+	m_teletextDocument->deleteSubPageToRecycle(m_subPageToDelete);
+	m_teletextDocument->selectSubPageIndex(qMin(m_subPageToDelete, m_teletextDocument->numberOfSubPages()-1), true);
+}
+
+void DeleteSubPageCommand::undo()
+{
+	m_teletextDocument->unDeleteSubPageFromRecycle(m_subPageToDelete);
+	m_teletextDocument->selectSubPageIndex(m_subPageToDelete, true);
+}
+
 SetColourCommand::SetColourCommand(TeletextDocument *teletextDocument, int colourIndex, int newColour, QUndoCommand *parent) : QUndoCommand(parent)
 {
 	m_teletextDocument = teletextDocument;
