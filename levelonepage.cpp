@@ -469,15 +469,6 @@ void LevelOnePage::setComposeLinkSubPageCodes(int linkNumber, int newSubPageCode
 	m_composeLink[linkNumber].subPageCodes = newSubPageCodes;
 }
 
-QString LevelOnePage::colourHash(int whichCLUT)
-{
-	QString resultHash;
-
-	for (int i=whichCLUT*16; i<whichCLUT*16+16; i++)
-		resultHash.append(QString("%1").arg(m_CLUT[i], 3, 16, QChar('0')));
-	return resultHash;
-}
-
 QColor CLUTtoQColor(int myColour)
 {
 	return QColor(((myColour & 0xf00) >> 8) * 17, ((myColour & 0x0f0) >> 4) * 17, (myColour & 0x00f) * 17);

@@ -102,7 +102,6 @@ public:
 	int composeLinkSubPageCodes(int linkNumber) const { return m_composeLink[linkNumber].subPageCodes; }
 	void setComposeLinkSubPageCodes(int, int);
 
-	QString colourHash(int);
 	QList<X26Triplet> localEnhance;
 
 private:
