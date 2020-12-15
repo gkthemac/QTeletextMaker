@@ -31,28 +31,25 @@ public:
 	enum ControlBitsEnum { C4ErasePage, C5Newsflash, C6Subtitle, C7SuppressHeader, C8Update, C9InterruptedSequence, C10InhibitDisplay, C11SerialMagazine, C12NOS, C13NOS, C14NOS };
 
 	PageBase();
-	PageBase(const PageBase &);
-	~PageBase();
+	virtual ~PageBase();
 
 	virtual bool isEmpty() const;
 
-	virtual QByteArray packet(int, int=0) const;
-	virtual bool packetNeeded(int, int=0) const;
+	virtual QByteArray packet(int) const;
+	virtual QByteArray packet(int, int) const;
+	virtual bool packetNeeded(int i) const { return m_displayPackets[i] != nullptr; }
+	virtual bool packetNeeded(int i, int j) const { return m_designationPackets[i-26][j] != nullptr; }
 	virtual bool setPacket(int, QByteArray);
 	virtual bool setPacket(int, int, QByteArray);
-//	bool deletePacket(int, int=0);
+//	bool deletePacket(int);
+//	bool deletePacket(int, int);
 
 	virtual bool controlBit(int bitNumber) const { return m_controlBits[bitNumber]; }
 	virtual bool setControlBit(int, bool);
 
-	QByteArray packetArrayIndex(int) const;
-	bool packetNeededArrayIndex(int) const;
-	bool setPacketArrayIndex(int, QByteArray);
-//	bool deletePacketArrayIndex(int);
-
 private:
 	bool m_controlBits[11];
-	QByteArray *m_packets[90]; // X/0 to X/25, plus 16 packets for X/26, another 16 for X/27, for X28 and for X/29
+	QByteArray *m_displayPackets[26], *m_designationPackets[4][16];
 };
 
 #endif

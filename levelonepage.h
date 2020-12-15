@@ -44,8 +44,10 @@ public:
 
 	bool isEmpty() const override;
 
-	QByteArray packet(int, int=0) const override;
-	bool packetNeeded(int, int=0) const override;
+	QByteArray packet(int) const override;
+	QByteArray packet(int, int) const override;
+	bool packetNeeded(int) const override;
+	bool packetNeeded(int, int) const override;
 	bool setPacket(int, QByteArray) override;
 	bool setPacket(int, int, QByteArray) override;
 

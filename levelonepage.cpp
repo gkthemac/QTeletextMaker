@@ -42,11 +42,16 @@ LevelOnePage::LevelOnePage(const PageBase &other)
 	localEnhance.reserve(208);
 	clearPage();
 
+	for (int i=0; i<26; i++)
+		if (other.packetNeeded(i))
+			setPacket(i, other.packet(i));
+	for (int i=26; i<30; i++)
+		for (int j=0; j<16; j++)
+			if (other.packetNeeded(i, j))
+				setPacket(i, j, other.packet(i));
+
 	for (int i=PageBase::C4ErasePage; i<=PageBase::C14NOS; i++)
 		setControlBit(i, other.controlBit(i));
-	for (int i=0; i<90; i++)
-		if (other.packetNeededArrayIndex(i))
-			setPacketArrayIndex(i, other.packetArrayIndex(i));
 }
 
 // So far we only call clearPage() once, within the constructor
@@ -98,7 +103,7 @@ bool LevelOnePage::isEmpty() const
 	return true;
 }
 
-QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
+QByteArray LevelOnePage::packet(int packetNumber) const
 {
 	QByteArray result(40, 0x00);
 
@@ -107,6 +112,13 @@ QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
 			result[c] = m_level1Page[packetNumber][c];
 		return result;
 	}
+
+	return PageBase::packet(packetNumber);
+}
+
+QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
+{
+	QByteArray result(40, 0x00);
 
 	if (packetNumber == 26) {
 		if (!packetNeeded(26, designationCode))
@@ -206,6 +218,7 @@ bool LevelOnePage::setPacket(int packetNumber, QByteArray packetContents)
 		return true;
 	}
 
+	qDebug("LevelOnePage unhandled setPacket X/%d", packetNumber);
 	return PageBase::setPacket(packetNumber, packetContents);
 }
 
@@ -293,11 +306,11 @@ bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray p
 		return true;
 	}
 
-	qDebug("LevelOnePage unhandled packet X/%d/%d", packetNumber, designationCode);
+	qDebug("LevelOnePage unhandled setPacket X/%d/%d", packetNumber, designationCode);
 	return PageBase::setPacket(packetNumber, designationCode, packetContents);
 }
 
-bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
+bool LevelOnePage::packetNeeded(int packetNumber) const
 {
 	if (packetNumber <= 24) {
 		for (int c=0; c<40; c++)
@@ -306,6 +319,11 @@ bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 		return false;
 	}
 
+	return PageBase::packetNeeded(packetNumber);
+}
+
+bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
+{
 	if (packetNumber == 26)
 		return ((localEnhance.size()+12) / 13) > designationCode;
 
@@ -342,6 +360,7 @@ bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 			return false;
 		}
 	}
+
 	return PageBase::packetNeeded(packetNumber, designationCode);
 }
 

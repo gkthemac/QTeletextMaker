@@ -24,112 +24,97 @@
 PageBase::PageBase()
 {
 	// We use nullptrs to keep track of allocated packets, so initialise them this way
-	for (int i=0; i<90; i++)
-		m_packets[i] = nullptr;
+	for (int i=0; i<26; i++)
+		m_displayPackets[i] = nullptr;
+	for (int i=0; i<4; i++)
+		for (int j=0; j<16; j++)
+			m_designationPackets[i][j] = nullptr;
+
 	for (int i=PageBase::C4ErasePage; i<=PageBase::C14NOS; i++)
 		m_controlBits[i] = false;
 }
 
-PageBase::PageBase(const PageBase &other)
-{
-	for (int i=PageBase::C4ErasePage; i<=PageBase::C14NOS; i++)
-		setControlBit(i, other.controlBit(i));
-	for (int i=0; i<90; i++)
-		if (other.packetNeededArrayIndex(i))
-			setPacketArrayIndex(i, other.packetArrayIndex(i));
-		else
-			m_packets[i] = nullptr;
-}
-
 PageBase::~PageBase()
 {
-	for (int i=0; i<90; i++)
-		if (m_packets[i] != nullptr)
-			delete m_packets[i];
+	for (int i=0; i<26; i++)
+		if (m_displayPackets[i] != nullptr)
+			delete m_displayPackets[i];
+	for (int i=0; i<4; i++)
+		for (int j=0; j<16; j++)
+			if (m_designationPackets[i][j] != nullptr)
+				delete m_designationPackets[i][j];
 }
 
 bool PageBase::isEmpty() const
 {
-	for (int i=0; i<90; i++)
-		if (m_packets[i] != nullptr)
+	for (int i=0; i<26; i++)
+		if (m_displayPackets[i] != nullptr)
 			return false;
+	for (int i=0; i<4; i++)
+		for (int j=0; j<16; j++)
+			if (m_designationPackets[i][j] != nullptr)
+				return false;
 
 	return true;
 }
 
-QByteArray PageBase::packet(int packetNumber, int designationCode) const
+QByteArray PageBase::packet(int i) const
 {
-	int arrayIndex = packetNumber;
-
-	if (packetNumber >= 26)
-		arrayIndex += (packetNumber - 26) * 16 + designationCode;
-	return packetArrayIndex(arrayIndex);
-}
-
-QByteArray PageBase::packetArrayIndex(int arrayIndex) const
-{
-	if (m_packets[arrayIndex] == nullptr)
+	if (m_displayPackets[i] == nullptr)
 		return QByteArray(); // Blank result
-	return *m_packets[arrayIndex];
+
+	return *m_displayPackets[i];
 }
 
-bool PageBase::packetNeeded(int packetNumber, int designationCode) const
+QByteArray PageBase::packet(int i, int j) const
 {
-	int arrayIndex = packetNumber;
+	if (m_designationPackets[i-26][j] == nullptr)
+		return QByteArray(); // Blank result
 
-	if (packetNumber >= 26)
-		arrayIndex += (packetNumber - 26) * 16 + designationCode;
-	return packetNeededArrayIndex(arrayIndex);
+	return *m_designationPackets[i-26][j];
 }
 
-bool PageBase::packetNeededArrayIndex(int arrayIndex) const
-{
-	return m_packets[arrayIndex] != nullptr;
-}
 
-bool PageBase::setPacket(int packetNumber, QByteArray packetContents)
+bool PageBase::setPacket(int i, QByteArray packetContents)
 {
-	return setPacket(packetNumber, 0, packetContents);
-}
-
-bool PageBase::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
-{
-	int arrayIndex = packetNumber;
-
-	if (packetNumber >= 26)
-		arrayIndex += (packetNumber - 26) * 16 + designationCode;
-	return setPacketArrayIndex(arrayIndex, packetContents);
-}
-
-bool PageBase::setPacketArrayIndex(int arrayIndex, QByteArray packetContents)
-{
-	if (m_packets[arrayIndex] == nullptr)
-		m_packets[arrayIndex] = new QByteArray(40, 0x00);
-	*m_packets[arrayIndex] = packetContents;
+	if (m_displayPackets[i] == nullptr)
+		m_displayPackets[i] = new QByteArray(40, 0x00);
+	*m_displayPackets[i] = packetContents;
 
 	return true;
 }
-/*
-bool PageBase::deletePacket(int packetNumber, int designationCode)
+
+bool PageBase::setPacket(int i, int j, QByteArray packetContents)
 {
-	int arrayIndex = packetNumber;
+	if (m_designationPackets[i-26][j] == nullptr)
+		m_designationPackets[i-26][j] = new QByteArray(40, 0x00);
+	*m_designationPackets[i-26][j] = packetContents;
 
-	if (packetNumber >= 26)
-		arrayIndex += (packetNumber - 26) * 16 + designationCode;
-
-	return deletePacketArrayIndex(arrayIndex);
+	return true;
 }
 
-bool PageBase::deletePacketArrayIndex(int arrayIndex)
+/*
+bool PageBase::deletePacket(int i)
 {
-	if (m_packets[arrayIndex] != nullptr) {
-		delete m_packets[arrayIndex];
-		m_packets[arrayIndex] = nullptr;
+	if (m_displayPackets[i] != nullptr) {
+		delete m_displayPackets[i];
+		m_displayPackets[i] = nullptr;
+	}
+
+	return true;
+}
+
+bool PageBase::deletePacket(int i)
+{
+	if (m_designationPackets[i-26][j] != nullptr) {
+		delete m_designationPackets[i-26][j];
+		m_designationPackets[i-26][j] = nullptr;
 	}
 
 	return true;
 }
 */
+
 bool PageBase::setControlBit(int bitNumber, bool active)
 {
 	m_controlBits[bitNumber] = active;
