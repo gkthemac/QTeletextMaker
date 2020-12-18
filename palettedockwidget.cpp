@@ -75,18 +75,10 @@ void PaletteDockWidget::updateColourButton(int colourIndex)
 	QString qss = QString("background-color: #%1; color: #%2%2%2; border: none").arg(colourString).arg(blackOrWhite);
 	m_colourButton[colourIndex]->setStyleSheet(qss);
 
-	if (m_parentMainWidget->document()->currentSubPage()->CLUT(colourIndex) == m_parentMainWidget->document()->currentSubPage()->CLUT(colourIndex, 0)) {
+	if (m_parentMainWidget->document()->currentSubPage()->isPaletteDefault(colourIndex))
 		// Default colour was set, disable Reset button if all colours in row are default as well
-		for (int i=colourIndex & 0x18; i<(colourIndex & 0x18)+8; i++) {
-			if (i == 8)
-				continue;
-			if (m_parentMainWidget->document()->currentSubPage()->CLUT(i) != m_parentMainWidget->document()->currentSubPage()->CLUT(i, 0)) {
-				m_resetButton[colourIndex>>3]->setEnabled(true);
-				return;
-			}
-		}
-		m_resetButton[colourIndex>>3]->setEnabled(false);
-	} else
+		m_resetButton[colourIndex>>3]->setEnabled(!m_parentMainWidget->document()->currentSubPage()->isPaletteDefault(colourIndex & 0x18, colourIndex | 0x07));
+	else
 		m_resetButton[colourIndex>>3]->setEnabled(true);
 }
 

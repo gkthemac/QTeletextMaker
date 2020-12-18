@@ -82,7 +82,7 @@ void LevelOnePage::clearPage()
 	m_leftSidePanelDisplayed = m_rightSidePanelDisplayed = false;
 	m_sidePanelStatusL25 = true;
 	m_sidePanelColumns = 0;
-	std::copy(defaultCLUT, defaultCLUT+32, m_CLUT);
+	std::copy(m_defaultCLUT, m_defaultCLUT+32, m_CLUT);
 //	If clearPage() is called outside constructor, we need to implement localEnhance.clear();
 }
 
@@ -91,9 +91,8 @@ bool LevelOnePage::isEmpty() const
 	if (!localEnhance.isEmpty())
 		return false;
 
-	for (int i=0; i<32; i++)
-		if (m_CLUT[i] != defaultCLUT[i])
-			return false;
+	if (!isPaletteDefault(0, 31))
+		return false;
 
 	for (int r=0; r<25; r++)
 		for (int c=0; c<40; c++)
@@ -348,17 +347,10 @@ bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 		if (designationCode == 0) {
 			if (m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf)
 				return true;
-			for (int i=16; i<32; i++)
-				if (m_CLUT[i] != defaultCLUT[i])
-					return true;
-			return false;
+			return !isPaletteDefault(16, 31);
 		}
-		if (designationCode == 4) {
-			for (int i=0; i<16; i++)
-				if (m_CLUT[i] != defaultCLUT[i])
-					return true;
-			return false;
-		}
+		if (designationCode == 4)
+			return !isPaletteDefault(0,15);
 	}
 
 	return PageBase::packetNeeded(packetNumber, designationCode);
@@ -428,12 +420,32 @@ void LevelOnePage::setBlackBackgroundSubst(bool newBlackBackgroundSubst) { m_bla
 int LevelOnePage::CLUT(int index, int renderLevel) const
 {
 	if (renderLevel == 2)
-		return index>=16 ? m_CLUT[index] : defaultCLUT[index];
+		return index>=16 ? m_CLUT[index] : m_defaultCLUT[index];
 	else
-		return renderLevel==3 ? m_CLUT[index] : defaultCLUT[index];
+		return renderLevel==3 ? m_CLUT[index] : m_defaultCLUT[index];
 }
 
-void LevelOnePage::setCLUT(int index, int newColour) { m_CLUT[index] = newColour; }
+void LevelOnePage::setCLUT(int index, int newColour)
+{
+	if (index == 8)
+		return;
+	m_CLUT[index] = newColour;
+}
+
+bool LevelOnePage::isPaletteDefault(int colour) const
+{
+	return m_CLUT[colour] == m_defaultCLUT[colour];
+}
+
+bool LevelOnePage::isPaletteDefault(int fromColour, int toColour) const
+{
+	for (int i=fromColour; i<toColour; i++)
+		if (m_CLUT[i] != m_defaultCLUT[i])
+			return false;
+
+	return true;
+}
+
 void LevelOnePage::setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed) { m_leftSidePanelDisplayed = newLeftSidePanelDisplayed; }
 void LevelOnePage::setRightSidePanelDisplayed(bool newRightSidePanelDisplayed) { m_rightSidePanelDisplayed = newRightSidePanelDisplayed; }
 void LevelOnePage::setSidePanelColumns(int newSidePanelColumns) { m_sidePanelColumns = newSidePanelColumns; }
