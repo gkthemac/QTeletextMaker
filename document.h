@@ -78,6 +78,7 @@ public:
 	bool selectionActive() const { return m_selectionSubPage == currentSubPage(); }
 	void setSelection(int, int, int, int);
 	void cancelSelection();
+	int levelRequired() const;
 
 signals:
 	void cursorMoved();

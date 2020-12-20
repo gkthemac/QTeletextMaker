@@ -225,3 +225,16 @@ void TeletextDocument::cancelSelection()
 {
 	m_selectionSubPage = nullptr;
 }
+
+int TeletextDocument::levelRequired() const
+{
+	int levelSeen = 0;
+
+	for (auto &subPage : m_subPages) {
+		levelSeen = qMax(levelSeen, subPage->levelRequired());
+		if (levelSeen == 3)
+			break;
+	}
+
+	return levelSeen;
+}

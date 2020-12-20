@@ -446,6 +446,67 @@ bool LevelOnePage::isPaletteDefault(int fromColour, int toColour) const
 	return true;
 }
 
+int LevelOnePage::levelRequired() const
+{
+	if (!isPaletteDefault(0, 15))
+		return 3;
+
+	// TODO Check for X/28/1 for DCLUT for mode 1-3 DRCS characters - return 3
+
+	int levelSeen = (!isPaletteDefault(16,31) || m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf) ? 2 : 0;
+
+	if (localEnhance.isEmpty())
+		return levelSeen;
+
+	for (int i=0; i<localEnhance.size(); i++) {
+		if (localEnhance.at(i).modeExt() == 0x2e) // Font style
+			return 3;
+
+		if (levelSeen == 0)
+			// Check for Level 1.5 triplets
+			switch (localEnhance.at(i).modeExt()) {
+				case 0x04: // Set Active Position
+				case 0x07: // Address Row 0
+				case 0x1f: // Termination
+				case 0x22: // G3 character @ Level 1.5
+				case 0x2f: // G2 character
+				case 0x30 ... 0x3f: // G0 character with diacritical
+					levelSeen = qMax(levelSeen, 1);
+					break;
+			}
+		if (levelSeen < 2)
+			switch (localEnhance.at(i).modeExt()) {
+				// Check for Level 2.5 triplets
+				case 0x00: // Full screen colour
+				case 0x01: // Full row colour
+				case 0x10 ... 0x13: // Origin Modifer and Object Invocation
+				case 0x15 ... 0x17: // Object Definition
+					// Check if Object Defition is required only at Level 3.5
+					if ((localEnhance.at(i).address() & 0x18) == 0x10)
+						return 3;
+					else
+						levelSeen = qMax(levelSeen, 2);
+					break;
+				case 0x18: // DRCS Mode
+					// Check if DRCS is required only at Level 3.5
+					if ((localEnhance.at(i).data() & 0x30) == 0x20)
+						return 3;
+					else
+						levelSeen = qMax(levelSeen, 2);
+					break;
+				case 0x20: // Foreground colour
+				case 0x21: // G1 character
+				case 0x23: // Background colour
+				case 0x27 ... 0x29: // Flash functions, G0 and G2 charset designation, G0 character @ Level 2.5
+				case 0x2b ... 0x2d: // G3 character @ Level 2.5, display attributes, DRCS character
+					levelSeen = qMax(levelSeen, 2);
+					break;
+			}
+	}
+
+	return levelSeen;
+}
+
 void LevelOnePage::setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed) { m_leftSidePanelDisplayed = newLeftSidePanelDisplayed; }
 void LevelOnePage::setRightSidePanelDisplayed(bool newRightSidePanelDisplayed) { m_rightSidePanelDisplayed = newRightSidePanelDisplayed; }
 void LevelOnePage::setSidePanelColumns(int newSidePanelColumns) { m_sidePanelColumns = newSidePanelColumns; }

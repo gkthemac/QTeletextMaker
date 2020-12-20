@@ -115,6 +115,7 @@ private:
 
 	QLabel *m_subPageLabel, *m_cursorPositionLabel;
 	QToolButton *m_previousSubPageButton, *m_nextSubPageButton;
+	QRadioButton *m_levelRadioButton[4];
 
 	QString m_curFile;
 	bool m_isUntitled;

@@ -83,6 +83,7 @@ public:
 	void setCLUT(int, int);
 	bool isPaletteDefault(int) const;
 	bool isPaletteDefault(int, int) const;
+	int levelRequired() const;
 	bool leftSidePanelDisplayed() const { return m_leftSidePanelDisplayed; }
 	void setLeftSidePanelDisplayed(bool);
 	bool rightSidePanelDisplayed() const { return m_rightSidePanelDisplayed; }

@@ -629,19 +629,19 @@ void MainWindow::createStatusBar()
 
 	statusBar()->addPermanentWidget(new QLabel("Level"));
 
-	QRadioButton *level1 = new QRadioButton("1");
-	QRadioButton *level15 = new QRadioButton("1.5");
-	QRadioButton *level25 = new QRadioButton("2.5");
-	QRadioButton *level35 = new QRadioButton("3.5");
-	statusBar()->addPermanentWidget(level1);
-	statusBar()->addPermanentWidget(level15);
-	statusBar()->addPermanentWidget(level25);
-	statusBar()->addPermanentWidget(level35);
-	level1->toggle();
-	connect(level1, &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(0); m_textWidget->update(); });
-	connect(level15, &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(1); m_textWidget->update(); });
-	connect(level25, &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(2); m_textWidget->update(); });
-	connect(level35, &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(3); m_textWidget->update(); });
+	m_levelRadioButton[0] = new QRadioButton("1");
+	m_levelRadioButton[1] = new QRadioButton("1.5");
+	m_levelRadioButton[2] = new QRadioButton("2.5");
+	m_levelRadioButton[3] = new QRadioButton("3.5");
+	statusBar()->addPermanentWidget(m_levelRadioButton[0]);
+	statusBar()->addPermanentWidget(m_levelRadioButton[1]);
+	statusBar()->addPermanentWidget(m_levelRadioButton[2]);
+	statusBar()->addPermanentWidget(m_levelRadioButton[3]);
+	m_levelRadioButton[0]->toggle();
+	connect(m_levelRadioButton[0], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(0); m_textWidget->update(); });
+	connect(m_levelRadioButton[1], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(1); m_textWidget->update(); });
+	connect(m_levelRadioButton[2], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(2); m_textWidget->update(); });
+	connect(m_levelRadioButton[3], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(3); m_textWidget->update(); });
 	statusBar()->showMessage(tr("Ready"));
 }
 
@@ -717,6 +717,8 @@ bool MainWindow::maybeSave()
 
 void MainWindow::loadFile(const QString &fileName)
 {
+	int levelSeen;
+
 	QFile file(fileName);
 	if (!file.open(QFile::ReadOnly | QFile::Text)) {
 		QMessageBox::warning(this, tr("QTeletextMaker"), tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
@@ -726,6 +728,9 @@ void MainWindow::loadFile(const QString &fileName)
 
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 	loadTTI(&file, m_textWidget->document());
+	levelSeen = m_textWidget->document()->levelRequired();
+	m_levelRadioButton[levelSeen]->toggle();
+	m_textWidget->pageRender()->setRenderLevel(levelSeen);
 	updatePageWidgets();
 
 	QApplication::restoreOverrideCursor();
