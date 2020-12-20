@@ -529,11 +529,8 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 	switch (role) {
 		case Qt::UserRole+1:
 			switch (mode) {
-				case 0x00: // Full screen colour
 				case 0x01: // Full row colour
 				case 0x07: // Address row 0
-				case 0x20: // Foreground colour
-				case 0x23: // Background colour
 					// Colour index
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x60, value.toInt(), role));
 					break;
@@ -569,7 +566,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 					// Proportional
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7e, value.toInt(), role));
 					break;
-				default:
+				default: // Others set the complete data value
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, value.toInt(), role));
 			}
 			break;
@@ -585,8 +582,8 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 				case 0x11 ... 0x13: // Invoke object
 					if ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x08) == 0x08) {
 						// Local object: Designation code
-						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x07, value.toInt() << 4, role));
-						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x3e, value.toInt() >> 3, role));
+						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x0f, (value.toInt() & 0x07) << 4, role));
+						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x38, value.toInt() >> 3, role));
 					} else
 						// (G)POP object: Subpage
 						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x30, value.toInt(), role));
@@ -594,7 +591,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 				case 0x15 ... 0x17: // Define object
 					// Local object: Designation code
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x0f, (value.toInt() & 0x07) << 4, role));
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x3e, value.toInt() >> 3, role));
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x38, value.toInt() >> 3, role));
 					break;
 				case 0x18: // DRCS Mode
 					// Required at level 3.5
