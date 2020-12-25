@@ -48,7 +48,7 @@ void InsertTripletCommand::redo()
 		m_x26Model->beginInsertRows(QModelIndex(), m_row, m_row+m_count-1);
 
 	for (int i=0; i<m_count; i++)
-		m_teletextDocument->currentSubPage()->localEnhance.insert(m_row+i, m_insertedTriplet);
+		m_teletextDocument->currentSubPage()->enhancements()->insert(m_row+i, m_insertedTriplet);
 
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
@@ -74,7 +74,7 @@ void InsertTripletCommand::undo()
 		m_x26Model->beginRemoveRows(QModelIndex(), m_row, m_row+m_count-1);
 
 	for (int i=0; i<m_count; i++)
-		m_teletextDocument->currentSubPage()->localEnhance.removeAt(m_row);
+		m_teletextDocument->currentSubPage()->enhancements()->removeAt(m_row);
 
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
@@ -92,7 +92,7 @@ DeleteTripletCommand::DeleteTripletCommand(TeletextDocument *teletextDocument, X
 	m_x26Model = x26Model;
 	m_row = row;
 	m_count = count;
-	m_deletedTriplet = m_teletextDocument->subPage(m_subPageIndex)->localEnhance.at(m_row);
+	m_deletedTriplet = m_teletextDocument->subPage(m_subPageIndex)->enhancements()->at(m_row);
 	setText(QString("delete triplet d%1 t%2").arg(m_row / 13).arg(m_row % 13));;
 	// BUG we only store one of the deleted triplets
 	if (m_count > 1)
@@ -106,7 +106,7 @@ void DeleteTripletCommand::redo()
 
 	m_x26Model->beginRemoveRows(QModelIndex(), m_row, m_row+m_count-1);
 	for (int i=0; i<m_count; i++)
-		m_teletextDocument->currentSubPage()->localEnhance.removeAt(m_row);
+		m_teletextDocument->currentSubPage()->enhancements()->removeAt(m_row);
 	m_x26Model->endRemoveRows();
 
 	m_teletextDocument->emit subPageSelected();
@@ -123,7 +123,7 @@ void DeleteTripletCommand::undo()
 		m_x26Model->beginInsertRows(QModelIndex(), m_row, m_row+m_count-1);
 
 	for (int i=0; i<m_count; i++)
-		m_teletextDocument->currentSubPage()->localEnhance.insert(m_row+i, m_deletedTriplet);
+		m_teletextDocument->currentSubPage()->enhancements()->insert(m_row+i, m_deletedTriplet);
 
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
@@ -143,7 +143,7 @@ EditTripletCommand::EditTripletCommand(TeletextDocument *teletextDocument, X26Mo
 	m_x26Model = x26Model;
 	m_row = row;
 	m_role = role;
-	m_oldTriplet = m_newTriplet = teletextDocument->currentSubPage()->localEnhance.at(m_row);
+	m_oldTriplet = m_newTriplet = teletextDocument->currentSubPage()->enhancements()->at(m_row);
 	setText(QString("edit triplet d%1 t%2").arg(m_row / 13).arg(m_row % 13));;
 	switch (tripletPart) {
 		case ETaddress:
@@ -164,7 +164,7 @@ void EditTripletCommand::redo()
 	if (m_teletextDocument->currentSubPageIndex() != m_subPageIndex)
 		m_teletextDocument->selectSubPageIndex(m_subPageIndex, true);
 
-	m_teletextDocument->currentSubPage()->localEnhance[m_row] = m_newTriplet;
+	m_teletextDocument->currentSubPage()->enhancements()->operator[](m_row) = m_newTriplet;
 	m_x26Model->emit dataChanged(m_x26Model->createIndex(m_row, 0), m_x26Model->createIndex(m_row, 3), {m_role});
 	m_teletextDocument->emit refreshNeeded();
 
@@ -179,7 +179,7 @@ void EditTripletCommand::undo()
 	if (m_teletextDocument->currentSubPageIndex() != m_subPageIndex)
 		m_teletextDocument->selectSubPageIndex(m_subPageIndex, true);
 
-	m_teletextDocument->currentSubPage()->localEnhance[m_row] = m_oldTriplet;
+	m_teletextDocument->currentSubPage()->enhancements()->operator[](m_row) = m_oldTriplet;
 	m_x26Model->emit dataChanged(m_x26Model->createIndex(m_row, 0), m_x26Model->createIndex(m_row, 3), {m_role});
 	m_teletextDocument->emit refreshNeeded();
 	m_teletextDocument->emit tripletCommandHighlight(m_row);

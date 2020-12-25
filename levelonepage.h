@@ -56,6 +56,8 @@ public:
 
 	void clearPage();
 
+	QList<X26Triplet> *enhancements() { return &m_enhancements; };
+
 /*	void setSubPageNumber(int); */
 	int cycleValue() const { return m_cycleValue; };
 	void setCycleValue(int);
@@ -105,8 +107,6 @@ public:
 	int composeLinkSubPageCodes(int linkNumber) const { return m_composeLink[linkNumber].subPageCodes; }
 	void setComposeLinkSubPageCodes(int, int);
 
-	QList<X26Triplet> localEnhance;
-
 private:
 	unsigned char m_level1Page[25][40];
 /*	int m_subPageNumber; */
@@ -126,6 +126,7 @@ private:
 		int pageNumber, subPageCodes;
 	} m_composeLink[8];
 
+	QList<X26Triplet> m_enhancements;
 	X26Triplet m_paddingX26Triplet;
 
 	const int m_defaultCLUT[32] = {

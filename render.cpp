@@ -128,7 +128,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 	int originModifierC=0;
 
 	do {
-		x26Triplet = &m_levelOnePage->localEnhance.at(tripletNumber);
+		x26Triplet = &m_levelOnePage->enhancements()->at(tripletNumber);
 		if (x26Triplet->isRowTriplet())
 			// Row address group
 			switch (x26Triplet->mode()) {
@@ -153,7 +153,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 					}
 					break;
 				case 0x10: // Origin modifier
-					if (m_renderLevel >= 2 && (tripletNumber+1) < m_levelOnePage->localEnhance.size() && m_levelOnePage->localEnhance.at(tripletNumber+1).mode() >= 0x11 && m_levelOnePage->localEnhance.at(tripletNumber+1).mode() <= 0x13 && x26Triplet->address() >= 40 && x26Triplet->data() < 72) {
+					if (m_renderLevel >= 2 && (tripletNumber+1) < m_levelOnePage->enhancements()->size() && m_levelOnePage->enhancements()->at(tripletNumber+1).mode() >= 0x11 && m_levelOnePage->enhancements()->at(tripletNumber+1).mode() <= 0x13 && x26Triplet->address() >= 40 && x26Triplet->data() < 72) {
 						originModifierR = x26Triplet->address()-40;
 						originModifierC = x26Triplet->data();
 					}
@@ -168,21 +168,21 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 								break;
 							int tripletPointer = ((x26Triplet->data() >> 4) | ((x26Triplet->address() & 1) << 3)) * 13 + (x26Triplet->data() & 0x0f);
 							// Can't point to triplet beyond the end of the Local Enhancement Data
-							if ((tripletPointer+1) >= m_levelOnePage->localEnhance.size())
+							if ((tripletPointer+1) >= m_levelOnePage->enhancements()->size())
 								break;
 							// Check if we're pointing to an actual Object Definition of the same type
-							if ((x26Triplet->mode() | 0x04) != m_levelOnePage->localEnhance.at(tripletPointer).mode())
+							if ((x26Triplet->mode() | 0x04) != m_levelOnePage->enhancements()->at(tripletPointer).mode())
 								break;
 							// The Object Definition can't declare it's at triplet 13-15; only 12 triplets per packet
-							if ((m_levelOnePage->localEnhance.at(tripletPointer).data() & 0x0f) > 12)
+							if ((m_levelOnePage->enhancements()->at(tripletPointer).data() & 0x0f) > 12)
 								break;
 							// Check if the Object Definition triplet is where it declares it is
-							if ((((m_levelOnePage->localEnhance.at(tripletPointer).data() >> 4) | ((m_levelOnePage->localEnhance.at(tripletPointer).address() & 1) << 3)) * 13 + (m_levelOnePage->localEnhance.at(tripletPointer).data() & 0x0f)) != tripletPointer)
+							if ((((m_levelOnePage->enhancements()->at(tripletPointer).data() >> 4) | ((m_levelOnePage->enhancements()->at(tripletPointer).address() & 1) << 3)) * 13 + (m_levelOnePage->enhancements()->at(tripletPointer).data() & 0x0f)) != tripletPointer)
 								break;
 							// Is the object required at the current presentation Level?
-							if (m_renderLevel == 2 && (m_levelOnePage->localEnhance.at(tripletPointer).address() & 0x08) == 0x00)
+							if (m_renderLevel == 2 && (m_levelOnePage->enhancements()->at(tripletPointer).address() & 0x08) == 0x00)
 								break;
-							if (m_renderLevel == 3 && (m_levelOnePage->localEnhance.at(tripletPointer).address() & 0x10) == 0x00)
+							if (m_renderLevel == 3 && (m_levelOnePage->enhancements()->at(tripletPointer).address() & 0x10) == 0x00)
 								break;
 							EnhanceLayer *newLayer = new EnhanceLayer;
 							m_textLayer.push_back(newLayer);
@@ -229,7 +229,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 				enhanceLayer->enhanceMap.insert((activePosition.row() << 8) | activePosition.column(), ((x26Triplet->mode() | 0x20) << 8) | x26Triplet->data());
 		}
 		tripletNumber++;
-	} while (!terminatorFound && tripletNumber < m_levelOnePage->localEnhance.size());
+	} while (!terminatorFound && tripletNumber < m_levelOnePage->enhancements()->size());
 }
 
 void TeletextPageRender::decodePage()
@@ -256,7 +256,7 @@ void TeletextPageRender::decodePage()
 		setFullRowColour(r ,downwardsFullRowColour);
 
 	m_textLayer[1]->enhanceMap.clear();
-	if (m_renderLevel == 0 || m_levelOnePage->localEnhance.empty())
+	if (m_renderLevel == 0 || m_levelOnePage->enhancements()->empty())
 		return;
 
 	m_textLayer[1]->setFullScreenColour(-1);

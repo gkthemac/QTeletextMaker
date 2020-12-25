@@ -38,7 +38,7 @@ void X26Model::setX26ListLoaded(bool newListLoaded)
 
 int X26Model::rowCount(const QModelIndex & /*parent*/) const
 {
-	return m_listLoaded ? m_parentMainWidget->document()->currentSubPage()->localEnhance.size() : 0;
+	return m_listLoaded ? m_parentMainWidget->document()->currentSubPage()->enhancements()->size() : 0;
 }
 
 int X26Model::columnCount(const QModelIndex & /*parent*/) const
@@ -48,17 +48,17 @@ int X26Model::columnCount(const QModelIndex & /*parent*/) const
 
 QVariant X26Model::data(const QModelIndex &index, int role) const
 {
-	int mode = m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).mode();
+	int mode = m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).mode();
 
 	// Qt::UserRole will always return the raw values
 	if (role == Qt::UserRole)
 		switch (index.column()) {
 			case 0:
-				return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address();
+				return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address();
 			case 1:
-				return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).mode();
+				return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).mode();
 			case 2:
-				return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data();
+				return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data();
 			default:
 				return QVariant();
 		}
@@ -68,30 +68,30 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 			case 0:
 				// Show row number only if address part of triplet actually represents a row
 				// i.e. Full row colour, Set Active Position and Origin Modifier
-				if (!m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).isRowTriplet())
+				if (!m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).isRowTriplet())
 					return QVariant();
 				// For Origin Modifier address of 40 refers to same row, so show it as 0
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).mode() == 0x10) {
-					if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() == 40)
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).mode() == 0x10) {
+					if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() == 40)
 						return 0;
 					else
-						return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).addressRow();
+						return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).addressRow();
 				}
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).mode() == 0x01 || m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).mode() == 0x04)
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).addressRow();
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).mode() == 0x01 || m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).mode() == 0x04)
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).addressRow();
 				else
 					return QVariant();
 			case 1:
-				if (!m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).isRowTriplet())
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).addressColumn();
+				if (!m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).isRowTriplet())
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).addressColumn();
 				// For Set Active Position and Origin Modifier, data is the column
 				else if (mode == 0x04 || mode == 0x10)
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data();
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data();
 				else
 					return QVariant();
 		}
 
-	if (!m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).isRowTriplet())
+	if (!m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).isRowTriplet())
 		mode |= 0x20;
 
 	QString result;
@@ -103,14 +103,14 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 		switch (mode) {
 			case 0x01: // Full row colour
 			case 0x07: // Address row 0
-				if ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x60) == 0x60)
+				if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x60) == 0x60)
 					result = ", down to bottom";
-				else if ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x60) == 0x00)
+				else if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x60) == 0x00)
 					result = ", this row only";
 				// fall-through
 			case 0x00: // Full screen colour
-				if (!(result.isEmpty()) || (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x60) == 0x00) {
-					result.prepend(QString("CLUT %1:%2").arg((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x18) >> 3).arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x07));
+				if (!(result.isEmpty()) || (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x60) == 0x00) {
+					result.prepend(QString("CLUT %1:%2").arg((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x18) >> 3).arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x07));
 					return result;
 				}
 				break;
@@ -119,9 +119,9 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				// For Set Active Position and Origin Modifier, data is the column, so return blank
 				return QVariant();
 			case 0x11 ... 0x13: // Invoke object
-				switch (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x18) {
+				switch (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x18) {
 					case 0x08:
-						return QString("Local: d%1 t%2").arg((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() >> 4) | ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x01) << 3)).arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x0f);
+						return QString("Local: d%1 t%2").arg((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >> 4) | ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x01) << 3)).arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f);
 					case 0x10:
 						result = "POP";
 						break;
@@ -130,15 +130,15 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 						break;
 					// case 0x00: shouldn't happen since that would make a column triplet, not a row triplet
 				}
-				result.append(QString(": subpage %1 pkt %2 trplt %3 bits ").arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x0f).arg((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x03) + 1).arg(((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x60) >> 5) * 3 + (mode & 0x03)));
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x10)
+				result.append(QString(": subpage %1 pkt %2 trplt %3 bits ").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f).arg((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x03) + 1).arg(((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x60) >> 5) * 3 + (mode & 0x03)));
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x10)
 					result.append("10-18");
 				else
 					result.append("1-9");
 				return result;
 			case 0x15 ... 0x17: // Define object
-				result = (QString("Local: d%1 t%2, ").arg((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() >> 4) | ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 1) << 3)).arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x0f));
-				switch (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x18) {
+				result = (QString("Local: d%1 t%2, ").arg((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >> 4) | ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 1) << 3)).arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f));
+				switch (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x18) {
 					case 0x08:
 						result.append("L2.5 only");
 						break;
@@ -152,9 +152,9 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				}
 				return result;
 			case 0x18: // DRCS mode
-				result = (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x40) == 0x40 ? "Normal" : "Global";
-				result.append(QString(": subpage %1, ").arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x0f));
-				switch (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x30) {
+				result = (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x40) == 0x40 ? "Normal" : "Global";
+				result.append(QString(": subpage %1, ").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f));
+				switch (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x30) {
 					case 0x10:
 						result.append("L2.5 only");
 						break;
@@ -170,7 +170,7 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				}
 				return result;
 			case 0x1f: // Termination
-				switch (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x07) {
+				switch (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x07) {
 					case 0x00:
 						return "Intermed (G)POP subpage. End of object, more follows";
 						break;
@@ -198,23 +198,23 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				}
 				break;
 			case 0x08 ... 0x0d: // PDC
-				return QString("0x%1").arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data(), 2, 16, QChar('0'));
+				return QString("0x%1").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data(), 2, 16, QChar('0'));
 			case 0x20: // Foreground colour
 			case 0x23: // Background colour
-				if (!(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x60))
-					return QString("CLUT %1:%2").arg((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x18) >> 3).arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x07);
+				if (!(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x60))
+					return QString("CLUT %1:%2").arg((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x18) >> 3).arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x07);
 				break;
 			case 0x21: // G1 mosaic character
 			case 0x22: // G3 mosaic character at level 1.5
 			case 0x29: // G0 character
 			case 0x2b: // G3 mosaic character at level >=2.5
 			case 0x2f ... 0x3f: // G2 character or G0 diacrtitical mark
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() >= 0x20)
-					return QString("0x%1").arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data(), 2, 16);
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >= 0x20)
+					return QString("0x%1").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data(), 2, 16);
 				break;
 			case 0x27: // Flash functions
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() < 0x18) {
-					switch (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x03) {
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() < 0x18) {
+					switch (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x03) {
 						case 0x00:
 							result = "Steady";
 							break;
@@ -228,7 +228,7 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 							result = "Adj CLUT";
 							break;
 					}
-					switch (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x1c) {
+					switch (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x1c) {
 						case 0x00:
 							result.append(", 1Hz");
 							break;
@@ -253,20 +253,20 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				break;
 			//TODO case 0x28: // G0 and G2 designation
 			case 0x2c: // Display attributes
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x02)
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x02)
 					result.append("Boxing ");
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x04)
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x04)
 					result.append("Conceal ");
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x10)
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x10)
 					result.append("Invert ");
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x20)
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x20)
 					result.append("Underline ");
 				if (result.isEmpty())
 					result = "None";
 				else
 					// Chop off the last space
 					result.chop(1);
-				switch (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x41) {
+				switch (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x41) {
 					case 0x00:
 						result.append(", normal size");
 						break;
@@ -282,35 +282,35 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				}
 				return result;
 			case 0x2d: // DRCS character
-				result = (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x40) == 0x40 ? "Normal" : "Global";
-				result.append(QString(": %1").arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x3f));
+				result = (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x40) == 0x40 ? "Normal" : "Global";
+				result.append(QString(": %1").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x3f));
 				return result;
 			case 0x2e: // Font style
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x01)
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x01)
 					result.append("Proportional ");
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x02)
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x02)
 					result.append("Bold ");
-				if (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x04)
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x04)
 					result.append("Italic ");
 				if (result.isEmpty())
 					result = "None";
 				else
 					// Chop off the last space
 					result.chop(1);
-				result.append(QString(", %1 row(s)").arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() >> 4));
+				result.append(QString(", %1 row(s)").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >> 4));
 				return result;
 			case 0x28: // Modified G0 and G2 character set
 			case 0x26: // PDC
-				return QString("0x%1").arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data(), 2, 16, QChar('0'));
+				return QString("0x%1").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data(), 2, 16, QChar('0'));
 			default: // Reserved
-				return QString("Reserved 0x%1").arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data(), 2, 16, QChar('0'));
+				return QString("Reserved 0x%1").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data(), 2, 16, QChar('0'));
 		}
 		// Reserved mode or data
-		return QString("Reserved 0x%1").arg(m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data(), 2, 16, QChar('0'));
+		return QString("Reserved 0x%1").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data(), 2, 16, QChar('0'));
 	}
 
 	if (role == Qt::EditRole && index.column() == 2) {
-		if (!m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).isRowTriplet())
+		if (!m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).isRowTriplet())
 			mode |= 0x20;
 		return mode;
 	}
@@ -327,34 +327,34 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				case 0x20: // Foreground colour
 				case 0x23: // Background colour
 					// Colour index
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x1f;
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x1f;
 				case 0x11 ... 0x13: // Invoke object
 					// Object source: Local, POP or GPOP
-					return ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x18) >> 3) - 1;
+					return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x18) >> 3) - 1;
 					break;
 				case 0x15 ... 0x17: // Define object
 					// Required at level 2.5
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x08) == 0x08;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x08) == 0x08;
 				case 0x18: // DRCS mode
 					// Required at level 2.5
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x10) == 0x10;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x10) == 0x10;
 				case 0x1f: // Termination
 					// Intermed POP subpage|Last POP subpage|Local Object|Local enhance
-					return ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x06) >> 1);
+					return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x06) >> 1);
 				case 0x27: // Flash functions
 					// Flash mode
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x03;
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x03;
 				case 0x2c: // Display attributes
 					// Text size
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x01) | ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x40) >> 5);
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x01) | ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x40) >> 5);
 				case 0x2d: // DRCS character
 					// Normal or Global
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x40) == 0x40;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x40) == 0x40;
 				case 0x2e: // Font style
 					// Proportional
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x01) == 0x01;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x01) == 0x01;
 				default:
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data();
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data();
 			}
 			break;
 
@@ -363,61 +363,61 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				case 0x01: // Full row colour
 				case 0x07: // Address row 0
 					// "this row only" or "down to bottom"
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x60) == 0x60;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x60) == 0x60;
 				case 0x11 ... 0x13: // Invoke object
-					if ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x08) == 0x08)
+					if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x08) == 0x08)
 						// Local object: Designation code
-						return ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x01) << 3) | ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x70) >> 4);
+						return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x01) << 3) | ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x70) >> 4);
 					else
 						// (G)POP object: Subpage
-						return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x0f;
+						return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f;
 					break;
 				case 0x15 ... 0x17: // Define object
 					// Local object: Designation code
-					return ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x01) << 3) | ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x70) >> 4);
+					return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x01) << 3) | ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x70) >> 4);
 				case 0x18: // DRCS mode
 					// Required at level 3.5
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x20) == 0x20;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x20) == 0x20;
 				case 0x1f: // Termination
 					// More follows/Last
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x01) == 0x01;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x01) == 0x01;
 				case 0x27: // Flash functions
 					// Flash rate and phase
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() >> 2;
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >> 2;
 				case 0x2c: // Display attributes
 					// Boxing/window
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x02) == 0x02;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x02) == 0x02;
 				case 0x2d: // DRCS character
 					// Character number
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x3f;
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x3f;
 				case 0x2e: // Font style
 					// Bold
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x02) == 0x02;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x02) == 0x02;
 			}
 			break;
 
 		case Qt::UserRole+3:
 			switch (mode) {
 				case 0x11 ... 0x13: // Invoke object
-					if ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x08) == 0x08)
+					if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x08) == 0x08)
 						// Local object: Triplet number
-						return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x0f;
+						return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f;
 					else
 						// (G)POP object: Pointer location
-						return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x03) + 1;
+						return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x03) + 1;
 					break;
 				case 0x15 ... 0x17: // Define object
 					// Local object: Triplet number
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x0f;
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f;
 				case 0x18: // DRCS mode
 					// Normal or Global
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x40) == 0x40;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x40) == 0x40;
 				case 0x2c: // Display attributes
 					// Conceal
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x04) == 0x04;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x04) == 0x04;
 				case 0x2e: // Font style
 					// Italics
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x04) == 0x04;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x04) == 0x04;
 			}
 			break;
 
@@ -425,19 +425,19 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 			switch (mode) {
 				case 0x11 ... 0x13: // Invoke object
 					// (G)POP object: Triplet number
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() >> 5;
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >> 5;
 				case 0x15 ... 0x17: // Define object
 					// Required at level 3.5
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x10) == 0x10;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x10) == 0x10;
 				case 0x18: // DRCS mode
 					// Subpage
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x0f;
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f;
 				case 0x2c: // Display attributes
 					// Invert
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x10) == 0x10;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x10) == 0x10;
 				case 0x2e: // Font style
 					// Number of rows
-					return m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() >> 4;
+					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >> 4;
 			}
 			break;
 
@@ -445,10 +445,10 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 			switch (mode) {
 				case 0x11 ... 0x13: // Invoke object
 					// (G)POP object: Pointer position
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x10) >> 4;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x10) >> 4;
 				case 0x2c: // Display attributes
 					// Underline/Separated
-					return (m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).data() & 0x20) == 0x20;
+					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x20) == 0x20;
 			}
 			break;
 	}
@@ -468,7 +468,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 		return true;
 	}
 
-	int mode = m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).modeExt();
+	int mode = m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).modeExt();
 
 	// Cooked row, column and triplet mode
 	if (role == Qt::EditRole && value.canConvert<int>()) {
@@ -502,12 +502,12 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, intValue, role));
 				return true;
 			case 2: // Cooked triplet mode
-				if (intValue < 0x20 && !m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).isRowTriplet()) {
+				if (intValue < 0x20 && !m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).isRowTriplet()) {
 					// Changing mode from column triplet to row triplet
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, 41, role));
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0, role));
 				}
-				if (intValue >= 0x20 && m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).isRowTriplet()) {
+				if (intValue >= 0x20 && m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).isRowTriplet()) {
 					// Changing mode from row triplet to column triplet
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, 0, role));
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0, role));
@@ -580,7 +580,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x1f, value.toInt() * 0x60, role));
 					break;
 				case 0x11 ... 0x13: // Invoke object
-					if ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x08) == 0x08) {
+					if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x08) == 0x08) {
 						// Local object: Designation code
 						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x0f, (value.toInt() & 0x07) << 4, role));
 						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x38, value.toInt() >> 3, role));
@@ -623,7 +623,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 		case Qt::UserRole+3:
 			switch (mode) {
 				case 0x11 ... 0x13: // Invoke object
-					if ((m_parentMainWidget->document()->currentSubPage()->localEnhance.at(index.row()).address() & 0x08) == 0x08)
+					if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x08) == 0x08)
 						// Local object: triplet number
 						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x70, value.toInt(), role));
 					else
@@ -724,7 +724,7 @@ bool X26Model::insertRows(int row, int count, const QModelIndex &parent)
 {
 	Q_UNUSED(parent);
 
-	m_parentMainWidget->document()->undoStack()->push(new InsertTripletCommand(m_parentMainWidget->document(), this, row, count, m_parentMainWidget->document()->currentSubPage()->localEnhance.at(row)));
+	m_parentMainWidget->document()->undoStack()->push(new InsertTripletCommand(m_parentMainWidget->document(), this, row, count, m_parentMainWidget->document()->currentSubPage()->enhancements()->at(row)));
 	return true;
 }
 

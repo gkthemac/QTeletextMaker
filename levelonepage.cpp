@@ -30,7 +30,7 @@ LevelOnePage::LevelOnePage()
 	m_paddingX26Triplet.setAddress(41);
 	m_paddingX26Triplet.setMode(0x1e);
 	m_paddingX26Triplet.setData(0);
-	localEnhance.reserve(208);
+	m_enhancements.reserve(208);
 	clearPage();
 }
 
@@ -39,7 +39,7 @@ LevelOnePage::LevelOnePage(const PageBase &other)
 	m_paddingX26Triplet.setAddress(41);
 	m_paddingX26Triplet.setMode(0x1e);
 	m_paddingX26Triplet.setData(0);
-	localEnhance.reserve(208);
+	m_enhancements.reserve(208);
 	clearPage();
 
 	for (int i=0; i<26; i++)
@@ -83,12 +83,12 @@ void LevelOnePage::clearPage()
 	m_sidePanelStatusL25 = true;
 	m_sidePanelColumns = 0;
 	std::copy(m_defaultCLUT, m_defaultCLUT+32, m_CLUT);
-//	If clearPage() is called outside constructor, we need to implement localEnhance.clear();
+//	If clearPage() is called outside constructor, we need to implement m_enhancements.clear();
 }
 
 bool LevelOnePage::isEmpty() const
 {
-	if (!localEnhance.isEmpty())
+	if (!m_enhancements.isEmpty())
 		return false;
 
 	if (!isPaletteDefault(0, 31))
@@ -129,14 +129,14 @@ QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
 		for (int i=0; i<13; i++) {
 			enhanceListPointer = designationCode*13+i;
 
-			if (enhanceListPointer < localEnhance.size()) {
-				result[i*3+1] = localEnhance.at(enhanceListPointer).address();
-				result[i*3+2] = localEnhance.at(enhanceListPointer).mode() | ((localEnhance.at(enhanceListPointer).data() & 1) << 5);
-				result[i*3+3] = localEnhance.at(enhanceListPointer).data() >> 1;
+			if (enhanceListPointer < m_enhancements.size()) {
+				result[i*3+1] = m_enhancements.at(enhanceListPointer).address();
+				result[i*3+2] = m_enhancements.at(enhanceListPointer).mode() | ((m_enhancements.at(enhanceListPointer).data() & 1) << 5);
+				result[i*3+3] = m_enhancements.at(enhanceListPointer).data() >> 1;
 
 				// If this is the last triplet, get a copy to repeat to the end of the packet
-				if (enhanceListPointer == localEnhance.size()-1) {
-					lastTriplet = localEnhance.at(enhanceListPointer);
+				if (enhanceListPointer == m_enhancements.size()-1) {
+					lastTriplet = m_enhancements.at(enhanceListPointer);
 					// If the last triplet was NOT a Termination Marker, make up one
 					if (lastTriplet.mode() != 0x1f || lastTriplet.address() != 0x3f) {
 						lastTriplet.setAddress(0x3f);
@@ -224,11 +224,11 @@ bool LevelOnePage::setPacket(int packetNumber, QByteArray packetContents)
 bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
 {
 	if (packetNumber == 26) {
-		// Preallocate entries in the localEnhance list to hold our incoming triplets.
+		// Preallocate entries in the m_enhancements list to hold our incoming triplets.
 		// We write "dummy" reserved 11110 Row Triplets in the allocated entries which then get overwritten by the packet contents.
 		// This is in case of missing packets so we can keep Local Object pointers valid.
-		while (localEnhance.size() < (designationCode+1)*13)
-			localEnhance.append(m_paddingX26Triplet);
+		while (m_enhancements.size() < (designationCode+1)*13)
+			m_enhancements.append(m_paddingX26Triplet);
 
 		int enhanceListPointer;
 		X26Triplet newX26Triplet;
@@ -239,12 +239,12 @@ bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray p
 			newX26Triplet.setAddress(packetContents.at(i*3+1) & 0x3f);
 			newX26Triplet.setMode(packetContents.at(i*3+2) & 0x1f);
 			newX26Triplet.setData(((packetContents.at(i*3+3) & 0x3f) << 1) | ((packetContents.at(i*3+2) & 0x20) >> 5));
-			localEnhance[enhanceListPointer] = newX26Triplet;
+			m_enhancements[enhanceListPointer] = newX26Triplet;
 		}
 		if (newX26Triplet.mode() == 0x1f && newX26Triplet.address() == 0x3f && newX26Triplet.data() & 0x01)
 			// Last triplet was a Termination Marker (without ..follows) so clean up the repeated ones
-			while (localEnhance.size()>1 && localEnhance.at(localEnhance.size()-2).mode() == 0x1f && localEnhance.at(localEnhance.size()-2).address() == 0x3f && localEnhance.at(localEnhance.size()-2).data() == newX26Triplet.data())
-				localEnhance.removeLast();
+			while (m_enhancements.size()>1 && m_enhancements.at(m_enhancements.size()-2).mode() == 0x1f && m_enhancements.at(m_enhancements.size()-2).address() == 0x3f && m_enhancements.at(m_enhancements.size()-2).data() == newX26Triplet.data())
+				m_enhancements.removeLast();
 
 		return true;
 	}
@@ -324,7 +324,7 @@ bool LevelOnePage::packetNeeded(int packetNumber) const
 bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 {
 	if (packetNumber == 26)
-		return ((localEnhance.size()+12) / 13) > designationCode;
+		return ((m_enhancements.size()+12) / 13) > designationCode;
 
 	if (packetNumber == 27 && designationCode == 0) {
 		for (int i=0; i<6; i++)
@@ -455,16 +455,16 @@ int LevelOnePage::levelRequired() const
 
 	int levelSeen = (!isPaletteDefault(16,31) || m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf) ? 2 : 0;
 
-	if (localEnhance.isEmpty())
+	if (m_enhancements.isEmpty())
 		return levelSeen;
 
-	for (int i=0; i<localEnhance.size(); i++) {
-		if (localEnhance.at(i).modeExt() == 0x2e) // Font style
+	for (int i=0; i<m_enhancements.size(); i++) {
+		if (m_enhancements.at(i).modeExt() == 0x2e) // Font style
 			return 3;
 
 		if (levelSeen == 0)
 			// Check for Level 1.5 triplets
-			switch (localEnhance.at(i).modeExt()) {
+			switch (m_enhancements.at(i).modeExt()) {
 				case 0x04: // Set Active Position
 				case 0x07: // Address Row 0
 				case 0x1f: // Termination
@@ -475,21 +475,21 @@ int LevelOnePage::levelRequired() const
 					break;
 			}
 		if (levelSeen < 2)
-			switch (localEnhance.at(i).modeExt()) {
+			switch (m_enhancements.at(i).modeExt()) {
 				// Check for Level 2.5 triplets
 				case 0x00: // Full screen colour
 				case 0x01: // Full row colour
 				case 0x10 ... 0x13: // Origin Modifer and Object Invocation
 				case 0x15 ... 0x17: // Object Definition
 					// Check if Object Defition is required only at Level 3.5
-					if ((localEnhance.at(i).address() & 0x18) == 0x10)
+					if ((m_enhancements.at(i).address() & 0x18) == 0x10)
 						return 3;
 					else
 						levelSeen = qMax(levelSeen, 2);
 					break;
 				case 0x18: // DRCS Mode
 					// Check if DRCS is required only at Level 3.5
-					if ((localEnhance.at(i).data() & 0x30) == 0x20)
+					if ((m_enhancements.at(i).data() & 0x30) == 0x20)
 						return 3;
 					else
 						levelSeen = qMax(levelSeen, 2);

@@ -362,12 +362,12 @@ QString exportHashStringPackets(LevelOnePage *subPage)
 			result.append(":X284=" + x28StringBegin + colourToHexString(0) + colourToHexString(1) + x28StringEnd);
 	}
 
-	if (!subPage->localEnhance.isEmpty()) {
+	if (!subPage->enhancements()->isEmpty()) {
 		result.append(":X26=");
-		for (int i=0; i<subPage->localEnhance.size(); i++) {
-			result.append(base64[subPage->localEnhance.at(i).data() >> 1]);
-			result.append(base64[subPage->localEnhance.at(i).mode() | ((subPage->localEnhance.at(i).data() & 1) << 5)]);
-			result.append(base64[subPage->localEnhance.at(i).address()]);
+		for (int i=0; i<subPage->enhancements()->size(); i++) {
+			result.append(base64[subPage->enhancements()->at(i).data() >> 1]);
+			result.append(base64[subPage->enhancements()->at(i).mode() | ((subPage->enhancements()->at(i).data() & 1) << 5)]);
+			result.append(base64[subPage->enhancements()->at(i).address()]);
 		}
 	}
 
