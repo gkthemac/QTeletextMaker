@@ -8,6 +8,7 @@ HEADERS       = document.h \
                 mainwidget.h \
                 mainwindow.h \
                 pagebase.h \
+                pagex26base.h \
                 pageenhancementsdockwidget.h \
                 pageoptionsdockwidget.h \
                 palettedockwidget.h \
@@ -24,6 +25,7 @@ SOURCES       = document.cpp \
                 mainwidget.cpp \
                 mainwindow.cpp \
                 pagebase.cpp \
+                pagex26base.cpp \
                 pageenhancementsdockwidget.cpp \
                 pageoptionsdockwidget.cpp \
                 palettedockwidget.cpp \

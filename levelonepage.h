@@ -22,17 +22,15 @@
 
 #include <QByteArray>
 #include <QColor>
-#include <QList>
 #include <QObject>
 #include <QString>
 
-#include "pagebase.h"
+#include "pagex26base.h"
 #include "x26triplets.h"
 
 QColor CLUTtoQColor(int myColour);
 
-// If we inherit from QObject then we can't copy construct, so "make a new subpage that's a copy of this one" wouldn't work
-class LevelOnePage : public PageBase //: public QObject
+class LevelOnePage : public PageX26Base //: public QObject
 {
 	//Q_OBJECT
 
@@ -125,9 +123,6 @@ private:
 		bool level2p5, level3p5;
 		int pageNumber, subPageCodes;
 	} m_composeLink[8];
-
-	QList<X26Triplet> m_enhancements;
-	X26Triplet m_paddingX26Triplet;
 
 	const int m_defaultCLUT[32] = {
 		0x000, 0xf00, 0x0f0, 0xff0, 0x00f, 0xf0f, 0x0ff, 0xfff,
