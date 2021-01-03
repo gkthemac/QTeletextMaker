@@ -187,10 +187,11 @@ void EditTripletCommand::undo()
 
 bool EditTripletCommand::mergeWith(const QUndoCommand *command)
 {
-	const EditTripletCommand *previousCommand = static_cast<const EditTripletCommand *>(command);
+	const EditTripletCommand *newerCommand = static_cast<const EditTripletCommand *>(command);
 
-	if (m_row != previousCommand->m_row)
+	if (m_subPageIndex != newerCommand->m_subPageIndex || m_row != newerCommand->m_row)
 		return false;
-	m_newTriplet = previousCommand->m_newTriplet;
+
+	m_newTriplet = newerCommand->m_newTriplet;
 	return true;
 }

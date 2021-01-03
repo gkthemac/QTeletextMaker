@@ -60,7 +60,7 @@ private:
 class EditTripletCommand : public QUndoCommand
 {
 public:
-	enum { Id = 1 };
+	enum { Id = 201 };
 	enum EditTripletEnum { ETaddress, ETmode, ETdata };
 
 	EditTripletCommand(TeletextDocument *, X26Model *, int, int, int, int, int, QUndoCommand *parent = 0);
