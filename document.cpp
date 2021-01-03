@@ -69,7 +69,7 @@ void TeletextDocument::setPacketCoding(PacketCodingEnum newPacketEncoding)
 void TeletextDocument::selectSubPageIndex(int newSubPageIndex, bool forceRefresh)
 {
 	// forceRefresh overrides "beyond the last subpage" check, so inserting a subpage after the last one still shows - dangerous workaround?
-	if (forceRefresh || (newSubPageIndex != m_currentSubPageIndex && newSubPageIndex < m_subPages.size()-1)) {
+	if (forceRefresh || (newSubPageIndex != m_currentSubPageIndex && newSubPageIndex < m_subPages.size())) {
 		emit aboutToChangeSubPage();
 		m_currentSubPageIndex = newSubPageIndex;
 		emit subPageSelected();
