@@ -27,21 +27,26 @@
 class OverwriteCharacterCommand : public QUndoCommand
 {
 public:
+	enum { Id = 101 };
+
 	OverwriteCharacterCommand(TeletextDocument *, unsigned char, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
+	bool mergeWith(const QUndoCommand *) override;
+	int id() const override { return Id; }
 
 private:
 	TeletextDocument *m_teletextDocument;
-	unsigned char m_oldCharacter, m_newCharacter;
-	int m_subPageIndex, m_row, m_column;
+	unsigned char m_newCharacter, m_oldRowContents[40], m_newRowContents[40];
+	int m_subPageIndex, m_row, m_columnStart, m_columnEnd;
+	bool m_firstDo;
 };
 
 class ToggleMosaicBitCommand : public QUndoCommand
 {
 public:
-	enum { Id = 2 };
+	enum { Id = 102 };
 
 	ToggleMosaicBitCommand(TeletextDocument *, unsigned char, QUndoCommand *parent = 0);
 
@@ -59,15 +64,20 @@ private:
 class BackspaceCommand : public QUndoCommand
 {
 public:
+	enum { Id = 103 };
+
 	BackspaceCommand(TeletextDocument *, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
+	bool mergeWith(const QUndoCommand *) override;
+	int id() const override { return Id; }
 
 private:
 	TeletextDocument *m_teletextDocument;
-	unsigned char m_deletedCharacter;
-	int m_subPageIndex, m_row, m_column;
+	unsigned char m_oldRowContents[40], m_newRowContents[40];
+	int m_subPageIndex, m_row, m_columnStart, m_columnEnd;
+	bool m_firstDo;
 };
 
 class InsertSubPageCommand : public QUndoCommand

@@ -26,28 +26,56 @@ OverwriteCharacterCommand::OverwriteCharacterCommand(TeletextDocument *teletextD
 	m_teletextDocument = teletextDocument;
 	m_subPageIndex = teletextDocument->currentSubPageIndex();
 	m_row = teletextDocument->cursorRow();
-	m_column = teletextDocument->cursorColumn();
-	m_oldCharacter = teletextDocument->currentSubPage()->character(m_row, m_column);
+	m_columnStart = m_columnEnd = teletextDocument->cursorColumn();
+	for (int c=0; c<40; c++)
+		m_oldRowContents[c] = m_newRowContents[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
 	m_newCharacter = newCharacter;
+
+	setText(QObject::tr("overwrite char"));
+	m_firstDo = true;
 }
 
 void OverwriteCharacterCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_newCharacter);
-	m_teletextDocument->moveCursor(m_row, m_column);
+
+	// Only apply the typed character on the first do, m_newRowContents will remember it if we redo
+	if (m_firstDo) {
+		m_newRowContents[m_columnEnd] = m_newCharacter;
+		m_firstDo = false;
+	}
+	for (int c=0; c<40; c++)
+		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_newRowContents[c]);
+
+	m_teletextDocument->moveCursor(m_row, m_columnEnd);
 	m_teletextDocument->cursorRight();
-	setText(QObject::tr("overwrite char"));
 	emit m_teletextDocument->contentsChange(m_row);
 }
 
 void OverwriteCharacterCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_oldCharacter);
-	m_teletextDocument->moveCursor(m_row, m_column);
-	setText(QObject::tr("overwrite char"));
+
+	for (int c=0; c<40; c++)
+		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_oldRowContents[c]);
+
+	m_teletextDocument->moveCursor(m_row, m_columnStart);
 	emit m_teletextDocument->contentsChange(m_row);
+}
+
+bool OverwriteCharacterCommand::mergeWith(const QUndoCommand *command)
+{
+	const OverwriteCharacterCommand *newerCommand = static_cast<const OverwriteCharacterCommand *>(command);
+
+	// Has to be the next typed column on the same row
+	if (m_subPageIndex != newerCommand->m_subPageIndex || m_row != newerCommand->m_row || m_columnEnd != newerCommand->m_columnEnd-1)
+		return false;
+
+	m_columnEnd = newerCommand->m_columnEnd;
+	for (int c=0; c<40; c++)
+		m_newRowContents[c] = newerCommand->m_newRowContents[c];
+
+	return true;
 }
 
 
@@ -84,11 +112,11 @@ void ToggleMosaicBitCommand::undo()
 
 bool ToggleMosaicBitCommand::mergeWith(const QUndoCommand *command)
 {
-	const ToggleMosaicBitCommand *previousCommand = static_cast<const ToggleMosaicBitCommand *>(command);
+	const ToggleMosaicBitCommand *newerCommand = static_cast<const ToggleMosaicBitCommand *>(command);
 
-	if (m_subPageIndex != previousCommand->m_subPageIndex || m_row != previousCommand->m_row || m_column != previousCommand->m_column)
+	if (m_subPageIndex != newerCommand->m_subPageIndex || m_row != newerCommand->m_row || m_column != newerCommand->m_column)
 		return false;
-	m_newCharacter = previousCommand->m_newCharacter;
+	m_newCharacter = newerCommand->m_newCharacter;
 	return true;
 }
 
@@ -98,32 +126,62 @@ BackspaceCommand::BackspaceCommand(TeletextDocument *teletextDocument, QUndoComm
 	m_teletextDocument = teletextDocument;
 	m_subPageIndex = teletextDocument->currentSubPageIndex();
 	m_row = teletextDocument->cursorRow();
-	m_column = teletextDocument->cursorColumn()-1;
-	if (m_column == -1) {
-		m_column = 39;
+	m_columnStart = teletextDocument->cursorColumn()-1;
+	if (m_columnStart == -1) {
+		m_columnStart = 39;
 		if (--m_row == 0)
 			m_row = 24;
 	}
-	m_deletedCharacter = teletextDocument->currentSubPage()->character(m_row, m_column);
+	m_columnEnd = m_columnStart;
+	for (int c=0; c<40; c++)
+		m_oldRowContents[c] = m_newRowContents[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
+
+	setText(QObject::tr("backspace"));
+	m_firstDo = true;
 }
 
 void BackspaceCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, 0x20);
-	m_teletextDocument->moveCursor(m_row, m_column);
-	setText(QObject::tr("backspace"));
+
+	if (m_firstDo) {
+		m_newRowContents[m_columnEnd] = 0x20;
+		m_firstDo = false;
+	}
+	for (int c=0; c<40; c++)
+		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_newRowContents[c]);
+
+	m_teletextDocument->moveCursor(m_row, m_columnEnd);
 	emit m_teletextDocument->contentsChange(m_row);
 }
 
 void BackspaceCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
-	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_deletedCharacter);
-	m_teletextDocument->moveCursor(m_row, m_column);
+
+	for (int c=0; c<40; c++)
+		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_oldRowContents[c]);
+
+	m_teletextDocument->moveCursor(m_row, m_columnStart);
 	m_teletextDocument->cursorRight();
-	setText(QObject::tr("backspace"));
 	emit m_teletextDocument->contentsChange(m_row);
+}
+
+bool BackspaceCommand::mergeWith(const QUndoCommand *command)
+{
+	const BackspaceCommand *newerCommand = static_cast<const BackspaceCommand *>(command);
+
+	// Has to be the next backspaced column on the same row
+	if (m_subPageIndex != newerCommand->m_subPageIndex || m_row != newerCommand->m_row || m_columnEnd != newerCommand->m_columnEnd+1)
+		return false;
+
+	// For backspacing m_columnStart is where we began backspacing and m_columnEnd is where we ended backspacing
+	// so m_columnEnd will be less than m_columnStart
+	m_columnEnd = newerCommand->m_columnEnd;
+	for (int c=0; c<40; c++)
+		m_newRowContents[c] = newerCommand->m_newRowContents[c];
+
+	return true;
 }
 
 
