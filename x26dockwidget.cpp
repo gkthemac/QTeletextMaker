@@ -564,19 +564,19 @@ void X26DockWidget::updateCookedModeFromCookedType(const int value)
 		case 2:
 			m_cookedModeComboBox->addItem("select...", -1);
 			m_cookedModeComboBox->addItem("Foreground colour", 0x20);
-			m_cookedModeComboBox->addItem("G1 block mosaic", 0x21);
-			m_cookedModeComboBox->addItem("G3 at L 1.5", 0x22);
 			m_cookedModeComboBox->addItem("Background colour", 0x23);
 			m_cookedModeComboBox->addItem("Flash functions", 0x27);
+			m_cookedModeComboBox->addItem("Display attrs", 0x2c);
+			m_cookedModeComboBox->addItem("Font style L 3.5", 0x2e);
 			m_cookedModeComboBox->addItem("Mod G0 and G2", 0x28);
 			m_cookedModeComboBox->addItem("G0 character", 0x29);
-			m_cookedModeComboBox->addItem("G3 at L 2.5", 0x2b);
-			m_cookedModeComboBox->addItem("Display attrs", 0x2c);
-			m_cookedModeComboBox->addItem("DRCS character", 0x2d);
-			m_cookedModeComboBox->addItem("Font style", 0x2e);
 			m_cookedModeComboBox->addItem("G2 character", 0x2f);
+			m_cookedModeComboBox->addItem("G1 block mosaic", 0x21);
+			m_cookedModeComboBox->addItem("G3 at L 1.5", 0x22);
+			m_cookedModeComboBox->addItem("G3 at L 2.5", 0x2b);
+			m_cookedModeComboBox->addItem("DRCS character", 0x2d);
 			for (int i=0; i<16; i++)
-				m_cookedModeComboBox->addItem(QString("G0 diactricial %1").arg(i), 0x30+i);
+				m_cookedModeComboBox->addItem(QString("G0 diactricial ")+QString("%1").arg(i, 1, 16).toUpper(), 0x30 | i);
 			break;
 		case 3:
 			m_cookedModeComboBox->addItem("select...", -1);
