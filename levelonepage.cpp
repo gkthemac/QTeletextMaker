@@ -377,6 +377,13 @@ void LevelOnePage::setCLUT(int index, int newColour)
 	m_CLUT[index] = newColour;
 }
 
+QColor LevelOnePage::CLUTtoQColor(int index, int renderLevel) const
+{
+	int colour12Bit = CLUT(index, renderLevel);
+
+	return QColor(((colour12Bit & 0xf00) >> 8) * 17, ((colour12Bit & 0x0f0) >> 4) * 17, (colour12Bit & 0x00f) * 17);
+}
+
 bool LevelOnePage::isPaletteDefault(int colour) const
 {
 	return m_CLUT[colour] == m_defaultCLUT[colour];
@@ -485,9 +492,4 @@ void LevelOnePage::setComposeLinkPageNumber(int linkNumber, int newPageNumber)
 void LevelOnePage::setComposeLinkSubPageCodes(int linkNumber, int newSubPageCodes)
 {
 	m_composeLink[linkNumber].subPageCodes = newSubPageCodes;
-}
-
-QColor CLUTtoQColor(int myColour)
-{
-	return QColor(((myColour & 0xf00) >> 8) * 17, ((myColour & 0x0f0) >> 4) * 17, (myColour & 0x00f) * 17);
 }

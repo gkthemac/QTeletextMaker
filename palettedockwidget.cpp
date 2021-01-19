@@ -96,7 +96,7 @@ void PaletteDockWidget::showEvent(QShowEvent *event)
 
 void PaletteDockWidget::selectColour(int colourIndex)
 {
-    const QColor newColour = QColorDialog::getColor(CLUTtoQColor(m_parentMainWidget->document()->currentSubPage()->CLUT(colourIndex)), this, "Select Colour");
+    const QColor newColour = QColorDialog::getColor(m_parentMainWidget->document()->currentSubPage()->CLUTtoQColor(colourIndex), this, "Select Colour");
 
 	if (newColour.isValid()) {
 		QUndoCommand *setColourCommand = new SetColourCommand(m_parentMainWidget->document(), colourIndex, ((newColour.red() & 0xf0) << 4) | (newColour.green() & 0xf0) | ((newColour.blue() & 0xf0) >> 4));

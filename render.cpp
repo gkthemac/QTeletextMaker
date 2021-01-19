@@ -474,11 +474,11 @@ void TeletextPageRender::renderPage(int r)
 		m_cell[r][c].rightHalf = applyRightHalf;
 
 		if (!resultAttributes.display.invert) {
-			foreQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.foreColour, m_renderLevel));
-			backQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.backColour, m_renderLevel));
+			foreQColour = m_levelOnePage->CLUTtoQColor(resultAttributes.foreColour, m_renderLevel);
+			backQColour = m_levelOnePage->CLUTtoQColor(resultAttributes.backColour, m_renderLevel);
 		} else {
-			foreQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.backColour, m_renderLevel));
-			backQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.foreColour, m_renderLevel));
+			foreQColour = m_levelOnePage->CLUTtoQColor(resultAttributes.backColour, m_renderLevel);
+			backQColour = m_levelOnePage->CLUTtoQColor(resultAttributes.foreColour, m_renderLevel);
 		}
 
 		renderCharacter();
@@ -557,11 +557,11 @@ void TeletextPageRender::renderPage(int r)
 				underlined = false;
 			}
 			if (!resultAttributes.display.invert) {
-				foreQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.foreColour, m_renderLevel));
-				backQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.backColour, m_renderLevel));
+				foreQColour = m_levelOnePage->CLUTtoQColor(resultAttributes.foreColour, m_renderLevel);
+				backQColour = m_levelOnePage->CLUTtoQColor(resultAttributes.backColour, m_renderLevel);
 			} else {
-				foreQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.backColour, m_renderLevel));
-				backQColour = CLUTtoQColor(m_levelOnePage->CLUT(resultAttributes.foreColour, m_renderLevel));
+				foreQColour = m_levelOnePage->CLUTtoQColor(resultAttributes.backColour, m_renderLevel);
+				backQColour = m_levelOnePage->CLUTtoQColor(resultAttributes.foreColour, m_renderLevel);
 			}
 			if (resultAttributes.flash.ratePhase == 0) {
 				// 1Hz flash
@@ -634,7 +634,7 @@ inline void TeletextPageRender::setFullScreenColour(int newColour)
 		emit fullScreenColourChanged(QColor(0, 0, 0, 0));
 		return;
 	}
-	QColor newFullScreenQColor = CLUTtoQColor(m_levelOnePage->CLUT(newColour, m_renderLevel));
+	QColor newFullScreenQColor = m_levelOnePage->CLUTtoQColor(newColour, m_renderLevel);
 	m_finalFullScreenColour = newColour;
 	if (m_finalFullScreenQColor != newFullScreenQColor) {
 		m_finalFullScreenQColor = newFullScreenQColor;
@@ -649,7 +649,7 @@ inline void TeletextPageRender::setFullRowColour(int row, int newColour)
 		emit fullRowColourChanged(row, QColor(0, 0, 0, 0));
 		return;
 	}
-	QColor newFullRowQColor = CLUTtoQColor(m_levelOnePage->CLUT(newColour, m_renderLevel));
+	QColor newFullRowQColor = m_levelOnePage->CLUTtoQColor(newColour, m_renderLevel);
 	m_fullRowColour[row] = newColour;
 	if (m_fullRowQColor[row] != newFullRowQColor) {
 		m_fullRowQColor[row] = newFullRowQColor;

@@ -28,8 +28,6 @@
 #include "pagex26base.h"
 #include "x26triplets.h"
 
-QColor CLUTtoQColor(int myColour);
-
 class LevelOnePage : public PageX26Base //: public QObject
 {
 	//Q_OBJECT
@@ -81,6 +79,7 @@ public:
 	void setBlackBackgroundSubst(bool);
 	int CLUT(int index, int renderLevel=3) const;
 	void setCLUT(int, int);
+	QColor CLUTtoQColor(int index, int renderlevel=3) const;
 	bool isPaletteDefault(int) const;
 	bool isPaletteDefault(int, int) const;
 	int levelRequired() const;
