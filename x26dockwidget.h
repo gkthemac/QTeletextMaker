@@ -71,7 +71,7 @@ private:
 	QStackedLayout *m_rawOrCookedStackedLayout;
 	QComboBox *m_colourComboBox;
 	QRadioButton *m_fullRowColourThisRowOnlyRadioButton, *m_fullRowColourDownToBottomRadioButton;
-	QSpinBox *m_characterCodeSpinBox;
+	QComboBox *m_characterCodeComboBox;
 	QComboBox *m_flashModeComboBox, *m_flashRateComboBox;
 	QComboBox *m_textSizeComboBox;
 	QCheckBox *m_displayAttributeBoxingCheckBox, *m_displayAttributeConcealCheckBox, *m_displayAttributeInvertCheckBox, *m_displayAttributeUnderlineCheckBox;
@@ -88,6 +88,7 @@ private:
 	QSpinBox *m_DRCSCharacterCodeSpinBox;
 	QCheckBox *m_fontStyleProportionalCheckBox, *m_fontStyleBoldCheckBox, *m_fontStyleItalicCheckBox;
 	QSpinBox *m_fontStyleRowsSpinBox;
+	QSpinBox *m_reservedPDCSpinBox;
 	QComboBox *m_terminationMarkerPageTypeComboBox;
 	QCheckBox *m_terminationMarkerMoreFollowsCheckBox;
 	QPushButton *m_insertPushButton, *m_deletePushButton;

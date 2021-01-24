@@ -103,11 +103,6 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 
 	// Cooked triplet mode
 	m_cookedModeComboBox = new QComboBox;
-	// FIXME maybe remove this example
-/*	m_cookedModeComboBox->addItem("Colour");
-	m_cookedModeComboBox->addItem("Character");
-	m_cookedModeComboBox->addItem("Flash");
-	m_cookedModeComboBox->addItem("Display");*/
 	m_cookedModeComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	cookedTripletLayout->addWidget(m_cookedModeComboBox);
 	connect(m_cookedModeComboBox, QOverload<int>::of(&QComboBox::activated), this, &X26DockWidget::cookedModeComboBoxChanged);
@@ -147,8 +142,8 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	rawTripletWidget->setLayout(rawTripletLayout);
 	rawTripletWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	m_rawOrCookedStackedLayout->addWidget(rawTripletWidget);
-//	We could simply: tripletSelectLayout->addLayout(m_rawOrCookedStackedLayout);
-//	but we need to keep it to the smallest size, only possible by putting it inside a QWidget
+	// We could simply: tripletSelectLayout->addLayout(m_rawOrCookedStackedLayout);
+	// but we need to keep it to the smallest size, only possible by putting it inside a QWidget
 	QWidget *rawOrCookedWidget = new QWidget;
 	rawOrCookedWidget->setLayout(m_rawOrCookedStackedLayout);
 	rawOrCookedWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -158,9 +153,11 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 
 	connect(rawOrCookedCheckBox, &QCheckBox::stateChanged,[=](const int value) { m_rawOrCookedStackedLayout->setCurrentIndex(value == 2); } );
 
-	// Widgets that alter the parameters of triplets which will all be stacked
 
-	// Colour and "this row only"/"down to bottom" selection
+	// Widgets that alter the parameters of triplets which will all be stacked
+	// Index 0 is a blank label widget, we allocate it later when we start stacking
+
+	// Index 1 - Colour and "this row only"/"down to bottom" selection
 	QHBoxLayout *colourAndRowLayout = new QHBoxLayout;
 
 	m_colourComboBox = new QComboBox;
@@ -180,17 +177,16 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	connect(m_fullRowColourThisRowOnlyRadioButton, &QAbstractButton::clicked, this, [=] { updateModelFromCookedWidget(0, Qt::UserRole+2); } );
 	connect(m_fullRowColourDownToBottomRadioButton, &QAbstractButton::clicked, this, [=] { updateModelFromCookedWidget(1, Qt::UserRole+2); } );
 
-	// Character code - also used as parameter for PDC and reserved
+	// Index 2 - Character code
 	QHBoxLayout *characterCodeLayout = new QHBoxLayout;
-	m_characterCodeSpinBox = new QSpinBox;
-	m_characterCodeSpinBox->setRange(32, 127);
-	m_characterCodeSpinBox->setDisplayIntegerBase(16);
-	m_characterCodeSpinBox->setPrefix("0x");
-	m_characterCodeSpinBox->setWrapping(true);
-	characterCodeLayout->addWidget(m_characterCodeSpinBox);
-	connect(m_characterCodeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+1); } );
 
-	// Flash rate and phase
+	m_characterCodeComboBox = new QComboBox;
+	for (int i=32; i<128; i++)
+		m_characterCodeComboBox->addItem(QString("0x%1").arg(i, 2, 16), i);
+	characterCodeLayout->addWidget(m_characterCodeComboBox);
+	connect(m_characterCodeComboBox, QOverload<int>::of(&QComboBox::activated), this, [=](const int value) { updateModelFromCookedWidget(value+32, Qt::UserRole+1); } );
+
+	// Index 3 - Flash rate and phase
 	QHBoxLayout *flashModeRateLayout = new QHBoxLayout;
 
 	m_flashModeComboBox = new QComboBox;
@@ -211,7 +207,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	flashModeRateLayout->addWidget(m_flashRateComboBox);
 	connect(m_flashRateComboBox, QOverload<int>::of(&QComboBox::activated), this, [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+2); } );
 
-	// Display attributes
+	// Index 4 - Display attributes
 	QHBoxLayout *displayAttributesLayout = new QHBoxLayout;
 
 	m_textSizeComboBox = new QComboBox;
@@ -235,7 +231,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	connect(m_displayAttributeInvertCheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+4); } );
 	connect(m_displayAttributeUnderlineCheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+5); } );
 
-	// Invoke Object
+	// Index 5 - Invoke Object
 	QHBoxLayout *invokeObjectLayout = new QHBoxLayout;
 
 	// From local or (G)POP page
@@ -291,11 +287,6 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 
 	// (G)POP triplet with pointer
 	m_invokePOPTripletNumberComboBox = new QComboBox;
-	// FIXME test if this example removal works
-/*	m_invokePOPTripletNumberComboBox->addItem("Triplet 1");
-	m_invokePOPTripletNumberComboBox->addItem("Triplet 4");
-	m_invokePOPTripletNumberComboBox->addItem("Triplet 7");
-	m_invokePOPTripletNumberComboBox->addItem("Triplet 10");*/
 	invokePOPLayout->addWidget(m_invokePOPTripletNumberComboBox);
 	connect(m_invokePOPTripletNumberComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+4); } );
 
@@ -323,8 +314,9 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	invokeObjectSourceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	invokeObjectLayout->addWidget(invokeObjectSourceWidget);
 
-	// DRCS mode
+	// Index 6 - DRCS mode
 	QHBoxLayout *DRCSModeLayout = new QHBoxLayout;
+
 	m_DRCSModeRequiredAtL2p5CheckBox = new QCheckBox("L2.5");
 	m_DRCSModeRequiredAtL3p5CheckBox = new QCheckBox("L3.5");
 	DRCSModeLayout->addWidget(m_DRCSModeRequiredAtL2p5CheckBox);
@@ -347,8 +339,9 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	DRCSModeLayout->addWidget(m_DRCSModeSubPageSpinBox);
 	connect(m_DRCSModeSubPageSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+4); } );
 
-	// DRCS character
+	// Index 7 - DRCS character
 	QHBoxLayout *DRCSCharacterLayout = new QHBoxLayout;
+
 	m_DRCSCharacterGlobalRadioButton = new QRadioButton("Global");
 	m_DRCSCharacterNormalRadioButton = new QRadioButton("Normal");
 	QButtonGroup *DRCSCharacterButtonGroup = new QButtonGroup;
@@ -365,7 +358,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	DRCSCharacterLayout->addWidget(m_DRCSCharacterCodeSpinBox);
 	connect(m_DRCSCharacterCodeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+2); } );
 
-	// Font style
+	// Index 8 - Font style
 	QHBoxLayout *fontStyleLayout = new QHBoxLayout;
 
 	m_fontStyleProportionalCheckBox = new QCheckBox(tr("Proportional"));
@@ -382,7 +375,18 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	fontStyleLayout->addWidget(m_fontStyleRowsSpinBox);
 	connect(m_fontStyleRowsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+4); } );
 
-	// Terminator
+	// Index 9 - Reserved/PDC data
+	QHBoxLayout *reservedPDCLayout = new QHBoxLayout;
+
+	m_reservedPDCSpinBox = new QSpinBox;
+	m_reservedPDCSpinBox->setMaximum(127);
+	m_reservedPDCSpinBox->setDisplayIntegerBase(16);
+	m_reservedPDCSpinBox->setPrefix("0x");
+	m_reservedPDCSpinBox->setWrapping(true);
+	reservedPDCLayout->addWidget(m_reservedPDCSpinBox);
+	connect(m_reservedPDCSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+1); } );
+
+	// Index 10 - Terminator
 	QHBoxLayout *terminationMarkerLayout = new QHBoxLayout;
 
 	m_terminationMarkerPageTypeComboBox = new QComboBox;
@@ -397,49 +401,77 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	terminationMarkerLayout->addWidget(m_terminationMarkerMoreFollowsCheckBox);
 	connect(m_terminationMarkerMoreFollowsCheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget(value != 2, Qt::UserRole+2); } );
 
+
 	// Stack all the triplet parameter layouts together
 	m_tripletParameterStackedLayout = new QStackedLayout;
-	QLabel *blankWidget = new QLabel("Intentionally blank");
+
+	// Index 0
+	// Blank label
+	QLabel *blankWidget = new QLabel(" ");
 	m_tripletParameterStackedLayout->addWidget(blankWidget);
+
+	// Index 1
 	QWidget *colourAndRowWidget = new QWidget;
 	colourAndRowWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	colourAndRowWidget->setLayout(colourAndRowLayout);
 	m_tripletParameterStackedLayout->addWidget(colourAndRowWidget);
+
+	// Index 2
 	QWidget *characterCodeWidget = new QWidget;
 	characterCodeWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	characterCodeWidget->setLayout(characterCodeLayout);
 	m_tripletParameterStackedLayout->addWidget(characterCodeWidget);
+
+	// Index 3
 	QWidget *flashModeRateWidget = new QWidget;
 	flashModeRateWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	flashModeRateWidget->setLayout(flashModeRateLayout);
 	m_tripletParameterStackedLayout->addWidget(flashModeRateWidget);
+
+	// Index 4
 	QWidget *displayAttributesWidget = new QWidget;
 	displayAttributesWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	displayAttributesWidget->setLayout(displayAttributesLayout);
 	m_tripletParameterStackedLayout->addWidget(displayAttributesWidget);
+
+	// Index 5
 	QWidget *invokeObjectWidget = new QWidget;
 	invokeObjectWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	invokeObjectWidget->setLayout(invokeObjectLayout);
 	m_tripletParameterStackedLayout->addWidget(invokeObjectWidget);
+
+	// Index 6
 	QWidget *DRCSModeWidget = new QWidget;
 	DRCSModeWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	DRCSModeWidget->setLayout(DRCSModeLayout);
 	m_tripletParameterStackedLayout->addWidget(DRCSModeWidget);
+
+	// Index 7
 	QWidget *DRCSCharacterWidget = new QWidget;
 	DRCSCharacterWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	DRCSCharacterWidget->setLayout(DRCSCharacterLayout);
 	m_tripletParameterStackedLayout->addWidget(DRCSCharacterWidget);
+
+	// Index 8
 	QWidget *fontStyleWidget = new QWidget;
 	fontStyleWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	fontStyleWidget->setLayout(fontStyleLayout);
 	m_tripletParameterStackedLayout->addWidget(fontStyleWidget);
+
+	// Index 9
+	QWidget *reservedPDCWidget = new QWidget;
+	reservedPDCWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+	reservedPDCWidget->setLayout(reservedPDCLayout);
+	m_tripletParameterStackedLayout->addWidget(reservedPDCWidget);
+
+	// Index 10
 	QWidget *terminationMarkerWidget = new QWidget;
 	terminationMarkerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	terminationMarkerWidget->setLayout(terminationMarkerLayout);
 	m_tripletParameterStackedLayout->addWidget(terminationMarkerWidget);
 
-//	We could simply: x26Layout->addLayout(m_tripletParameterStackedLayout);
-//	but we need to keep it to the smallest size, only possible by putting it inside a QWidget
+	// We could simply: x26Layout->addLayout(m_tripletParameterStackedLayout);
+	// but we need to keep it to the smallest size, only possible by putting it inside a QWidget
 	QWidget *tripletParameterWidget = new QWidget;
 	tripletParameterWidget->setLayout(m_tripletParameterStackedLayout);
 	tripletParameterWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -665,13 +697,12 @@ void X26DockWidget::updateCookedTripletParameters(const QModelIndex &index)
 		case 0x29: // G0 character
 		case 0x2b: // G3 character at Level 2.5
 		case 0x2f ... 0x3f: // G2 character, G0 character with diacritical
-		case 0x28: // TODO replace with dedicated parameters - Modified G0 and G2 designation
-			m_characterCodeSpinBox->blockSignals(true);
-			m_characterCodeSpinBox->setMinimum(modeExt == 0x28 ? 0x00 : 0x20);
-			m_characterCodeSpinBox->setValue(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt());
-			m_characterCodeSpinBox->blockSignals(false);
+			m_characterCodeComboBox->blockSignals(true);
+			m_characterCodeComboBox->setCurrentIndex(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt()-32);
+			m_characterCodeComboBox->blockSignals(false);
 			m_tripletParameterStackedLayout->setCurrentIndex(2);
 			break;
+		// TODO case 0x28: Modified G0 and G2 designation
 		case 0x27: // Flash functions
 			m_flashModeComboBox->blockSignals(true);
 			m_flashRateComboBox->blockSignals(true);
@@ -805,14 +836,13 @@ void X26DockWidget::updateCookedTripletParameters(const QModelIndex &index)
 			m_terminationMarkerMoreFollowsCheckBox->setChecked(!index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+2).toBool());
 			m_terminationMarkerPageTypeComboBox->blockSignals(false);
 			m_terminationMarkerMoreFollowsCheckBox->blockSignals(false);
-			m_tripletParameterStackedLayout->setCurrentIndex(9);
+			m_tripletParameterStackedLayout->setCurrentIndex(10);
 			break;
-		default: // PDC and reserved triplet, (mis)use character spinbox
-			m_characterCodeSpinBox->blockSignals(true);
-			m_characterCodeSpinBox->setMinimum(0);
-			m_characterCodeSpinBox->setValue(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt());
-			m_characterCodeSpinBox->blockSignals(false);
-			m_tripletParameterStackedLayout->setCurrentIndex(2);
+		default: // PDC and reserved triplet
+			m_reservedPDCSpinBox->blockSignals(true);
+			m_reservedPDCSpinBox->setValue(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt());
+			m_reservedPDCSpinBox->blockSignals(false);
+			m_tripletParameterStackedLayout->setCurrentIndex(9);
 			break;
 	}
 
