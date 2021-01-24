@@ -52,8 +52,6 @@ public:
 
 	void clearPage();
 
-	QList<X26Triplet> *enhancements() { return &m_enhancements; };
-
 /*	void setSubPageNumber(int); */
 	int cycleValue() const { return m_cycleValue; };
 	void setCycleValue(int);

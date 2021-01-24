@@ -30,6 +30,9 @@ class PageX26Base : public PageBase //: public QObject
 {
 	//Q_OBJECT
 
+public:
+	QList<X26Triplet> *enhancements() { return &m_enhancements; };
+
 protected:
 	QByteArray packetFromEnhancementList(int) const;
 	void setEnhancementListFromPacket(int, QByteArray);
