@@ -22,8 +22,6 @@ The above will place the qteletextmaker executable in the same directory as the 
 ## Current limitations
 At the moment QTeletextMaker is in pre-alpha status so many features are not finished yet. The most-often encountered limitations are detailed here.
 
-Spacing attributes are only accessible through an "Insert" menu. A toolbar to insert spacing attributes may be added in the future.
-
 Keymapping between ASCII and Teletext character sets is not yet implemented e.g. in English pressing the hash key will type a pound sign instead, and in other languages the square and curly brackets keys need to be pressed to obtain the accented characters.
 
 The following X/26 enhancement triplets are not rendered by the editor, although the list is fully aware of them.

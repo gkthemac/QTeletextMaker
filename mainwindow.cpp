@@ -424,73 +424,91 @@ void MainWindow::createActions()
 		const char *colours[] = { "Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White" };
 
 		QAction *alphaColour = alphaColourSubMenu->addAction(tr(colours[i]));
+		alphaColour->setShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_0 + i));
 		alphaColour->setStatusTip(QString("Insert alphanumeric %1 attribute").arg(QString(colours[i]).toLower()));
 		connect(alphaColour, &QAction::triggered, [=]() { m_textWidget->setCharacter(i); });
 
 		QAction *mosaicColour = mosaicColourSubMenu->addAction(tr(colours[i]));
+		mosaicColour->setShortcut(QKeySequence(Qt::Key_Escape, Qt::SHIFT + Qt::Key_0 + i));
 		mosaicColour->setStatusTip(QString("Insert mosaic %1 attribute").arg(QString(colours[i]).toLower()));
 		connect(mosaicColour, &QAction::triggered, [=]() { m_textWidget->setCharacter(i+0x10); });
 	}
 
 	QMenu *mosaicsStyleSubMenu = insertMenu->addMenu(tr("Mosaics style"));
-	QAction *mosaicsContiguousAct = mosaicsStyleSubMenu->addAction(tr("Contiguous mosaics"));
-	mosaicsContiguousAct->setStatusTip(tr("Insert contiguous mosaics attribute"));
-	connect(mosaicsContiguousAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x19); });
 	QAction *mosaicsSeparatedAct = mosaicsStyleSubMenu->addAction(tr("Separated mosaics"));
+	mosaicsSeparatedAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::SHIFT + Qt::Key_S));
 	mosaicsSeparatedAct->setStatusTip(tr("Insert separated mosaics attribute"));
 	connect(mosaicsSeparatedAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x1a); });
+	QAction *mosaicsContiguousAct = mosaicsStyleSubMenu->addAction(tr("Contiguous mosaics"));
+	mosaicsContiguousAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_S));
+	mosaicsContiguousAct->setStatusTip(tr("Insert contiguous mosaics attribute"));
+	connect(mosaicsContiguousAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x19); });
 
 	QMenu *mosaicsHoldSubMenu = insertMenu->addMenu(tr("Mosaics hold"));
 	QAction *mosaicsHoldAct = mosaicsHoldSubMenu->addAction(tr("Hold mosaics"));
+	mosaicsHoldAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::SHIFT + Qt::Key_H));
 	mosaicsHoldAct->setStatusTip(tr("Insert hold mosaics attribute"));
 	connect(mosaicsHoldAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x1e); });
 	QAction *mosaicsReleaseAct = mosaicsHoldSubMenu->addAction(tr("Release mosaics"));
+	mosaicsReleaseAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_H));
 	mosaicsReleaseAct->setStatusTip(tr("Insert release mosaics attribute"));
 	connect(mosaicsReleaseAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x1f); });
 
 	QMenu *backgroundColourSubMenu = insertMenu->addMenu(tr("Background colour"));
 	QAction *backgroundNewAct = backgroundColourSubMenu->addAction(tr("New background"));
+	backgroundNewAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::SHIFT + Qt::Key_N));
 	backgroundNewAct->setStatusTip(tr("Insert new background attribute"));
 	connect(backgroundNewAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x1d); });
 	QAction *backgroundBlackAct = backgroundColourSubMenu->addAction(tr("Black background"));
+	backgroundBlackAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_N));
 	backgroundBlackAct->setStatusTip(tr("Insert black background attribute"));
 	connect(backgroundBlackAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x1c); });
 
 	QMenu *textSizeSubMenu = insertMenu->addMenu(tr("Text size"));
 	QAction *textSizeNormalAct = textSizeSubMenu->addAction(tr("Normal size"));
+	textSizeNormalAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_D));
 	textSizeNormalAct->setStatusTip(tr("Insert normal size attribute"));
 	connect(textSizeNormalAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x0c); });
-	QAction *textSizeHeightAct = textSizeSubMenu->addAction(tr("Double height"));
-	textSizeHeightAct->setStatusTip(tr("Insert double height attribute"));
-	connect(textSizeHeightAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x0d); });
-	QAction *textSizeWidthAct = textSizeSubMenu->addAction(tr("Double width"));
-	textSizeWidthAct->setStatusTip(tr("Insert double width attribute"));
-	connect(textSizeWidthAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x0e); });
-	QAction *textSizeDoubleAct = textSizeSubMenu->addAction(tr("Double size"));
-	textSizeDoubleAct->setStatusTip(tr("Insert double size attribute"));
-	connect(textSizeDoubleAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x0f); });
+	QAction *textSizeDoubleHeightAct = textSizeSubMenu->addAction(tr("Double height"));
+	textSizeDoubleHeightAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::SHIFT + Qt::Key_D));
+	textSizeDoubleHeightAct->setStatusTip(tr("Insert double height attribute"));
+	connect(textSizeDoubleHeightAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x0d); });
+	QAction *textSizeDoubleWidthAct = textSizeSubMenu->addAction(tr("Double width"));
+	textSizeDoubleWidthAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::CTRL + Qt::Key_D));
+	textSizeDoubleWidthAct->setStatusTip(tr("Insert double width attribute"));
+	connect(textSizeDoubleWidthAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x0e); });
+	QAction *textSizeDoubleSizeAct = textSizeSubMenu->addAction(tr("Double size"));
+	textSizeDoubleSizeAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::CTRL + Qt::SHIFT + Qt::Key_D));
+	textSizeDoubleSizeAct->setStatusTip(tr("Insert double size attribute"));
+	connect(textSizeDoubleSizeAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x0f); });
 
 	QAction *concealAct = insertMenu->addAction(tr("Conceal"));
+	concealAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_O));
 	concealAct->setStatusTip(tr("Insert conceal attribute"));
 	connect(concealAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x18); });
 
 	QMenu *flashSubMenu = insertMenu->addMenu(tr("Flash"));
 	QAction *flashFlashingAct = flashSubMenu->addAction(tr("Flashing"));
+	flashFlashingAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::SHIFT + Qt::Key_F));
 	flashFlashingAct->setStatusTip(tr("Insert flashing attribute"));
 	connect(flashFlashingAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x08); });
 	QAction *flashSteadyAct = flashSubMenu->addAction(tr("Steady"));
+	flashSteadyAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_F));
 	flashSteadyAct->setStatusTip(tr("Insert steady attribute"));
 	connect(flashSteadyAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x09); });
 
 	QMenu *boxingSubMenu = insertMenu->addMenu(tr("Box"));
 	QAction *boxingStartAct = boxingSubMenu->addAction(tr("Start box"));
+	boxingStartAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::SHIFT + Qt::Key_X));
 	boxingStartAct->setStatusTip(tr("Insert start box attribute"));
 	connect(boxingStartAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x0b); });
 	QAction *boxingEndAct = boxingSubMenu->addAction(tr("End box"));
+	boxingEndAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_X));
 	boxingEndAct->setStatusTip(tr("Insert end box attribute"));
 	connect(boxingEndAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x0a); });
 
 	QAction *escSwitchAct = insertMenu->addAction(tr("ESC/switch"));
+	escSwitchAct->setShortcut(QKeySequence(Qt::Key_Escape, Qt::CTRL + Qt::Key_S));
 	escSwitchAct->setStatusTip(tr("Insert ESC/switch character set attribute"));
 	connect(escSwitchAct, &QAction::triggered, [=]() { m_textWidget->setCharacter(0x1b); });
 
