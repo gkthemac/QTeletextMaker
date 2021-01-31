@@ -20,6 +20,7 @@
 #include <QMultiMap>
 #include <QPainter>
 //#include <QTime>
+#include <QPair>
 #include <algorithm>
 #include <vector>
 
@@ -215,7 +216,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 				case 0x0f: // G2 character
 				case 0x10 ... 0x1f: // Diacritical mark
 					if (activePosition.setColumn(x26Triplet->addressColumn()) && x26Triplet->data() >= 0x20)
-						enhanceLayer->enhanceMap.insert((activePosition.row() << 8) | activePosition.column(), ((x26Triplet->mode() | 0x20) << 8) | x26Triplet->data());
+						enhanceLayer->enhanceMap.insert(qMakePair(activePosition.row(), activePosition.column()), qMakePair(x26Triplet->mode() | 0x20, x26Triplet->data()));
 					break;
 				// Make sure that PDC and reserved triplets don't affect the Active Position
 				case 0x04 ... 0x06: // 0x04 and 0x05 are reserved, 0x06 for PDC
@@ -226,7 +227,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 			}
 			// All remaining possible column triplets at Level 2.5 affect the Active Position
 			if (m_renderLevel >= 2 && !columnTripletActioned && activePosition.setColumn(x26Triplet->addressColumn()))
-				enhanceLayer->enhanceMap.insert((activePosition.row() << 8) | activePosition.column(), ((x26Triplet->mode() | 0x20) << 8) | x26Triplet->data());
+				enhanceLayer->enhanceMap.insert(qMakePair(activePosition.row(), activePosition.column()), qMakePair(x26Triplet->mode() | 0x20, x26Triplet->data()));
 		}
 		tripletNumber++;
 	} while (!terminatorFound && tripletNumber < m_levelOnePage->enhancements()->size());
@@ -696,26 +697,29 @@ textCharacter EnhanceLayer::character(int r, int c)
 	c -= m_originC;
 	if (r < 0 || c < 0)
 		return { 0, 0 };
-	QList<int> enhancements = enhanceMap.values((r << 8) | c);
+
+	// QPair.first is triplet mode, QPair.second is triplet data
+	QList<QPair<int, int>> enhancements = enhanceMap.values(qMakePair(r, c));
 
 	if (enhancements.size() > 0)
 		for (int i=0; i<enhancements.size(); i++)
-			switch (enhancements.at(i) >> 8) {
+			switch (enhancements.at(i).first) {
 				case 0x2b: // G3 mosaic character at Level 2.5
 				case 0x22: // G3 mosaic character at Level 1.5
-					return { enhancements.at(i) & 0x7f, 26 };
+					return { enhancements.at(i).second, 26 };
 				case 0x29: // G0 character at Level 2.5
-					return { enhancements.at(i) & 0x7f, 0 };
+					return { enhancements.at(i).second, 0 };
 				case 0x2f: // G2 character
-					return { enhancements.at(i) & 0x7f, 7 };
+					return { enhancements.at(i).second, 7 };
 				case 0x30 ... 0x3f: // Diacritical
-					if (enhancements.at(i) == 0x302a)
+					// Deal with @ symbol replacing * symbol - clause 15.6.1 note 3 in spec
+					if (enhancements.at(i).first == 0x30 && enhancements.at(i).second == 0x2a)
 						return { 0x40, 0 };
 					else
-						return { enhancements.at(i) & 0x7f, 0, (enhancements.at(i) >> 8) & 0x0f };
+						return { enhancements.at(i).second, 0, enhancements.at(i).first & 0x0f };
 				case 0x21: // G1 character
-					if ((enhancements.at(i) & 0x7f) >= 0x20)
-						return { enhancements.at(i) & 0x7f, (enhancements.at(i) & 0x20) ? 24 : 0 };
+					if ((enhancements.at(i).second) >= 0x20)
+						return { enhancements.at(i).second, (enhancements.at(i).second & 0x20) ? 24 : 0 };
 			}
 	return { 0, 0 };
 }
@@ -732,7 +736,7 @@ void EnhanceLayer::attributes(int r, int c, applyAttributes *layerApplyAttribute
 			m_rightMostColumn[r] = 0;
 			m_rowCached = r;
 			for (int cc=39; cc>0; cc--)
-				if (enhanceMap.contains((r << 8) | cc)) {
+				if (enhanceMap.contains(qMakePair(r, cc))) {
 					m_rightMostColumn[r] = cc;
 					break;
 				}
@@ -789,39 +793,41 @@ void EnhanceLayer::attributes(int r, int c, applyAttributes *layerApplyAttribute
 		else
 			*layerApplyAttributes = m_applyAttributes;
 	}
-	QList<int> enhancements = enhanceMap.values((r << 8) | c);
+
+	// QPair.first is triplet mode, QPair.second is triplet data
+	QList<QPair<int, int>> enhancements = enhanceMap.values(qMakePair(r, c));
 
 	for (int i=0; i<enhancements.size(); i++)
-		switch (enhancements.at(i) >> 8) {
+		switch (enhancements.at(i).first) {
 			case 0x20: // Foreground colour
-				if ((enhancements.at(i) & 0x60) == 0) {
+				if ((enhancements.at(i).second & 0x60) == 0) {
 					layerApplyAttributes->applyForeColour = true;
-					layerApplyAttributes->attribute.foreColour = enhancements.at(i) & 0x1f;
+					layerApplyAttributes->attribute.foreColour = enhancements.at(i).second;
 				}
 				break;
 			case 0x23: // Background colour
-				if ((enhancements.at(i) & 0x60) == 0) {
+				if ((enhancements.at(i).second & 0x60) == 0) {
 					layerApplyAttributes->applyBackColour = true;
-					layerApplyAttributes->attribute.backColour = enhancements.at(i) & 0x1f;
+					layerApplyAttributes->attribute.backColour = enhancements.at(i).second;
 				}
 				break;
 			case 0x27: // Additional flash functions
-				if ((enhancements.at(i) & 0x60) == 0 && (enhancements.at(i) & 0x18) != 0x18) { // Avoid reserved rate/phase
+				if ((enhancements.at(i).second & 0x60) == 0 && (enhancements.at(i).second & 0x18) != 0x18) { // Avoid reserved rate/phase
 					layerApplyAttributes->applyFlash = true;
-					layerApplyAttributes->attribute.flash.mode = enhancements.at(i) & 0x03;
-					layerApplyAttributes->attribute.flash.ratePhase = (enhancements.at(i) >> 2) & 0x07;
+					layerApplyAttributes->attribute.flash.mode = enhancements.at(i).second & 0x03;
+					layerApplyAttributes->attribute.flash.ratePhase = (enhancements.at(i).second >> 2) & 0x07;
 				}
 				break;
 			case 0x2c: // Display attributes
 				layerApplyAttributes->applyDisplayAttributes = true;
-				layerApplyAttributes->attribute.display.doubleHeight = enhancements.at(i) & 0x01;
-				layerApplyAttributes->attribute.display.boxingWindow = enhancements.at(i) & 0x02;
-				layerApplyAttributes->attribute.display.conceal = enhancements.at(i) & 0x04;
-				layerApplyAttributes->attribute.display.invert = enhancements.at(i) & 0x10;
-				layerApplyAttributes->attribute.display.underlineSeparated = enhancements.at(i) & 0x20;
+				layerApplyAttributes->attribute.display.doubleHeight = enhancements.at(i).second & 0x01;
+				layerApplyAttributes->attribute.display.boxingWindow = enhancements.at(i).second & 0x02;
+				layerApplyAttributes->attribute.display.conceal = enhancements.at(i).second & 0x04;
+				layerApplyAttributes->attribute.display.invert = enhancements.at(i).second & 0x10;
+				layerApplyAttributes->attribute.display.underlineSeparated = enhancements.at(i).second & 0x20;
 				// Selecting contiguous mosaics wih a triplet will override an earlier Level 1 separated mosaics attribute
 				layerApplyAttributes->attribute.display.forceContiguous = !layerApplyAttributes->attribute.display.underlineSeparated;
-				layerApplyAttributes->attribute.display.doubleWidth = enhancements.at(i) & 0x40;
+				layerApplyAttributes->attribute.display.doubleWidth = enhancements.at(i).second & 0x40;
 				break;
 		}
 	if (m_objectType >= 2)

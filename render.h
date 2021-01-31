@@ -23,6 +23,7 @@
 #include <QBitmap>
 #include <QMap>
 #include <QMultiMap>
+#include <QPair>
 #include <vector>
 
 #include "levelonepage.h"
@@ -109,8 +110,8 @@ public:
 	void setFullScreenColour(int);
 	void setFullRowColour(int, int, bool);
 
-	// TODO replace ints with proper classes
-	QMultiMap<int, int> enhanceMap;
+	// Key QPair is row and column, value QPair is triplet mode and data
+	QMultiMap<QPair<int, int>, QPair<int, int>> enhanceMap;
 
 protected:
 	LevelOnePage* m_levelOnePage;
