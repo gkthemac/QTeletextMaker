@@ -20,10 +20,6 @@ Install the QtCore, QtGui and QtWidgets libraries and build headers, along with 
 The above will place the qteletextmaker executable in the same directory as the source, type `./qteletextmaker` in the terminal to launch. Optionally, type `make install` afterwards to place the executable into /usr/local/bin.
 
 ## Current limitations
-At the moment QTeletextMaker is in pre-alpha status so many features are not finished yet. The most-often encountered limitations are detailed here.
-
-Keymapping between ASCII and Teletext character sets is not yet implemented e.g. in English pressing the hash key will type a pound sign instead, and in other languages the square and curly brackets keys need to be pressed to obtain the accented characters.
-
 The following X/26 enhancement triplets are not rendered by the editor, although the list is fully aware of them.
 - Invocation of Objects from POP and GPOP pages.
 - DRCS characters.

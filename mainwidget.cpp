@@ -34,6 +34,7 @@
 #include "mainwidget.h"
 
 #include "document.h"
+#include "keymap.h"
 #include "levelonecommands.h"
 #include "levelonepage.h"
 #include "render.h"
@@ -43,6 +44,7 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 {
 	this->resize(QSize(480, 250));
 	this->setAttribute(Qt::WA_NoSystemBackground);
+	this->setAttribute(Qt::WA_InputMethodEnabled, true);
 	m_teletextDocument = new TeletextDocument();
 	m_levelOnePage = m_teletextDocument->currentSubPage();
 	m_pageRender.setTeletextPage(m_levelOnePage);
@@ -64,6 +66,17 @@ TeletextWidget::~TeletextWidget()
 	if (m_flashTimer.isActive())
 		m_flashTimer.stop();
 	delete m_teletextDocument;
+}
+
+// Re-implemented so compose/dead keys work properly
+void TeletextWidget::inputMethodEvent(QInputMethodEvent* event)
+{
+	if (!event->commitString().isEmpty()) {
+		QKeyEvent keyEvent(QEvent::KeyPress, 0, Qt::NoModifier, event->commitString());
+
+		keyPressEvent(&keyEvent);
+	}
+	event->accept();
 }
 
 void TeletextWidget::subPageSelected()
@@ -223,55 +236,96 @@ void TeletextWidget::changeSize()
 void TeletextWidget::keyPressEvent(QKeyEvent *event)
 {
 	if (event->key() < 0x01000000) {
-		char keyPressed = *qPrintable(event->text());
-//		if (attributes[cursorRow][cursorColumn].mosaics && (keyPressed < 0x40 || keyPressed > 0x5f) && (((keyPressed >= '1' && keyPressed <= '9') && (event->modifiers() & Qt::KeypadModifier)) || (keyPressed >= 'a' && keyPressed <= 'z'))) {
-		if (m_pageRender.level1MosaicAttribute(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) && (keyPressed < 0x40 || keyPressed > 0x5f) && (((keyPressed >= '1' && keyPressed <= '9') && (event->modifiers() & Qt::KeypadModifier)) || (keyPressed >= 'a' && keyPressed <= 'z'))) {
-			if (!(m_levelOnePage->character(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) & 0x20))
-				setCharacter(0x20);
-			switch (event->key()) {
-				case Qt::Key_Q:
-				case Qt::Key_7:
-					toggleCharacterBit(0x01); // Top left
-					break;
-				case Qt::Key_W:
-				case Qt::Key_8:
-					toggleCharacterBit(0x02); // Top right
-					break;
-				case Qt::Key_A:
-				case Qt::Key_4:
-					toggleCharacterBit(0x04); // Middle left
-					break;
-				case Qt::Key_S:
-				case Qt::Key_5:
-					toggleCharacterBit(0x08); // Middle right
-					break;
-				case Qt::Key_Z:
-				case Qt::Key_1:
-					toggleCharacterBit(0x10); // Bottom left
-					break;
-				case Qt::Key_X:
-				case Qt::Key_2:
-					toggleCharacterBit(0x40); // Bottom right
-					break;
-				case Qt::Key_R:
-				case Qt::Key_9:
-					toggleCharacterBit(0x5f); // Invert
-					break;
-				case Qt::Key_F:
-				case Qt::Key_6:
-					toggleCharacterBit(0x7f); // Set all
-					break;
-				case Qt::Key_C:
-				case Qt::Key_3:
-					toggleCharacterBit(0x20); // Clear all
-					break;
+		// A character-typing key was pressed
+		// Try to keymap it, if not keymapped then plain ASCII code (may be) returned
+		char mappedKeyPress = keymapping[m_pageRender.level1CharSet(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn())].value(event->text().at(0), *qPrintable(event->text()));
+		// If outside ASCII map then the character can't be represented by current Level 1 character set
+		// Map it to block character so it doesn't need to be inserted-between later on
+		if (mappedKeyPress & 0x80)
+			mappedKeyPress = 0x7f;
+		if (m_pageRender.level1MosaicAttribute(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) && (mappedKeyPress < 0x40 || mappedKeyPress > 0x5f)) {
+			// We're on a mosaic and a blast-through character was NOT pressed
+			if (event->key() >= Qt::Key_1 && event->key() <= Qt::Key_9 && event->modifiers() & Qt::KeypadModifier) {
+				switch (event->key()) {
+					case Qt::Key_7:
+						toggleCharacterBit(0x01); // Top left
+						break;
+					case Qt::Key_8:
+						toggleCharacterBit(0x02); // Top right
+						break;
+					case Qt::Key_4:
+						toggleCharacterBit(0x04); // Middle left
+						break;
+					case Qt::Key_5:
+						toggleCharacterBit(0x08); // Middle right
+						break;
+					case Qt::Key_1:
+						toggleCharacterBit(0x10); // Bottom left
+						break;
+					case Qt::Key_2:
+						toggleCharacterBit(0x40); // Bottom right
+						break;
+					case Qt::Key_9:
+						toggleCharacterBit(0x5f); // Invert
+						break;
+					case Qt::Key_6:
+						toggleCharacterBit(0x7f); // Set all
+						break;
+					case Qt::Key_3:
+						toggleCharacterBit(0x20); // Clear all
+						break;
+				}
+				return;
 			}
+			if (event->key() == Qt::Key_Space) {
+				setCharacter(0x20);
+				return;
+			}
+
+			// This macro is defined in keymap.h if no native scan codes are defined
+			// for the platform we are compiling on
+#ifndef QTTM_NONATIVESCANCODES
+			if (event->nativeScanCode() > 1) {
+				switch (event->nativeScanCode()) {
+					case mosaicNativeScanCodes[0]:
+						toggleCharacterBit(0x01); // Top left
+						break;
+					case mosaicNativeScanCodes[1]:
+						toggleCharacterBit(0x02); // Top right
+						break;
+					case mosaicNativeScanCodes[2]:
+						toggleCharacterBit(0x04); // Middle left
+						break;
+					case mosaicNativeScanCodes[3]:
+						toggleCharacterBit(0x08); // Middle right
+						break;
+					case mosaicNativeScanCodes[4]:
+						toggleCharacterBit(0x10); // Bottom left
+						break;
+					case mosaicNativeScanCodes[5]:
+						toggleCharacterBit(0x40); // Bottom right
+						break;
+					case mosaicNativeScanCodes[6]:
+						toggleCharacterBit(0x5f); // Invert
+						break;
+					case mosaicNativeScanCodes[7]:
+						toggleCharacterBit(0x7f); // Set all
+						break;
+					case mosaicNativeScanCodes[8]:
+						toggleCharacterBit(0x20); // Clear all
+						break;
+				}
+				return;
+			} else
+				qDebug("nativeScanCode not usable! Please use numeric keypad to toggle mosaic bits.");
+#else
+			qDebug("nativeScanCode was not compiled in! Please use numeric keypad to toggle mosaic bits.");
+#endif
+
+			// TODO some contingency plan if nativeScanCode didn't work?
 			return;
 		}
-		if (keyPressed == 0x20)
-			setCharacter((event->modifiers() & Qt::ShiftModifier) ? 0x7f : 0x20);
-		else
-			setCharacter(keyPressed);
+		setCharacter(mappedKeyPress);
 		return;
 	}
 	switch (event->key()) {

@@ -47,6 +47,8 @@ public:
 
 	QSize sizeHint() { return QSize(480+(pageRender()->leftSidePanelColumns()+pageRender()->rightSidePanelColumns())*12, 250); }
 
+	void inputMethodEvent(QInputMethodEvent *);
+
 	TeletextDocument* document() const { return m_teletextDocument; }
 	TeletextPageRender *pageRender() { return &m_pageRender; }
 

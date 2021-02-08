@@ -2,6 +2,7 @@ QT += widgets
 requires(qtConfig(filedialog))
 
 HEADERS       = document.h \
+                keymap.h \
                 levelonecommands.h \
                 levelonepage.h \
                 loadsave.h \
