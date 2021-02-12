@@ -497,11 +497,20 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	connect(m_x26View, &QWidget::customContextMenuRequested, this, &X26DockWidget::customMenuRequested);
 
 	connect(m_x26View, &QAbstractItemView::clicked, this, &X26DockWidget::rowClicked);
+}
 
-	QShortcut* insertShortcut = new QShortcut(QKeySequence(Qt::Key_Insert), m_x26View);
-	connect(insertShortcut, &QShortcut::activated, this, &X26DockWidget::insertTriplet);
-	QShortcut* deleteShortcut = new QShortcut(QKeySequence(Qt::Key_Delete), m_x26View);
-	connect(deleteShortcut, &QShortcut::activated, this, &X26DockWidget::deleteTriplet);
+void X26DockWidget::keyPressEvent(QKeyEvent *event)
+{
+	switch (event->key()) {
+		case Qt::Key_Insert:
+			insertTriplet();
+			break;
+		case Qt::Key_Delete:
+			deleteTriplet();
+			break;
+		default:
+			QWidget::keyPressEvent(event);
+	}
 }
 
 void X26DockWidget::selectX26ListRow(int row)

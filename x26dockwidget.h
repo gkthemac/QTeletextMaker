@@ -61,6 +61,9 @@ public slots:
 	void updateModelFromCookedWidget(const int, const int);
 	void selectX26ListRow(int);
 
+protected:
+	void keyPressEvent(QKeyEvent *event) override;
+
 private:
 	QTableView *m_x26View;
 	X26Model *m_x26Model;
