@@ -655,10 +655,10 @@ void MainWindow::createStatusBar()
 	m_levelRadioButton[1] = new QRadioButton("1.5");
 	m_levelRadioButton[2] = new QRadioButton("2.5");
 	m_levelRadioButton[3] = new QRadioButton("3.5");
-	statusBar()->addPermanentWidget(m_levelRadioButton[0]);
-	statusBar()->addPermanentWidget(m_levelRadioButton[1]);
-	statusBar()->addPermanentWidget(m_levelRadioButton[2]);
-	statusBar()->addPermanentWidget(m_levelRadioButton[3]);
+	for (int i=0; i<4; i++) {
+		m_levelRadioButton[i]->setFocusPolicy(Qt::NoFocus);
+		statusBar()->addPermanentWidget(m_levelRadioButton[i]);
+	}
 	m_levelRadioButton[0]->toggle();
 	connect(m_levelRadioButton[0], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(0); m_textWidget->update(); });
 	connect(m_levelRadioButton[1], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(1); m_textWidget->update(); });
