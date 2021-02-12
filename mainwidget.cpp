@@ -332,6 +332,10 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 		case Qt::Key_Backspace:
 			backspaceEvent();
 			break;
+		case Qt::Key_Delete:
+			m_teletextDocument->undoStack()->push(new DeleteKeyCommand(m_teletextDocument));
+			break;
+
 		case Qt::Key_Up:
 			m_teletextDocument->cursorUp();
 			update();

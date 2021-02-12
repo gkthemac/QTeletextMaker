@@ -185,6 +185,58 @@ bool BackspaceCommand::mergeWith(const QUndoCommand *command)
 }
 
 
+DeleteKeyCommand::DeleteKeyCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
+{
+	m_teletextDocument = teletextDocument;
+	m_subPageIndex = teletextDocument->currentSubPageIndex();
+	m_row = teletextDocument->cursorRow();
+	m_column = teletextDocument->cursorColumn();
+	for (int c=0; c<40; c++)
+		m_oldRowContents[c] = m_newRowContents[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
+
+	setText(QObject::tr("delete"));
+}
+
+void DeleteKeyCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+
+	for (int c=m_column; c<39; c++)
+		m_newRowContents[c] = m_newRowContents[c+1];
+	m_newRowContents[39] = 0x20;
+
+	for (int c=0; c<40; c++)
+		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_newRowContents[c]);
+
+	m_teletextDocument->moveCursor(m_row, m_column);
+	emit m_teletextDocument->contentsChange(m_row);
+}
+
+void DeleteKeyCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+
+	for (int c=0; c<40; c++)
+		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_oldRowContents[c]);
+
+	m_teletextDocument->moveCursor(m_row, m_column);
+	emit m_teletextDocument->contentsChange(m_row);
+}
+
+bool DeleteKeyCommand::mergeWith(const QUndoCommand *command)
+{
+	const DeleteKeyCommand *newerCommand = static_cast<const DeleteKeyCommand *>(command);
+
+	if (m_subPageIndex != newerCommand->m_subPageIndex || m_row != newerCommand->m_row || m_column != newerCommand->m_column)
+		return false;
+
+	for (int c=0; c<40; c++)
+		m_newRowContents[c] = newerCommand->m_newRowContents[c];
+
+	return true;
+}
+
+
 InsertRowCommand::InsertRowCommand(TeletextDocument *teletextDocument, bool copyRow, QUndoCommand *parent) : QUndoCommand(parent)
 {
 	m_teletextDocument = teletextDocument;
@@ -317,6 +369,7 @@ void DeleteSubPageCommand::undo()
 	m_teletextDocument->unDeleteSubPageFromRecycle(m_subPageToDelete);
 	m_teletextDocument->selectSubPageIndex(m_subPageToDelete, true);
 }
+
 
 SetColourCommand::SetColourCommand(TeletextDocument *teletextDocument, int colourIndex, int newColour, QUndoCommand *parent) : QUndoCommand(parent)
 {

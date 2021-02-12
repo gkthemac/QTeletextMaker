@@ -80,6 +80,24 @@ private:
 	bool m_firstDo;
 };
 
+class DeleteKeyCommand : public QUndoCommand
+{
+public:
+	enum { Id = 104 };
+
+	DeleteKeyCommand(TeletextDocument *, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+	bool mergeWith(const QUndoCommand *) override;
+	int id() const override { return Id; }
+
+private:
+	TeletextDocument *m_teletextDocument;
+	unsigned char m_oldRowContents[40], m_newRowContents[40];
+	int m_subPageIndex, m_row, m_column;
+};
+
 class InsertSubPageCommand : public QUndoCommand
 {
 public:
