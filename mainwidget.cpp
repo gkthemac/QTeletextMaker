@@ -144,6 +144,11 @@ void TeletextWidget::timerEvent(QTimerEvent *event)
 		QWidget::timerEvent(event);
 }
 
+void TeletextWidget::setInsertMode(bool insertMode)
+{
+	m_insertMode = insertMode;
+}
+
 void TeletextWidget::toggleReveal(bool revealOn)
 {
 	m_pageRender.setReveal(revealOn);
@@ -330,7 +335,10 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 	}
 	switch (event->key()) {
 		case Qt::Key_Backspace:
-			backspaceEvent();
+			m_teletextDocument->undoStack()->push(new BackspaceKeyCommand(m_teletextDocument, m_insertMode));
+			break;
+		case Qt::Key_Tab:
+			m_teletextDocument->undoStack()->push(new TypeCharacterCommand(m_teletextDocument, 0x20, true));
 			break;
 		case Qt::Key_Delete:
 			m_teletextDocument->undoStack()->push(new DeleteKeyCommand(m_teletextDocument));
@@ -383,20 +391,13 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 
 void TeletextWidget::setCharacter(unsigned char newCharacter)
 {
-	QUndoCommand *overwriteCharacterCommand = new OverwriteCharacterCommand(m_teletextDocument, newCharacter);
-	m_teletextDocument->undoStack()->push(overwriteCharacterCommand);
+	m_teletextDocument->undoStack()->push(new TypeCharacterCommand(m_teletextDocument, newCharacter, m_insertMode));
 }
 
 void TeletextWidget::toggleCharacterBit(unsigned char bitToToggle)
 {
 	QUndoCommand *toggleMosaicBitCommand = new ToggleMosaicBitCommand(m_teletextDocument, bitToToggle);
 	m_teletextDocument->undoStack()->push(toggleMosaicBitCommand);
-}
-
-void TeletextWidget::backspaceEvent()
-{
-	QUndoCommand *backspaceCommand = new BackspaceCommand(m_teletextDocument);
-	m_teletextDocument->undoStack()->push(backspaceCommand);
 }
 
 QPair<int, int> TeletextWidget::mouseToRowAndColumn(const QPoint &mousePosition)

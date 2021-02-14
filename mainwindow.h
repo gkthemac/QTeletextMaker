@@ -27,6 +27,7 @@
 #include <QGraphicsView>
 #include <QMainWindow>
 #include <QLabel>
+#include <QPushButton>
 #include <QToolButton>
 
 #include "mainwidget.h"
@@ -77,6 +78,8 @@ private slots:
 	void zoomOut();
 	void zoomReset();
 
+	void toggleInsertMode();
+
 private:
 	enum { m_MaxRecentFiles = 10 };
 
@@ -115,6 +118,7 @@ private:
 
 	QLabel *m_subPageLabel, *m_cursorPositionLabel;
 	QToolButton *m_previousSubPageButton, *m_nextSubPageButton;
+	QPushButton *m_insertModePushButton;
 	QRadioButton *m_levelRadioButton[4];
 
 	QString m_curFile;

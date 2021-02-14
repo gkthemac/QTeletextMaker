@@ -23,6 +23,7 @@
 #include <QList>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QRadioButton>
 #include <QSaveFile>
 #include <QScreen>
@@ -180,6 +181,8 @@ void MainWindow::init()
 
 	QShortcut *blockShortCut = new QShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_J), m_textView);
 	connect(blockShortCut, &QShortcut::activated, [=]() { m_textWidget->setCharacter(0x7f); });
+	QShortcut *insertModeShortCut = new QShortcut(QKeySequence(Qt::Key_Insert), this);
+	connect(insertModeShortCut, &QShortcut::activated, this, &MainWindow::toggleInsertMode);
 
 	setUnifiedTitleAndToolBarOnMac(true);
 
@@ -622,6 +625,15 @@ void MainWindow::zoomReset()
 	setSceneDimensions();
 }
 
+void MainWindow::toggleInsertMode()
+{
+	m_textWidget->setInsertMode(!m_textWidget->insertMode());
+	if (m_textWidget->insertMode())
+		m_insertModePushButton->setText("INSERT");
+	else
+		m_insertModePushButton->setText("OVERWRITE");
+}
+
 void MainWindow::createStatusBar()
 {
 	QLabel *subPageLabel = new QLabel("Subpage");
@@ -648,6 +660,12 @@ void MainWindow::createStatusBar()
 
 	m_cursorPositionLabel = new QLabel("Row 1 Column 1");
 	statusBar()->insertWidget(4, m_cursorPositionLabel);
+
+	m_insertModePushButton = new QPushButton("OVERWRITE");
+	m_insertModePushButton->setFlat(true);
+	m_insertModePushButton->setFocusProxy(m_textWidget);
+	statusBar()->addPermanentWidget(m_insertModePushButton);
+	connect(m_insertModePushButton, &QPushButton::clicked, this, &MainWindow::toggleInsertMode);
 
 	statusBar()->addPermanentWidget(new QLabel("Level"));
 

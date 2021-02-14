@@ -21,26 +21,36 @@
 
 #include "document.h"
 
-OverwriteCharacterCommand::OverwriteCharacterCommand(TeletextDocument *teletextDocument, unsigned char newCharacter, QUndoCommand *parent) : QUndoCommand(parent)
+TypeCharacterCommand::TypeCharacterCommand(TeletextDocument *teletextDocument, unsigned char newCharacter, bool insertMode, QUndoCommand *parent) : QUndoCommand(parent)
 {
 	m_teletextDocument = teletextDocument;
 	m_subPageIndex = teletextDocument->currentSubPageIndex();
 	m_row = teletextDocument->cursorRow();
 	m_columnStart = m_columnEnd = teletextDocument->cursorColumn();
+	m_newCharacter = newCharacter;
+	m_insertMode = insertMode;
+
 	for (int c=0; c<40; c++)
 		m_oldRowContents[c] = m_newRowContents[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
-	m_newCharacter = newCharacter;
 
-	setText(QObject::tr("overwrite char"));
+	if (m_insertMode)
+		setText(QObject::tr("insert character"));
+	else
+		setText(QObject::tr("overwrite character"));
 	m_firstDo = true;
 }
 
-void OverwriteCharacterCommand::redo()
+void TypeCharacterCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 
 	// Only apply the typed character on the first do, m_newRowContents will remember it if we redo
 	if (m_firstDo) {
+		if (m_insertMode) {
+			// Insert - Move characters rightwards
+			for (int c=39; c>m_columnEnd; c--)
+				m_newRowContents[c] = m_newRowContents[c-1];
+		}
 		m_newRowContents[m_columnEnd] = m_newCharacter;
 		m_firstDo = false;
 	}
@@ -52,7 +62,7 @@ void OverwriteCharacterCommand::redo()
 	emit m_teletextDocument->contentsChange(m_row);
 }
 
-void OverwriteCharacterCommand::undo()
+void TypeCharacterCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 
@@ -63,9 +73,9 @@ void OverwriteCharacterCommand::undo()
 	emit m_teletextDocument->contentsChange(m_row);
 }
 
-bool OverwriteCharacterCommand::mergeWith(const QUndoCommand *command)
+bool TypeCharacterCommand::mergeWith(const QUndoCommand *command)
 {
-	const OverwriteCharacterCommand *newerCommand = static_cast<const OverwriteCharacterCommand *>(command);
+	const TypeCharacterCommand *newerCommand = static_cast<const TypeCharacterCommand *>(command);
 
 	// Has to be the next typed column on the same row
 	if (m_subPageIndex != newerCommand->m_subPageIndex || m_row != newerCommand->m_row || m_columnEnd != newerCommand->m_columnEnd-1)
@@ -90,14 +100,17 @@ ToggleMosaicBitCommand::ToggleMosaicBitCommand(TeletextDocument *teletextDocumen
 		m_newCharacter = bitToToggle;
 	else
 		m_newCharacter = m_oldCharacter ^ bitToToggle;
+
+	setText(QObject::tr("mosaic"));
+
 }
 
 void ToggleMosaicBitCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_newCharacter);
+
 	m_teletextDocument->moveCursor(m_row, m_column);
-	setText(QObject::tr("mosaic"));
 	emit m_teletextDocument->contentsChange(m_row);
 }
 
@@ -105,8 +118,8 @@ void ToggleMosaicBitCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_oldCharacter);
+
 	m_teletextDocument->moveCursor(m_row, m_column);
-	setText(QObject::tr("mosaic"));
 	emit m_teletextDocument->contentsChange(m_row);
 }
 
@@ -121,7 +134,7 @@ bool ToggleMosaicBitCommand::mergeWith(const QUndoCommand *command)
 }
 
 
-BackspaceCommand::BackspaceCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
+BackspaceKeyCommand::BackspaceKeyCommand(TeletextDocument *teletextDocument, bool insertMode, QUndoCommand *parent) : QUndoCommand(parent)
 {
 	m_teletextDocument = teletextDocument;
 	m_subPageIndex = teletextDocument->currentSubPageIndex();
@@ -133,6 +146,8 @@ BackspaceCommand::BackspaceCommand(TeletextDocument *teletextDocument, QUndoComm
 			m_row = 24;
 	}
 	m_columnEnd = m_columnStart;
+	m_insertMode = insertMode;
+
 	for (int c=0; c<40; c++)
 		m_oldRowContents[c] = m_newRowContents[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
 
@@ -140,14 +155,22 @@ BackspaceCommand::BackspaceCommand(TeletextDocument *teletextDocument, QUndoComm
 	m_firstDo = true;
 }
 
-void BackspaceCommand::redo()
+void BackspaceKeyCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 
 	if (m_firstDo) {
-		m_newRowContents[m_columnEnd] = 0x20;
+		if (m_insertMode) {
+			// Insert - Move characters leftwards and put a space on the far right
+			for (int c=m_columnEnd; c<39; c++)
+				m_newRowContents[c] = m_newRowContents[c+1];
+			m_newRowContents[39] = 0x20;
+		} else
+			// Replace - Overwrite backspaced character with a space
+			m_newRowContents[m_columnEnd] = 0x20;
 		m_firstDo = false;
 	}
+
 	for (int c=0; c<40; c++)
 		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_newRowContents[c]);
 
@@ -155,7 +178,7 @@ void BackspaceCommand::redo()
 	emit m_teletextDocument->contentsChange(m_row);
 }
 
-void BackspaceCommand::undo()
+void BackspaceKeyCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 
@@ -167,9 +190,9 @@ void BackspaceCommand::undo()
 	emit m_teletextDocument->contentsChange(m_row);
 }
 
-bool BackspaceCommand::mergeWith(const QUndoCommand *command)
+bool BackspaceKeyCommand::mergeWith(const QUndoCommand *command)
 {
-	const BackspaceCommand *newerCommand = static_cast<const BackspaceCommand *>(command);
+	const BackspaceKeyCommand *newerCommand = static_cast<const BackspaceKeyCommand *>(command);
 
 	// Has to be the next backspaced column on the same row
 	if (m_subPageIndex != newerCommand->m_subPageIndex || m_row != newerCommand->m_row || m_columnEnd != newerCommand->m_columnEnd+1)
@@ -191,6 +214,7 @@ DeleteKeyCommand::DeleteKeyCommand(TeletextDocument *teletextDocument, QUndoComm
 	m_subPageIndex = teletextDocument->currentSubPageIndex();
 	m_row = teletextDocument->cursorRow();
 	m_column = teletextDocument->cursorColumn();
+
 	for (int c=0; c<40; c++)
 		m_oldRowContents[c] = m_newRowContents[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
 
@@ -201,6 +225,7 @@ void DeleteKeyCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 
+	// Move characters leftwards and put a space on the far right
 	for (int c=m_column; c<39; c++)
 		m_newRowContents[c] = m_newRowContents[c+1];
 	m_newRowContents[39] = 0x20;
@@ -243,6 +268,11 @@ InsertRowCommand::InsertRowCommand(TeletextDocument *teletextDocument, bool copy
 	m_subPageIndex = teletextDocument->currentSubPageIndex();
 	m_row = teletextDocument->cursorRow();
 	m_copyRow = copyRow;
+
+	if (m_copyRow)
+		setText(QObject::tr("insert copy row"));
+	else
+		setText(QObject::tr("insert blank row"));
 }
 
 void InsertRowCommand::redo()
@@ -252,18 +282,15 @@ void InsertRowCommand::redo()
 	// Store copy of the bottom row we're about to push out, for undo
 	for (int c=0; c<40; c++)
 		m_deletedBottomRow[c] = m_teletextDocument->currentSubPage()->character(23, c);
-	// Shuffle lines below the inserting row downwards without affecting the FastText row
+	// Move lines below the inserting row downwards without affecting the FastText row
 	for (int r=22; r>=m_row; r--)
 		for (int c=0; c<40; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(r+1, c, m_teletextDocument->currentSubPage()->character(r, c));
-	if (m_copyRow)
-		setText(QObject::tr("insert copy row"));
-	else {
-		// The above shuffle leaves a duplicate of the current row, so blank it if requested
+	if (!m_copyRow)
+		// The above movement leaves a duplicate of the current row, so blank it if requested
 		for (int c=0; c<40; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(m_row, c, ' ');
-		setText(QObject::tr("insert blank row"));
-	}
+
 	emit m_teletextDocument->refreshNeeded();
 }
 
@@ -271,17 +298,14 @@ void InsertRowCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->moveCursor(m_row, -1);
-	// Shuffle lines below the deleting row upwards without affecting the FastText row
+	// Move lines below the deleting row upwards without affecting the FastText row
 	for (int r=m_row; r<23; r++)
 		for (int c=0; c<40; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(r, c, m_teletextDocument->currentSubPage()->character(r+1, c));
 	// Now repair the bottom row we pushed out
 	for (int c=0; c<40; c++)
 		m_teletextDocument->currentSubPage()->setCharacter(23, c, m_deletedBottomRow[c]);
-	if (m_copyRow)
-		setText(QObject::tr("insert copy row"));
-	else
-		setText(QObject::tr("insert blank row"));
+
 	emit m_teletextDocument->refreshNeeded();
 }
 
@@ -291,6 +315,8 @@ DeleteRowCommand::DeleteRowCommand(TeletextDocument *teletextDocument, QUndoComm
 	m_teletextDocument = teletextDocument;
 	m_subPageIndex = teletextDocument->currentSubPageIndex();
 	m_row = teletextDocument->cursorRow();
+
+	setText(QObject::tr("delete row"));
 }
 
 void DeleteRowCommand::redo()
@@ -300,7 +326,7 @@ void DeleteRowCommand::redo()
 	// Store copy of the row we're going to delete, for undo
 	for (int c=0; c<40; c++)
 		m_deletedRow[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
-	// Shuffle lines below the deleting row upwards without affecting the FastText row
+	// Move lines below the deleting row upwards without affecting the FastText row
 	for (int r=m_row; r<23; r++)
 		for (int c=0; c<40; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(r, c, m_teletextDocument->currentSubPage()->character(r+1, c));
@@ -308,7 +334,7 @@ void DeleteRowCommand::redo()
 	int blankingRow = (m_row < 24) ? 23 : 24;
 		for (int c=0; c<40; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(blankingRow, c, ' ');
-	setText(QObject::tr("delete row"));
+
 	emit m_teletextDocument->refreshNeeded();
 }
 
@@ -316,14 +342,14 @@ void DeleteRowCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->moveCursor(m_row, -1);
-	// Shuffle lines below the inserting row downwards without affecting the FastText row
+	// Move lines below the inserting row downwards without affecting the FastText row
 	for (int r=22; r>=m_row; r--)
 		for (int c=0; c<40; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(r+1, c, m_teletextDocument->currentSubPage()->character(r, c));
 	// Now repair the row we deleted
 	for (int c=0; c<40; c++)
 		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_deletedRow[c]);
-	setText(QObject::tr("delete row"));
+
 	emit m_teletextDocument->refreshNeeded();
 }
 
@@ -333,21 +359,24 @@ InsertSubPageCommand::InsertSubPageCommand(TeletextDocument *teletextDocument, b
 	m_teletextDocument = teletextDocument;
 	m_newSubPageIndex = teletextDocument->currentSubPageIndex()+afterCurrentSubPage;
 	m_copySubPage = copySubPage;
+
+	setText(QObject::tr("insert subpage"));
+
 }
 
 void InsertSubPageCommand::redo()
 {
 	m_teletextDocument->insertSubPage(m_newSubPageIndex, m_copySubPage);
+
 	m_teletextDocument->selectSubPageIndex(m_newSubPageIndex, true);
-	setText(QObject::tr("insert subpage"));
 }
 
 void InsertSubPageCommand::undo()
 {
 	m_teletextDocument->deleteSubPage(m_newSubPageIndex);
 	//TODO should we always wrench to "subpage viewed when we inserted"? Or just if subpage viewed is being deleted?
+
 	m_teletextDocument->selectSubPageIndex(qMin(m_newSubPageIndex, m_teletextDocument->numberOfSubPages()-1), true);
-	setText(QObject::tr("insert subpage"));
 }
 
 
@@ -378,14 +407,17 @@ SetColourCommand::SetColourCommand(TeletextDocument *teletextDocument, int colou
 	m_colourIndex = colourIndex;
 	m_oldColour = teletextDocument->currentSubPage()->CLUT(colourIndex);
 	m_newColour = newColour;
+
+	setText(QObject::tr("colour change"));
+
 }
 
 void SetColourCommand::redo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setCLUT(m_colourIndex, m_newColour);
+
 	emit m_teletextDocument->colourChanged(m_colourIndex);
-	setText(QObject::tr("colour change"));
 	emit m_teletextDocument->refreshNeeded();
 }
 
@@ -393,8 +425,8 @@ void SetColourCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setCLUT(m_colourIndex, m_oldColour);
+
 	emit m_teletextDocument->colourChanged(m_colourIndex);
-	setText(QObject::tr("colour change"));
 	emit m_teletextDocument->refreshNeeded();
 }
 
@@ -406,6 +438,8 @@ ResetCLUTCommand::ResetCLUTCommand(TeletextDocument *teletextDocument, int colou
 	m_colourTable = colourTable;
 	for (int i=m_colourTable*8; i<m_colourTable*8+8; i++)
 		m_oldColourEntry[i&7] = teletextDocument->currentSubPage()->CLUT(i);
+
+	setText(QObject::tr("CLUT %1 reset").arg(m_colourTable));
 }
 
 void ResetCLUTCommand::redo()
@@ -415,7 +449,7 @@ void ResetCLUTCommand::redo()
 		m_teletextDocument->currentSubPage()->setCLUT(i, m_teletextDocument->currentSubPage()->CLUT(i, 0));
 		emit m_teletextDocument->colourChanged(i);
 	}
-	setText(QObject::tr("CLUT %1 reset").arg(m_colourTable));
+
 	emit m_teletextDocument->refreshNeeded();
 }
 
@@ -426,6 +460,6 @@ void ResetCLUTCommand::undo()
 		m_teletextDocument->currentSubPage()->setCLUT(i, m_oldColourEntry[i&7]);
 		emit m_teletextDocument->colourChanged(i);
 	}
-	setText(QObject::tr("CLUT %1 reset").arg(m_colourTable));
+
 	emit m_teletextDocument->refreshNeeded();
 }

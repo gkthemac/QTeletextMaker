@@ -24,12 +24,12 @@
 
 #include "document.h"
 
-class OverwriteCharacterCommand : public QUndoCommand
+class TypeCharacterCommand : public QUndoCommand
 {
 public:
 	enum { Id = 101 };
 
-	OverwriteCharacterCommand(TeletextDocument *, unsigned char, QUndoCommand *parent = 0);
+	TypeCharacterCommand(TeletextDocument *, unsigned char, bool, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -40,7 +40,7 @@ private:
 	TeletextDocument *m_teletextDocument;
 	unsigned char m_newCharacter, m_oldRowContents[40], m_newRowContents[40];
 	int m_subPageIndex, m_row, m_columnStart, m_columnEnd;
-	bool m_firstDo;
+	bool m_firstDo, m_insertMode;
 };
 
 class ToggleMosaicBitCommand : public QUndoCommand
@@ -61,12 +61,12 @@ private:
 	int m_subPageIndex, m_row, m_column;
 };
 
-class BackspaceCommand : public QUndoCommand
+class BackspaceKeyCommand : public QUndoCommand
 {
 public:
 	enum { Id = 103 };
 
-	BackspaceCommand(TeletextDocument *, QUndoCommand *parent = 0);
+	BackspaceKeyCommand(TeletextDocument *, bool insertMode, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -77,7 +77,7 @@ private:
 	TeletextDocument *m_teletextDocument;
 	unsigned char m_oldRowContents[40], m_newRowContents[40];
 	int m_subPageIndex, m_row, m_columnStart, m_columnEnd;
-	bool m_firstDo;
+	bool m_firstDo, m_insertMode;
 };
 
 class DeleteKeyCommand : public QUndoCommand

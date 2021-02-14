@@ -43,7 +43,8 @@ public:
 	~TeletextWidget();
 	void setCharacter(unsigned char);
 	void toggleCharacterBit(unsigned char);
-	void backspaceEvent();
+	bool insertMode() const { return m_insertMode; };
+	void setInsertMode(bool);
 
 	QSize sizeHint() { return QSize(480+(pageRender()->leftSidePanelColumns()+pageRender()->rightSidePanelColumns())*12, 250); }
 
