@@ -166,6 +166,7 @@ void TeletextWidget::toggleGrid(bool gridOn)
 	m_grid = gridOn;
 	m_pageRender.setGrid(gridOn);
 	m_pageRender.renderPage();
+	update();
 }
 
 void TeletextWidget::setControlBit(int bitNumber, bool active)
@@ -199,6 +200,7 @@ void TeletextWidget::setDefaultRowColour(int newColour)
 	m_levelOnePage->setDefaultRowColour(newColour);
 	m_pageRender.decodePage();
 	m_pageRender.renderPage();
+	update();
 }
 
 void TeletextWidget::setColourTableRemap(int newMap)
@@ -206,6 +208,7 @@ void TeletextWidget::setColourTableRemap(int newMap)
 	m_levelOnePage->setColourTableRemap(newMap);
 	m_pageRender.decodePage();
 	m_pageRender.renderPage();
+	update();
 }
 
 void TeletextWidget::setBlackBackgroundSubst(bool substOn)
@@ -213,6 +216,7 @@ void TeletextWidget::setBlackBackgroundSubst(bool substOn)
 	m_levelOnePage->setBlackBackgroundSubst(substOn);
 	m_pageRender.decodePage();
 	m_pageRender.renderPage();
+	update();
 }
 
 void TeletextWidget::setSidePanelWidths(int newLeftSidePanelColumns, int newRightSidePanelColumns)
