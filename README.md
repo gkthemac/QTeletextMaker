@@ -30,9 +30,9 @@ The following X/26 enhancement triplets are not rendered by the editor, although
 ## Using the X/26 triplet editor
 The X/26 triplet editor sorts all the triplet modes available into categories selected by the triplet *type* dropdown on the left. The categories are:
 - Set Active Position
-- Row triplet
-- Column triplet
-- Object
+- Row triplet - full screen and full row colours, address row 0 and DRCS mode
+- Column triplet - non-spacing attributes and overwriting characters
+- Object - invocations and definitions
 - Terminator
 - PDC/reserved
 
