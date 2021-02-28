@@ -208,7 +208,7 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 			case 0x22: // G3 mosaic character at level 1.5
 			case 0x29: // G0 character
 			case 0x2b: // G3 mosaic character at level >=2.5
-			case 0x2f ... 0x3f: // G2 character or G0 diacrtitical mark
+			case 0x2f ... 0x3f: // G2 character or G0 diacritical mark
 				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >= 0x20)
 					return QString("0x%1").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data(), 2, 16);
 				break;
@@ -475,6 +475,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 		int intValue = value.toInt();
 		if (intValue < 0)
 			return false;
+
 		switch (index.column()) {
 			case 0: // Cooked row
 				// Maximum row is 24
@@ -491,6 +492,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 				// Others use address 40 for row 24
 				m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, (intValue == 24) ? 40 : intValue+40, role));
 				return true;
+
 			case 1: // Cooked column
 				// Origin modifier allows columns up to 71
 				if (intValue > (mode == 0x10 ? 71 : 39))
@@ -501,6 +503,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 				else
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, intValue, role));
 				return true;
+
 			case 2: // Cooked triplet mode
 				if (intValue < 0x20 && !m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).isRowTriplet()) {
 					// Changing mode from column triplet to row triplet
@@ -513,6 +516,92 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0, role));
 				}
 				m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETmode, 0x00, intValue & 0x1f, role));
+
+				// Now set data values to avoid reserved bits if we need to
+				// FIXME this can rather messily push multiple EditTripletCommands
+				// that rely on mergeWith to tidy them up afterwards
+				// Also this just flips bits,  where we could use default values
+				switch (intValue) {
+					case 0x00: // Full screen colour
+					case 0x20: // Foreground colour
+					case 0x23: // Background colour
+						// Both S1 and S0 reserved bits must be clear
+						if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x60)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x1f, 0x00, role));
+						break;
+					case 0x07: // Address row 0
+						// Address locked to 63
+						if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() != 63)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, 63, role));
+						// fall-through
+					case 0x01: // Full row colour
+						// S1 and S0 bits need to be the same
+						if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x60) != 0x00 && (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x60) != 0x60)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x1f, 0x00, role));
+						break;
+					case 0x04: // Set Active Position
+						// Data range 0-39
+						if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >= 40)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0, role));
+						break;
+					case 0x10: // Origin modifier
+						// Data range 0-71
+						if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >= 72)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0, role));
+						break;
+					case 0x11: // Invoke Active Object
+					case 0x12: // Invoke Adaptive Object
+					case 0x13: // Invoke Passive Object
+					case 0x15: // Define Active Object
+					case 0x16: // Define Adaptive Object
+					case 0x17: // Define Passive Object
+						// Bit 3 of Address is reserved
+						if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x04) == 0x04)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x7b, 0x00, role));
+						// BUG we're only dealing with Local Object Definitions at the moment!
+						// If source is Local, triplet number must be in range 0-12
+						if (((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x18) == 0x08) && ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f) >= 12))
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x70, 0x00, role));
+						break;
+					case 0x18: // DRCS mode
+						// At least one of the L1 and L0 bits must be set
+						if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x30) == 0x00)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x4f, 0x30, role));
+						break;
+					case 0x1f: // Termination marker
+						// Address locked to 63
+						if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() != 63)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, 63, role));
+						// Clear reserved bits D6-D3
+						if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x78)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x07, 0x00, role));
+						break;
+					case 0x21: // G1 mosaic character
+					case 0x22: // G3 mosaic character at level 1.5
+					case 0x29: // G0 character
+					case 0x2b: // G3 mosaic character at level >=2.5
+					case 0x2f ... 0x3f: // G2 character or G0 diacritical mark
+						// Data range 0x20-0x7f
+						if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() < 0x20)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0x20, role));
+						break;
+					case 0x27: // Additional flash functions
+						// D6 and D5 must be clear, D4 and D3 set is reserved phase
+						if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >= 0x18)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0, role));
+						break;
+					case 0x28: // Display attributes
+					case 0x2e: // Font style
+						// Clear reserved bit D3
+						if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x08)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x77, 0x00, role));
+						break;
+					case 0x2d: // DRCS character
+						// D5-D0 range 0-47
+						if ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x3f) >= 48)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x40, 0x77, role));
+						break;
+				};
 				return true;
 		}
 		return false;
