@@ -360,7 +360,7 @@ static const QMap<QChar, char> keymapping[24] = {
 
 		{ 0x00bc, 0x7b }, // ¼ VULGAR FRACTION ONE QUARTER
 		{ 0x00bd, 0x5c }, // ½ VULGAR FRACTION ONE HALF
-		{ 0x00be, 0x7b }, // ½ VULGAR FRACTION THREE QUARTERS
+		{ 0x00be, 0x7b }, // ¾ VULGAR FRACTION THREE QUARTERS
 		{ 0x00f7, 0x7e }  // ÷ DIVISION SIGN
 	},
 
