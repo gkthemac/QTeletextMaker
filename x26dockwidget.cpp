@@ -965,6 +965,7 @@ void X26DockWidget::cookedModeComboBoxChanged(const int value)
 
 	m_x26Model->setData(m_x26Model->index(m_x26View->currentIndex().row(), 2), m_cookedModeComboBox->itemData(value).toInt(), Qt::EditRole);
 
+	updateAllRawTripletSpinBoxes(m_x26View->currentIndex());
 	updateCookedTripletParameters(m_x26View->currentIndex());
 }
 
