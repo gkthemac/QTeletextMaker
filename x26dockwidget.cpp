@@ -240,8 +240,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	m_objectSourceComboBox->addItem("POP");
 	m_objectSourceComboBox->addItem("GPOP");
 	invokeObjectLayout->addWidget(m_objectSourceComboBox);
-	// FIXME combine this with bit setting
-	connect(m_objectSourceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](const int value) { m_invokeObjectSourceStackedLayout->setCurrentIndex(value != 0); updateModelFromCookedWidget(value, Qt::UserRole+1); } );
+	connect(m_objectSourceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+1); updateCookedTripletParameters(m_x26View->currentIndex()); } );
 
 	// Object required at which levels
 	m_objectRequiredAtL2p5CheckBox = new QCheckBox("L2.5");
