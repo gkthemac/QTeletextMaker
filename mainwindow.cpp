@@ -325,14 +325,17 @@ void MainWindow::createActions()
 #endif // !QT_NO_CLIPBOARD
 
 	QAction *insertBlankRowAct = editMenu->addAction(tr("Insert blank row"));
+	insertBlankRowAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
 	insertBlankRowAct->setStatusTip(tr("Insert a blank row at the cursor position"));
 	connect(insertBlankRowAct, &QAction::triggered, [=]() { insertRow(false); } );
 
 	QAction *insertCopyRowAct = editMenu->addAction(tr("Insert copy row"));
+	insertCopyRowAct->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_I));
 	insertCopyRowAct->setStatusTip(tr("Insert a row that's a copy of the row at the cursor position"));
 	connect(insertCopyRowAct, &QAction::triggered, [=]() { insertRow(true); } );
 
 	QAction *deleteRowAct = editMenu->addAction(tr("Delete row"));
+	deleteRowAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_D));
 	deleteRowAct->setStatusTip(tr("Delete the row at the cursor position"));
 	connect(deleteRowAct, &QAction::triggered, this, &MainWindow::deleteRow);
 
@@ -358,21 +361,25 @@ void MainWindow::createActions()
 
 	QAction *revealAct = viewMenu->addAction(tr("&Reveal"));
 	revealAct->setCheckable(true);
+	revealAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
 	revealAct->setStatusTip(tr("Toggle reveal"));
 	connect(revealAct, &QAction::toggled, m_textWidget, &TeletextWidget::toggleReveal);
 
 	QAction *mixAct = viewMenu->addAction(tr("&Mix"));
 	mixAct->setCheckable(true);
+	mixAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_M));
 	mixAct->setStatusTip(tr("Toggle mix"));
 	connect(mixAct, &QAction::toggled, m_textWidget, &TeletextWidget::toggleMix);
 
 	QAction *gridAct = viewMenu->addAction(tr("&Grid"));
 	gridAct->setCheckable(true);
+	gridAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
 	gridAct->setStatusTip(tr("Toggle the text grid"));
 	connect(gridAct, &QAction::toggled, m_textWidget, &TeletextWidget::toggleGrid);
 
 	QAction *showCodesAct = viewMenu->addAction(tr("Show codes"));
 	showCodesAct->setCheckable(true);
+	showCodesAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
 	showCodesAct->setStatusTip(tr("Toggle showing of control codes"));
 	connect(showCodesAct, &QAction::toggled, m_textWidget->pageRender(), &TeletextPageRender::setShowCodes);
 
@@ -420,6 +427,7 @@ void MainWindow::createActions()
 	connect(zoomOutAct, &QAction::triggered, this, &MainWindow::zoomOut);
 
 	QAction *zoomResetAct = viewMenu->addAction(tr("Reset zoom"));
+	zoomResetAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_0));
 	zoomResetAct->setStatusTip(tr("Reset zoom level"));
 	connect(zoomResetAct, &QAction::triggered, this, &MainWindow::zoomReset);
 
