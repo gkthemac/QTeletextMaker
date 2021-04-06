@@ -78,8 +78,7 @@ private:
 	QComboBox *m_flashModeComboBox, *m_flashRateComboBox;
 	QComboBox *m_textSizeComboBox;
 	QCheckBox *m_displayAttributeBoxingCheckBox, *m_displayAttributeConcealCheckBox, *m_displayAttributeInvertCheckBox, *m_displayAttributeUnderlineCheckBox;
-	QComboBox *m_objectSourceComboBox;
-	QCheckBox *m_objectRequiredAtL2p5CheckBox, *m_objectRequiredAtL3p5CheckBox;
+	QComboBox *m_objectSourceComboBox, *m_objectRequiredAtLevelsComboBox;
 	QSpinBox *m_invokeLocalObjectDesignationCodeSpinBox, *m_invokeLocalObjectTripletNumberSpinBox;
 	QSpinBox *m_invokePOPSubPageSpinBox, *m_invokePOPPacketNumberSpinBox;
 	QComboBox *m_invokePOPTripletNumberComboBox, *m_invokePOPPointerBitsComboBox;

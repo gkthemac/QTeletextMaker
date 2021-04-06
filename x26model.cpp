@@ -333,8 +333,8 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x18) >> 3) - 1;
 					break;
 				case 0x15 ... 0x17: // Define object
-					// Required at level 2.5
-					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x08) == 0x08;
+					// Required at which levels
+					return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x18) >> 3) - 1;
 				case 0x18: // DRCS mode
 					// Required at level 2.5
 					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x10) == 0x10;
@@ -426,9 +426,6 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				case 0x11 ... 0x13: // Invoke object
 					// (G)POP object: Triplet number
 					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >> 5;
-				case 0x15 ... 0x17: // Define object
-					// Required at level 3.5
-					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x10) == 0x10;
 				case 0x18: // DRCS mode
 					// Subpage
 					return m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x0f;
@@ -520,7 +517,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 				// Now set data values to avoid reserved bits if we need to
 				// FIXME this can rather messily push multiple EditTripletCommands
 				// that rely on mergeWith to tidy them up afterwards
-				// Also this just flips bits,  where we could use default values
+				// Also this just flips bits, where we could use default values
 				switch (intValue) {
 					case 0x00: // Full screen colour
 					case 0x20: // Foreground colour
@@ -628,8 +625,8 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x27, (value.toInt()+1) << 3, role));
 					break;
 				case 0x15 ... 0x17: // Define object
-					// Required at level 2.5
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x37, value.toInt() << 2, role));
+					// Required at which levels
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x27, (value.toInt()+1) << 3, role));
 					break;
 				case 0x18: // DRCS Mode
 					// Required at level 2.5
@@ -743,10 +740,6 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 				case 0x11 ... 0x13: // Invoke object
 					// (G)POP object: Triplet number
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x1f, value.toInt() << 5, role));
-					break;
-				case 0x15 ... 0x17: // Define object
-					// Required at level 3.5
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x2f, value.toInt() << 3, role));
 					break;
 				case 0x18: // DRCS Mode
 					// Subpage

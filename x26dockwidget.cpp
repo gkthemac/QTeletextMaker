@@ -243,12 +243,12 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	connect(m_objectSourceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+1); updateCookedTripletParameters(m_x26View->currentIndex()); } );
 
 	// Object required at which levels
-	m_objectRequiredAtL2p5CheckBox = new QCheckBox("L2.5");
-	m_objectRequiredAtL3p5CheckBox = new QCheckBox("L3.5");
-	invokeObjectLayout->addWidget(m_objectRequiredAtL2p5CheckBox);
-	invokeObjectLayout->addWidget(m_objectRequiredAtL3p5CheckBox);
-	connect(m_objectRequiredAtL2p5CheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget(value, Qt::UserRole+1); } );
-	connect(m_objectRequiredAtL3p5CheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget(value, Qt::UserRole+4); } );
+	m_objectRequiredAtLevelsComboBox = new QComboBox;
+	m_objectRequiredAtLevelsComboBox->addItem("L2.5 only");
+	m_objectRequiredAtLevelsComboBox->addItem("L3.5 only");
+	m_objectRequiredAtLevelsComboBox->addItem("L2.5 + 3.5");
+	invokeObjectLayout->addWidget(m_objectRequiredAtLevelsComboBox);
+	connect(m_objectRequiredAtLevelsComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](const int value) {  updateModelFromCookedWidget(value, Qt::UserRole+1); } );
 
 	// Invoke Local Objects
 	QHBoxLayout *invokeLocalObjectLayout = new QHBoxLayout;
@@ -743,18 +743,13 @@ void X26DockWidget::updateCookedTripletParameters(const QModelIndex &index)
 			if (index.model()->data(index.model()->index(index.row(), 1), Qt::UserRole).toInt() & 0x04) {
 				// Define object
 				m_objectSourceComboBox->setVisible(false);
-				m_objectRequiredAtL2p5CheckBox->setVisible(true);
-				m_objectRequiredAtL3p5CheckBox->setVisible(true);
-				m_objectRequiredAtL2p5CheckBox->blockSignals(true);
-				m_objectRequiredAtL3p5CheckBox->blockSignals(true);
-				m_objectRequiredAtL2p5CheckBox->setChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toBool());
-				m_objectRequiredAtL3p5CheckBox->setChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+4).toBool());
-				m_objectRequiredAtL2p5CheckBox->blockSignals(false);
-				m_objectRequiredAtL3p5CheckBox->blockSignals(false);
+				m_objectRequiredAtLevelsComboBox->setVisible(true);
+				m_objectRequiredAtLevelsComboBox->blockSignals(true);
+				m_objectRequiredAtLevelsComboBox->setCurrentIndex(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt());
+				m_objectRequiredAtLevelsComboBox->blockSignals(false);
 			} else {
 				// Invoke object
-				m_objectRequiredAtL2p5CheckBox->setVisible(false);
-				m_objectRequiredAtL3p5CheckBox->setVisible(false);
+				m_objectRequiredAtLevelsComboBox->setVisible(false);
 				m_objectSourceComboBox->setVisible(true);
 			}
 			m_objectSourceComboBox->blockSignals(true);
