@@ -83,7 +83,7 @@ private:
 	QSpinBox *m_invokePOPSubPageSpinBox, *m_invokePOPPacketNumberSpinBox;
 	QComboBox *m_invokePOPTripletNumberComboBox, *m_invokePOPPointerBitsComboBox;
 	QStackedLayout *m_invokeObjectSourceStackedLayout, *m_tripletParameterStackedLayout;
-	QCheckBox *m_DRCSModeRequiredAtL2p5CheckBox, *m_DRCSModeRequiredAtL3p5CheckBox;
+	QComboBox *m_DRCSModeRequiredAtLevelsComboBox;
 	QRadioButton *m_DRCSModeGlobalRadioButton, *m_DRCSModeNormalRadioButton;
 	QSpinBox *m_DRCSModeSubPageSpinBox;
 	QRadioButton *m_DRCSCharacterGlobalRadioButton, *m_DRCSCharacterNormalRadioButton;

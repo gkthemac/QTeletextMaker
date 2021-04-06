@@ -316,12 +316,12 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	// Index 6 - DRCS mode
 	QHBoxLayout *DRCSModeLayout = new QHBoxLayout;
 
-	m_DRCSModeRequiredAtL2p5CheckBox = new QCheckBox("L2.5");
-	m_DRCSModeRequiredAtL3p5CheckBox = new QCheckBox("L3.5");
-	DRCSModeLayout->addWidget(m_DRCSModeRequiredAtL2p5CheckBox);
-	DRCSModeLayout->addWidget(m_DRCSModeRequiredAtL3p5CheckBox);
-	connect(m_DRCSModeRequiredAtL2p5CheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget(value, Qt::UserRole+1); } );
-	connect(m_DRCSModeRequiredAtL3p5CheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget(value, Qt::UserRole+2); } );
+	m_DRCSModeRequiredAtLevelsComboBox = new QComboBox;
+	m_DRCSModeRequiredAtLevelsComboBox->addItem("L2.5 only");
+	m_DRCSModeRequiredAtLevelsComboBox->addItem("L3.5 only");
+	m_DRCSModeRequiredAtLevelsComboBox->addItem("L2.5 + 3.5");
+	DRCSModeLayout->addWidget(m_DRCSModeRequiredAtLevelsComboBox);
+	connect(m_DRCSModeRequiredAtLevelsComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](const int value) {  updateModelFromCookedWidget(value, Qt::UserRole+1); } );
 	m_DRCSModeGlobalRadioButton = new QRadioButton("Global");
 	m_DRCSModeNormalRadioButton = new QRadioButton("Normal");
 	QButtonGroup *DRCSModeButtonGroup = new QButtonGroup;
@@ -788,18 +788,15 @@ void X26DockWidget::updateCookedTripletParameters(const QModelIndex &index)
 			m_tripletParameterStackedLayout->setCurrentIndex(5);
 			break;
 		case 0x18: // DRCS mode
-			m_DRCSModeRequiredAtL2p5CheckBox->blockSignals(true);
-			m_DRCSModeRequiredAtL3p5CheckBox->blockSignals(true);
+			m_DRCSModeRequiredAtLevelsComboBox->blockSignals(true);
 			m_DRCSModeGlobalRadioButton->blockSignals(true);
 			m_DRCSModeNormalRadioButton->blockSignals(true);
 			m_DRCSModeSubPageSpinBox->blockSignals(true);
-			m_DRCSModeRequiredAtL2p5CheckBox->setChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toBool());
-			m_DRCSModeRequiredAtL3p5CheckBox->setChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+2).toBool());
+			m_DRCSModeRequiredAtLevelsComboBox->setCurrentIndex(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt());
 			m_DRCSModeGlobalRadioButton->setChecked(!index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+3).toBool());
 			m_DRCSModeNormalRadioButton->setChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+3).toBool());
 			m_DRCSModeSubPageSpinBox->setValue(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+4).toInt());
-			m_DRCSModeRequiredAtL2p5CheckBox->blockSignals(false);
-			m_DRCSModeRequiredAtL3p5CheckBox->blockSignals(false);
+			m_DRCSModeRequiredAtLevelsComboBox->blockSignals(false);
 			m_DRCSModeGlobalRadioButton->blockSignals(false);
 			m_DRCSModeNormalRadioButton->blockSignals(false);
 			m_DRCSModeSubPageSpinBox->blockSignals(false);

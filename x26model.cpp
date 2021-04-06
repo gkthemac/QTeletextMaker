@@ -164,9 +164,9 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					case 0x30:
 						result.append("L2.5 and 3.5");
 						break;
-					//case 0x00:
-					//	result = "Reserved";
-					//	break;
+					case 0x00:
+						result.append("Reserved");
+						break;
 				}
 				return result;
 			case 0x1f: // Termination
@@ -336,8 +336,8 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					// Required at which levels
 					return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x18) >> 3) - 1;
 				case 0x18: // DRCS mode
-					// Required at level 2.5
-					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x10) == 0x10;
+					// Required at which levels
+					return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x30) >> 4) - 1;
 				case 0x1f: // Termination
 					// Intermed POP subpage|Last POP subpage|Local Object|Local enhance
 					return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x06) >> 1);
@@ -375,9 +375,6 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				case 0x15 ... 0x17: // Define object
 					// Local object: Designation code
 					return ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).address() & 0x01) << 3) | ((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x70) >> 4);
-				case 0x18: // DRCS mode
-					// Required at level 3.5
-					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x20) == 0x20;
 				case 0x1f: // Termination
 					// More follows/Last
 					return (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x01) == 0x01;
@@ -629,8 +626,8 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x27, (value.toInt()+1) << 3, role));
 					break;
 				case 0x18: // DRCS Mode
-					// Required at level 2.5
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x6f, value.toInt() << 3, role));
+					// Required at which levels
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x4f, (value.toInt()+1) << 4, role));
 					break;
 				case 0x1f: // Termination
 					// Intermed POP subpage|Last POP subpage|Local Object|Local enhance
@@ -678,10 +675,6 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 					// Local object: Designation code
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x0f, (value.toInt() & 0x07) << 4, role));
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x38, value.toInt() >> 3, role));
-					break;
-				case 0x18: // DRCS Mode
-					// Required at level 3.5
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x5f, value.toInt() << 4, role));
 					break;
 				case 0x1f: // Termination
 					// More follows/Last
