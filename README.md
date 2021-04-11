@@ -11,7 +11,7 @@ Features
 - Configurable zoom.
 - View teletext pages in 4:3, 16:9 pillar-box and 16:9 stretch aspect ratios.
 
-Although designed on and developed for Linux, the Qt 5 libraries are cross platform so hopefully it should be compilable on Windows. And maybe MacOS as well.
+Although designed on and developed for Linux, the Qt 5 libraries are cross platform so a Windows executable can be built. A Windows executable can be found within the "Releases" link, compiled on a Linux host using [MXE](https://github.com/mxe/mxe) based on [these instructions](https://blog.8bitbuddhism.com/2018/08/22/cross-compiling-windows-applications-with-mxe/). After MXE is installed `make qtbase` will be enough to build QTeletextMaker.
 
 ## Building
 ### Linux

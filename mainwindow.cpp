@@ -134,7 +134,7 @@ void MainWindow::about()
 {
 	QMessageBox::about(this, tr("About QTeletextMaker"), tr("<b>QTeletextMaker</b><br>"
 	"An open source Level 2.5 teletext page editor.<br>"
-	"<i>Pre-alpha version</i><br><br>"
+	"<i>Version 0.1-alpha</i><br><br>"
 	"Copyright (C) 2020, 2021 Gavin MacGregor<br><br>"
 	"Released under the GNU General Public License version 3<br>"
 	"<a href=\"https://github.com/gkthemac/qteletextmaker\">https://github.com/gkthemac/qteletextmaker</a>"));
