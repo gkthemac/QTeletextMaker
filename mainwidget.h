@@ -55,6 +55,7 @@ public:
 
 signals:
 	void sizeChanged();
+	void insertKeyPressed();
 
 public slots:
 	void subPageSelected();

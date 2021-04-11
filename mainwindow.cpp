@@ -178,11 +178,10 @@ void MainWindow::init()
 	connect(m_textWidget, &TeletextWidget::sizeChanged, this, &MainWindow::setSceneDimensions);
 	connect(m_textWidget->pageRender(), &TeletextPageRender::fullScreenColourChanged, m_textScene, &LevelOneScene::setFullScreenColour);
 	connect(m_textWidget->pageRender(), &TeletextPageRender::fullRowColourChanged, m_textScene, &LevelOneScene::setFullRowColour);
+	connect(m_textWidget, &TeletextWidget::insertKeyPressed, this, &MainWindow::toggleInsertMode);
 
 	QShortcut *blockShortCut = new QShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_J), m_textView);
 	connect(blockShortCut, &QShortcut::activated, [=]() { m_textWidget->setCharacter(0x7f); });
-	QShortcut *insertModeShortCut = new QShortcut(QKeySequence(Qt::Key_Insert), this);
-	connect(insertModeShortCut, &QShortcut::activated, this, &MainWindow::toggleInsertMode);
 
 	setUnifiedTitleAndToolBarOnMac(true);
 
