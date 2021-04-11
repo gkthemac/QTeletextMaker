@@ -20,6 +20,7 @@
 #ifndef PALETTEDOCKWIDGET_H
 #define PALETTEDOCKWIDGET_H
 
+#include <QCheckBox>
 #include <QDockWidget>
 #include <QPushButton>
 
@@ -46,6 +47,7 @@ private:
 	void resetCLUT(int);
 
 	QPushButton *m_colourButton[32], *m_resetButton[4];
+	QCheckBox *m_showHexValuesCheckBox;
 
 	TeletextWidget *m_parentMainWidget;
 };

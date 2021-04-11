@@ -17,6 +17,7 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <QCheckBox>
 #include <QColorDialog>
 #include <QDialog>
 #include <QGridLayout>
@@ -40,20 +41,26 @@ PaletteDockWidget::PaletteDockWidget(TeletextWidget *parent): QDockWidget(parent
 
 	this->setObjectName("PaletteDockWidget");
 	this->setWindowTitle("Palette");
+	for (int c=0; c<=7; c++)
+		paletteGridLayout->addWidget(new QLabel(QString("%1").arg(c)), 0, c+1, 1, 1, Qt::AlignHCenter);
 	for (int r=0, i=0; r<=3; r++) {
-		paletteGridLayout->addWidget(new QLabel(tr("CLUT %1").arg(r)), r, 0);
+		paletteGridLayout->addWidget(new QLabel(tr("CLUT %1").arg(r)), r+1, 0);
 		m_resetButton[r] = new QPushButton(tr("Reset"));
-		paletteGridLayout->addWidget(m_resetButton[r], r, 9);
+		paletteGridLayout->addWidget(m_resetButton[r], r+1, 9);
 		connect(m_resetButton[r], &QAbstractButton::clicked, [=]() { resetCLUT(r); });
 		for (int c=0; c<=7; c++, i++) {
 			if (i == 8)
 				continue;
 			m_colourButton[i] = new QPushButton();
 			m_colourButton[i]->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-			paletteGridLayout->addWidget(m_colourButton[i], r, c+1);
+			paletteGridLayout->addWidget(m_colourButton[i], r+1, c+1);
 			connect(m_colourButton[i], &QAbstractButton::clicked, [=]() { selectColour(i); });
 		}
 	}
+	m_showHexValuesCheckBox = new QCheckBox(tr("Show colour hex values"));
+	paletteGridLayout->addWidget(m_showHexValuesCheckBox, 5, 1, 1, 8);
+	connect(m_showHexValuesCheckBox, &QCheckBox::stateChanged, this, &PaletteDockWidget::updateAllColourButtons);
+
 	paletteGridWidget->setLayout(paletteGridLayout);
 	this->setWidget(paletteGridWidget);
 	connect(m_parentMainWidget->document(), &TeletextDocument::colourChanged, this, &PaletteDockWidget::updateColourButton);
@@ -64,7 +71,10 @@ void PaletteDockWidget::updateColourButton(int colourIndex)
 	if (colourIndex == 8)
 		return;
 	QString colourString = QString("%1").arg(m_parentMainWidget->document()->currentSubPage()->CLUT(colourIndex), 3, 16, QChar('0'));
-	m_colourButton[colourIndex]->setText(colourString);
+	if (m_showHexValuesCheckBox->isChecked())
+		m_colourButton[colourIndex]->setText(colourString);
+	else
+		m_colourButton[colourIndex]->setText(nullptr);
 
 	// Set text itself to black or white so it can be seen over background colour - http://alienryderflex.com/hsp.html
 	int r = m_parentMainWidget->document()->currentSubPage()->CLUT(colourIndex) >> 8;
