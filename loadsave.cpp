@@ -193,7 +193,11 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 					outLine.insert(c, 0x1b);
 					c++;
 				}
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 			outStream << outLine << Qt::endl;
+#else
+			outStream << outLine << endl;
+#endif
 		}
 	};
 
@@ -207,14 +211,22 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 			outLine[0] = designationCode | 0x40;
 			for (int c=1; c<outLine.size(); c++)
 				outLine[c] = outLine.at(c) | 0x40;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 			outStream << outLine << Qt::endl;
+#else
+			outStream << outLine << endl;
+#endif
 		}
 	};
 
 	outStream.setCodec("ISO-8859-1");
 
 	if (!document.description().isEmpty())
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 		outStream << "DE," << document.description() << Qt::endl;
+#else
+		outStream << "DE," << document.description() << endl;
+#endif
 
 	// TODO DS and SP commands
 
@@ -224,21 +236,48 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 
 	for (p=0; p<document.numberOfSubPages(); p++) {
 
-		outStream << QString("PN,%1%2").arg(document.pageNumber(), 3, 16, QChar('0')).arg(subPageNumber & 0xff, 2, 16, QChar('0')) << Qt::endl;
+		// Page number
+		outStream << QString("PN,%1%2").arg(document.pageNumber(), 3, 16, QChar('0')).arg(subPageNumber & 0xff, 2, 16, QChar('0'));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+			outStream << Qt::endl;
+#else
+			outStream << endl;
+#endif
+
+		// Subpage
 		// Magazine Organisation Table and Magazine Inventory Page don't have subpages
-		if (document.pageFunction() != TeletextDocument::PFMOT && document.pageFunction() != TeletextDocument::PFMIP)
-			outStream << QString("SC,%1").arg(subPageNumber, 4, 16, QChar('0')) << Qt::endl;
+		if (document.pageFunction() != TeletextDocument::PFMOT && document.pageFunction() != TeletextDocument::PFMIP) {
+			outStream << QString("SC,%1").arg(subPageNumber, 4, 16, QChar('0'));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+			outStream << Qt::endl;
+#else
+			outStream << endl;
+#endif
+		}
 
-		outStream << QString("PS,%1").arg(0x8000 | controlBitsToPS(document.subPage(p)), 4, 16, QChar('0')) << Qt::endl;
+		// Status bits
+		outStream << QString("PS,%1").arg(0x8000 | controlBitsToPS(document.subPage(p)), 4, 16, QChar('0'));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+		outStream << Qt::endl;
+#else
+		outStream << endl;
+#endif
 
+		// Cycle time
 		if (document.pageFunction() == TeletextDocument::PFLevelOnePage)
 			// Assume that only Level One Pages have configurable cycle times
-			outStream << QString("CT,%1,%2").arg(document.subPage(p)->cycleValue()).arg(document.subPage(p)->cycleType()==LevelOnePage::CTcycles ? 'C' : 'T') << Qt::endl;
+			outStream << QString("CT,%1,%2").arg(document.subPage(p)->cycleValue()).arg(document.subPage(p)->cycleType()==LevelOnePage::CTcycles ? 'C' : 'T');
 		else
 			// X/28/0 specifies page function and coding but the PF command
 			// should make it obvious to a human that this isn't a Level One Page
-			outStream << QString("PF,%1,%2").arg(document.pageFunction()).arg(document.packetCoding()) << Qt::endl;
+			outStream << QString("PF,%1,%2").arg(document.pageFunction()).arg(document.packetCoding());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+		outStream << Qt::endl;
+#else
+		outStream << endl;
+#endif
 
+		// FastText links
 		bool writeFLCommand = false;
 		if (document.pageFunction() == TeletextDocument::PFLevelOnePage && document.subPage(p)->packetNeeded(27,0)) {
 			// Subpage has FastText links - if any link to a specific subpage, we need to write X/27/0 as raw
@@ -285,7 +324,11 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 				if (i<5)
 					outStream << ',';
 			}
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 			outStream << Qt::endl;
+#else
+			outStream << endl;
+#endif
 		}
 
 		subPageNumber++;
