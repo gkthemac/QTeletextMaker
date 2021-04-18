@@ -34,7 +34,7 @@ TeletextPageRender::TeletextPageRender()
 	for (int i=0; i<6; i++)
 		m_pagePixmap[i] = new QPixmap(864, 250);
 	m_pagePixmap[0]->fill(Qt::transparent);
-	m_grid = m_mix = m_reveal = m_showCodes = false;
+	m_mix = m_reveal = m_showCodes = false;
 	m_renderLevel = 0;
 	m_flashRequired = 0;
 	m_finalFullScreenColour = 0;
@@ -92,7 +92,6 @@ void TeletextPageRender::setRenderLevel(int newRenderLevel)
 	renderPage();
 }
 
-void TeletextPageRender::setGrid(bool newGrid) { m_grid = newGrid; }
 void TeletextPageRender::setShowCodes(bool newShowCodes)
 {
 	m_showCodes = newShowCodes;
@@ -360,12 +359,6 @@ void TeletextPageRender::renderPage(int r)
 			else
 				pixmapPainter.drawRect(c*12, r*10+18, charWidth-1, 1);
 		}
-
-		if (m_grid) {
-			pixmapPainter.setPen(QColor(128, 128, 128, (c <= 39) ? 192 : 64));
-			pixmapPainter.drawRect(c*12, r*10, 11, 9);
-		}
-
 	};
 
 	pixmapPainter.begin(m_pagePixmap[0]);

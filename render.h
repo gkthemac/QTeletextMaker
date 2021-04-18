@@ -217,7 +217,7 @@ protected:
 	int m_finalFullScreenColour, m_renderLevel;
 	QColor m_finalFullScreenQColor;
 	int m_leftSidePanelColumns, m_rightSidePanelColumns;
-	bool m_reveal, m_mix, m_grid, m_showCodes;
+	bool m_reveal, m_mix, m_showCodes;
 	Level1Layer m_level1Layer;
 	std::vector<TextLayer *> m_textLayer;
 	const int m_foregroundRemap[8] = { 0,  0,  0,  8,  8, 16, 16, 16 };

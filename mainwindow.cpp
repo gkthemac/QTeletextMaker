@@ -157,12 +157,12 @@ void MainWindow::init()
 	m_paletteDockWidget = new PaletteDockWidget(m_textWidget);
 	addDockWidget(Qt::RightDockWidgetArea, m_paletteDockWidget);
 
+	m_textScene = new LevelOneScene(m_textWidget, this);
+
 	createActions();
 	createStatusBar();
 
 	readSettings();
-
-	m_textScene = new LevelOneScene(m_textWidget, this);
 
 	m_textView = new QGraphicsView(this);
 	m_textView->setScene(m_textScene);
@@ -374,7 +374,7 @@ void MainWindow::createActions()
 	gridAct->setCheckable(true);
 	gridAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
 	gridAct->setStatusTip(tr("Toggle the text grid"));
-	connect(gridAct, &QAction::toggled, m_textWidget, &TeletextWidget::toggleGrid);
+	connect(gridAct, &QAction::toggled, m_textScene, &LevelOneScene::toggleGrid);
 
 	QAction *showCodesAct = viewMenu->addAction(tr("Show codes"));
 	showCodesAct->setCheckable(true);
@@ -568,7 +568,7 @@ void MainWindow::setSceneDimensions()
 	else
 		newSceneWidth = m_textWidget->width() + leftRightBorders[m_viewBorder]*2;
 
-	m_textScene->setDimensions(newSceneWidth, 250+topBottomBorders[m_viewBorder]*2, m_textWidget->width());
+	m_textScene->setBorderDimensions(newSceneWidth, 250+topBottomBorders[m_viewBorder]*2, m_textWidget->width(), m_textWidget->pageRender()->leftSidePanelColumns(), m_textWidget->pageRender()->rightSidePanelColumns());
 	m_textView->setTransform(QTransform((1+(float)m_viewZoom/2)*aspectRatioHorizontalScaling[m_viewAspectRatio], 0, 0, 1+(float)m_viewZoom/2, 0, 0));
 }
 

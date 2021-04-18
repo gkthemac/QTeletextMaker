@@ -20,6 +20,7 @@
 #include <QBitmap>
 #include <QFrame>
 #include <QGraphicsItem>
+#include <QGraphicsItemGroup>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
 #include <QKeyEvent>
@@ -50,7 +51,6 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 	m_pageRender.setTeletextPage(m_levelOnePage);
 	m_insertMode = false;
 	m_selectionInProgress = false;
-	m_grid = false;
 	setFocusPolicy(Qt::StrongFocus);
 	m_flashTiming = m_flashPhase = 0;
 	connect(&m_pageRender, &TeletextPageRender::flashChanged, this, &TeletextWidget::updateFlashTimer);
@@ -158,14 +158,6 @@ void TeletextWidget::toggleReveal(bool revealOn)
 void TeletextWidget::toggleMix(bool mixOn)
 {
 	m_pageRender.setMix(mixOn);
-	update();
-}
-
-void TeletextWidget::toggleGrid(bool gridOn)
-{
-	m_grid = gridOn;
-	m_pageRender.setGrid(gridOn);
-	m_pageRender.renderPage();
 	update();
 }
 
@@ -480,7 +472,12 @@ void TeletextWidget::focusOutEvent(QFocusEvent *event)
 
 LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphicsScene(parent)
 {
+	m_grid = false;
+
+	// These dimensions are scratch, setBorderDimensions will get called straight away to adjust them
 	setSceneRect(0, 0, 600, 288);
+
+	// Full screen colours
 	m_fullScreenTopRectItem = new QGraphicsRectItem(0, 0, 600, 19);
 	m_fullScreenTopRectItem->setPen(Qt::NoPen);
 	m_fullScreenTopRectItem->setBrush(QBrush(QColor(0, 0, 0)));
@@ -490,6 +487,7 @@ LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphi
 	m_fullScreenBottomRectItem->setBrush(QBrush(QColor(0, 0, 0)));
 	addItem(m_fullScreenBottomRectItem);
 
+	// Full row colours
 	for (int r=0; r<25; r++) {
 		m_fullRowLeftRectItem[r] = new QGraphicsRectItem(0, 19+r*10, 60, 10);
 		m_fullRowLeftRectItem[r]->setPen(Qt::NoPen);
@@ -501,16 +499,43 @@ LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphi
 		addItem(m_fullRowRightRectItem[r]);
 	}
 
+	// Main text widget
 	m_levelOneProxyWidget = addWidget(levelOneWidget);
 	m_levelOneProxyWidget->setPos(60, 19);
 	m_levelOneProxyWidget->setAutoFillBackground(false);
+
+	// Optional grid overlay for text widget
+	m_mainGridItemGroup = new QGraphicsItemGroup;
+	m_mainGridItemGroup->setVisible(false);
+	addItem(m_mainGridItemGroup);
+	// Additional vertical pieces of grid for side panels
+	for (int i=0; i<32; i++) {
+		m_sidePanelGridNeeded[i] = false;
+		m_sidePanelGridItemGroup[i] = new QGraphicsItemGroup;
+		m_sidePanelGridItemGroup[i]->setVisible(false);
+		addItem(m_sidePanelGridItemGroup[i]);
+	}
+	for (int r=1; r<25; r++) {
+		for (int c=0; c<40; c++) {
+			QGraphicsRectItem *gridPiece = new QGraphicsRectItem(c*12, r*10, 12, 10);
+			gridPiece->setPen(QPen(QBrush(QColor(128, 128, 128, r<24 ? 192 : 128)), 0));
+			m_mainGridItemGroup->addToGroup(gridPiece);
+		}
+
+		if (r < 24)
+			for (int c=0; c<32; c++) {
+				QGraphicsRectItem *gridPiece = new QGraphicsRectItem(0, r*10, 12, 10);
+				gridPiece->setPen(QPen(QBrush(QColor(128, 128, 128, 64)), 0));
+				m_sidePanelGridItemGroup[c]->addToGroup(gridPiece);
+			}
+	}
 }
 
-void LevelOneScene::setDimensions(int sceneWidth, int sceneHeight, int widgetWidth)
+void LevelOneScene::setBorderDimensions(int sceneWidth, int sceneHeight, int widgetWidth, int leftSidePanelColumns, int rightSidePanelColumns)
 {
 	setSceneRect(0, 0, sceneWidth, sceneHeight);
 
-	// Assume widget height is always 250
+	// Assume text widget height is always 250
 	int topBottomBorders = (sceneHeight-250) / 2;
 	// Ideally we'd use m_levelOneProxyWidget->size() to discover the widget width ourselves
 	// but this causes a stubborn segfault, so we have to receive the widgetWidth as a parameter
@@ -518,13 +543,46 @@ void LevelOneScene::setDimensions(int sceneWidth, int sceneHeight, int widgetWid
 
 	m_levelOneProxyWidget->setPos(leftRightBorders, topBottomBorders);
 
+	// Position grid to cover central 40 columns
+	m_mainGridItemGroup->setPos(leftRightBorders + leftSidePanelColumns*12, topBottomBorders);
+	// Grid for right side panel
+	for (int c=0; c<16; c++)
+		if (rightSidePanelColumns > c) {
+			m_sidePanelGridItemGroup[c]->setPos(leftRightBorders + leftSidePanelColumns*12 + 480 + c*12, topBottomBorders);
+			m_sidePanelGridItemGroup[c]->setVisible(m_grid);
+			m_sidePanelGridNeeded[c] = true;
+		} else {
+			m_sidePanelGridItemGroup[c]->setVisible(false);
+			m_sidePanelGridNeeded[c] = false;
+		}
+	// Grid for left side panel
+	for (int c=0; c<16; c++)
+		if (c < leftSidePanelColumns) {
+			m_sidePanelGridItemGroup[31-c]->setPos(leftRightBorders + (leftSidePanelColumns-c-1)*12, topBottomBorders);
+			m_sidePanelGridItemGroup[31-c]->setVisible(m_grid);
+			m_sidePanelGridNeeded[31-c] = true;
+		} else {
+			m_sidePanelGridItemGroup[31-c]->setVisible(false);
+			m_sidePanelGridNeeded[31-c] = false;
+		}
+
+	// Full screen colours
 	m_fullScreenTopRectItem->setRect(0, 0, sceneWidth, topBottomBorders);
 	m_fullScreenBottomRectItem->setRect(0, 250+topBottomBorders, sceneWidth, topBottomBorders);
-
+	// Full row colours
 	for (int r=0; r<25; r++) {
 		m_fullRowLeftRectItem[r]->setRect(0, topBottomBorders+r*10, leftRightBorders+1, 10);
 		m_fullRowRightRectItem[r]->setRect(sceneWidth-leftRightBorders-1, topBottomBorders+r*10, leftRightBorders+1, 10);
 	}
+}
+
+void LevelOneScene::toggleGrid(bool gridOn)
+{
+	m_grid = gridOn;
+	m_mainGridItemGroup->setVisible(gridOn);
+	for (int i=0; i<32; i++)
+		if (m_sidePanelGridNeeded[i])
+			m_sidePanelGridItemGroup[i]->setVisible(gridOn);
 }
 
 void LevelOneScene::setFullScreenColour(const QColor &newColor)

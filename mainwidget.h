@@ -22,6 +22,7 @@
 
 #include <QBasicTimer>
 #include <QFrame>
+#include <QGraphicsItemGroup>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
 #include <QPair>
@@ -62,7 +63,6 @@ public slots:
 	void refreshPage();
 	void toggleReveal(bool);
 	void toggleMix(bool);
-	void toggleGrid(bool);
 	void updateFlashTimer(int);
 	void refreshRow(int);
 
@@ -91,13 +91,11 @@ protected:
 private:
 	TeletextDocument* m_teletextDocument;
 	LevelOnePage* m_levelOnePage;
-	bool m_insertMode, m_grid, m_selectionInProgress;
+	bool m_insertMode, m_selectionInProgress;
 	QBasicTimer m_flashTimer;
 	int m_flashTiming, m_flashPhase;
 
 	void timerEvent(QTimerEvent *event) override;
-
-	void calculateDimensions();
 
 	QPair<int, int> mouseToRowAndColumn(const QPoint &);
 };
@@ -108,9 +106,10 @@ class LevelOneScene : public QGraphicsScene
 
 public:
 	LevelOneScene(QWidget *, QObject *parent = nullptr);
-	void setDimensions(int, int, int);
+	void setBorderDimensions(int, int, int, int, int);
 
 public slots:
+	void toggleGrid(bool);
 	void setFullScreenColour(const QColor &);
 	void setFullRowColour(int, const QColor &);
 
@@ -118,6 +117,8 @@ private:
 	QGraphicsRectItem *m_fullScreenTopRectItem, *m_fullScreenBottomRectItem;
 	QGraphicsRectItem *m_fullRowLeftRectItem[25], *m_fullRowRightRectItem[25];
 	QGraphicsProxyWidget *m_levelOneProxyWidget;
+	QGraphicsItemGroup *m_mainGridItemGroup, *m_sidePanelGridItemGroup[32];
+	bool m_grid, m_sidePanelGridNeeded[32];
 };
 
 #endif
