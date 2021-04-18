@@ -163,7 +163,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 						if ((x26Triplet->address() & 0x18) == 0x08) {
 							// Local Object
 							// Check if the pointer in the Invocation triplet is valid
-							// Can't point to triplets 13-15; only 12 triplets per packet
+							// Can't point to triplets 13-15; only triplets 0-12 per packet
 							if ((x26Triplet->data() & 0x0f) > 12)
 								break;
 							int tripletPointer = ((x26Triplet->data() >> 4) | ((x26Triplet->address() & 1) << 3)) * 13 + (x26Triplet->data() & 0x0f);
@@ -173,11 +173,14 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 							// Check if we're pointing to an actual Object Definition of the same type
 							if ((x26Triplet->mode() | 0x04) != m_levelOnePage->enhancements()->at(tripletPointer).mode())
 								break;
-							// The Object Definition can't declare it's at triplet 13-15; only 12 triplets per packet
+							// The Object Definition can't declare it's at triplet 13-15; only triplets 0-12 per packet
 							if ((m_levelOnePage->enhancements()->at(tripletPointer).data() & 0x0f) > 12)
 								break;
 							// Check if the Object Definition triplet is where it declares it is
 							if ((((m_levelOnePage->enhancements()->at(tripletPointer).data() >> 4) | ((m_levelOnePage->enhancements()->at(tripletPointer).address() & 1) << 3)) * 13 + (m_levelOnePage->enhancements()->at(tripletPointer).data() & 0x0f)) != tripletPointer)
+								break;
+							// Check if (sub)Object type can be invoked by Object type we're within
+							if (enhanceLayer->objectType() >= (x26Triplet->mode() & 0x03))
 								break;
 							// Is the object required at the current presentation Level?
 							if (m_renderLevel == 2 && (m_levelOnePage->enhancements()->at(tripletPointer).address() & 0x08) == 0x00)
