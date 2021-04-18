@@ -107,6 +107,8 @@ public:
 	virtual int fullRowColour(int) const =0;
 	virtual bool fullRowDownwards(int) const =0;
 	virtual int objectType() const =0;
+	virtual int originR() const { return 0; };
+	virtual int originC() const { return 0; };
 	void setFullScreenColour(int);
 	void setFullRowColour(int, int, bool);
 
@@ -131,6 +133,8 @@ public:
 	int fullRowColour(int r) const { return m_layerFullRowColour[r]; };
 	bool fullRowDownwards(int r) const { return m_layerFullRowDownwards[r]; };
 	int objectType() const { return m_objectType; };
+	int originR() const { return m_originR; };
+	int originC() const { return m_originC; };
 	void setObjectType(int);
 	void setOrigin(int, int);
 

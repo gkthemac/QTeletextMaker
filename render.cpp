@@ -187,7 +187,7 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 							EnhanceLayer *newLayer = new EnhanceLayer;
 							m_textLayer.push_back(newLayer);
 							newLayer->setObjectType(x26Triplet->mode() & 0x03);
-							newLayer->setOrigin(activePosition.row()+originModifierR, activePosition.column()+originModifierC);
+							newLayer->setOrigin(enhanceLayer->originR() + activePosition.row() + originModifierR, enhanceLayer->originC() + activePosition.column() + originModifierC);
 							buildEnhanceMap(newLayer, tripletPointer+1);
 						} else
 							qDebug("POP or GPOP");
