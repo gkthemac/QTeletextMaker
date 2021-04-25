@@ -799,6 +799,9 @@ bool X26Model::insertRows(int row, int count, const QModelIndex &parent)
 {
 	Q_UNUSED(parent);
 
+	if (m_parentMainWidget->document()->currentSubPage()->enhancements()->size() + count > m_parentMainWidget->document()->currentSubPage()->maxEnhancements())
+		return false;
+
 	m_parentMainWidget->document()->undoStack()->push(new InsertTripletCommand(m_parentMainWidget->document(), this, row, count, m_parentMainWidget->document()->currentSubPage()->enhancements()->at(row)));
 	return true;
 }

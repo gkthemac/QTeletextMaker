@@ -52,6 +52,8 @@ public:
 
 	void clearPage();
 
+	int maxEnhancements() const { return 208; };
+
 /*	void setSubPageNumber(int); */
 	int cycleValue() const { return m_cycleValue; };
 	void setCycleValue(int);

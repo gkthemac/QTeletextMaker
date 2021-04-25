@@ -27,13 +27,13 @@
 
 LevelOnePage::LevelOnePage()
 {
-	m_enhancements.reserve(208);
+	m_enhancements.reserve(maxEnhancements());
 	clearPage();
 }
 
 LevelOnePage::LevelOnePage(const PageBase &other)
 {
-	m_enhancements.reserve(208);
+	m_enhancements.reserve(maxEnhancements());
 	clearPage();
 
 	for (int i=0; i<26; i++)
