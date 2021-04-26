@@ -175,6 +175,7 @@ void TeletextDocument::cursorUp()
 {
 	if (--m_cursorRow == 0)
 		m_cursorRow = 24;
+	cancelSelection();
 	emit cursorMoved();
 }
 
@@ -182,6 +183,7 @@ void TeletextDocument::cursorDown()
 {
 	if (++m_cursorRow == 25)
 		m_cursorRow = 1;
+	cancelSelection();
 	emit cursorMoved();
 }
 
@@ -191,6 +193,7 @@ void TeletextDocument::cursorLeft()
 		m_cursorColumn = 39;
 		cursorUp();
 	}
+	cancelSelection();
 	emit cursorMoved();
 }
 
@@ -200,6 +203,7 @@ void TeletextDocument::cursorRight()
 		m_cursorColumn = 0;
 		cursorDown();
 	}
+	cancelSelection();
 	emit cursorMoved();
 }
 
@@ -209,6 +213,7 @@ void TeletextDocument::moveCursor(int cursorRow, int cursorColumn)
 		m_cursorRow = cursorRow;
 	if (cursorColumn != -1)
 		m_cursorColumn = cursorColumn;
+	cancelSelection();
 	emit cursorMoved();
 }
 
@@ -226,8 +231,10 @@ void TeletextDocument::setSelection(int topRow, int leftColumn, int bottomRow, i
 
 void TeletextDocument::cancelSelection()
 {
-	m_selectionSubPage = nullptr;
-	emit selectionMoved();
+	if (m_selectionSubPage != nullptr) {
+		m_selectionSubPage = nullptr;
+		emit selectionMoved();
+	}
 }
 
 int TeletextDocument::levelRequired() const
