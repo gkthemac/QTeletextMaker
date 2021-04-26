@@ -58,7 +58,6 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 	connect(m_teletextDocument, &TeletextDocument::subPageSelected, this, &TeletextWidget::subPageSelected);
 	connect(m_teletextDocument, &TeletextDocument::contentsChange, this, &TeletextWidget::refreshRow);
 	connect(m_teletextDocument, &TeletextDocument::refreshNeeded, this, &TeletextWidget::refreshPage);
-	connect(m_teletextDocument, &TeletextDocument::selectionMoved, this, QOverload<>::of(&TeletextWidget::update));
 }
 
 TeletextWidget::~TeletextWidget()
@@ -109,11 +108,6 @@ void TeletextWidget::paintEvent(QPaintEvent *event)
 		widgetPainter.drawPixmap(0, 0, *m_pageRender.pagePixmap(m_flashPhase), 864-m_pageRender.leftSidePanelColumns()*12, 0, m_pageRender.leftSidePanelColumns()*12, 250);
 	if (m_pageRender.rightSidePanelColumns())
 		widgetPainter.drawPixmap(480+m_pageRender.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(m_flashPhase), 480, 0, m_pageRender.rightSidePanelColumns()*12, 250);
-	if (m_teletextDocument->selectionActive()) {
-		widgetPainter.setPen(QPen(QColor(192, 192, 192, 224), 1, Qt::DashLine));
-		widgetPainter.setBrush(QBrush(QColor(255, 255, 255, 64)));
-		widgetPainter.drawRect((m_teletextDocument->selectionLeftColumn()+m_pageRender.leftSidePanelColumns())*12, m_teletextDocument->selectionTopRow()*10, m_teletextDocument->selectionWidth()*12-1, m_teletextDocument->selectionHeight()*10-1);
-	}
 }
 
 void TeletextWidget::updateFlashTimer(int newFlashTimer)
@@ -496,6 +490,13 @@ LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphi
 	m_levelOneProxyWidget->setPos(60, 19);
 	m_levelOneProxyWidget->setAutoFillBackground(false);
 
+	// Selection
+	m_selectionRectItem = new QGraphicsRectItem(0, 0, 12, 10);
+	m_selectionRectItem->setVisible(false);
+	m_selectionRectItem->setPen(QPen(QColor(192, 192, 192), 1, Qt::DashLine));
+	m_selectionRectItem->setBrush(QBrush(QColor(255, 255, 255, 64)));
+	addItem(m_selectionRectItem);
+
 	// Cursor
 	m_cursorRectItem = new QGraphicsRectItem(0, 0, 12, 10);
 	m_cursorRectItem->setPen(Qt::NoPen);
@@ -545,6 +546,7 @@ void LevelOneScene::setBorderDimensions(int sceneWidth, int sceneHeight, int wid
 	m_mainGridItemGroup->setPos(leftRightBorders + leftSidePanelColumns*12, topBottomBorders);
 
 	updateCursor();
+	updateSelection();
 
 	// Grid for right side panel
 	for (int c=0; c<16; c++)
@@ -580,6 +582,18 @@ void LevelOneScene::setBorderDimensions(int sceneWidth, int sceneHeight, int wid
 void LevelOneScene::updateCursor()
 {
 	m_cursorRectItem->setPos(m_mainGridItemGroup->pos().x() + static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->cursorColumn()*12, m_mainGridItemGroup->pos().y() + static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->cursorRow()*10);
+}
+
+void LevelOneScene::updateSelection()
+{
+	if (!static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionActive()) {
+		m_selectionRectItem->setVisible(false);
+		return;
+	}
+
+	m_selectionRectItem->setRect(m_mainGridItemGroup->pos().x() + static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionLeftColumn()*12, m_mainGridItemGroup->pos().y() + static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionTopRow()*10, static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionWidth()*12-1, static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionHeight()*10-1);
+
+	m_selectionRectItem->setVisible(true);
 }
 
 void LevelOneScene::toggleGrid(bool gridOn)

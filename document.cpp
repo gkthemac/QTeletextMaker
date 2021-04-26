@@ -73,6 +73,7 @@ void TeletextDocument::selectSubPageIndex(int newSubPageIndex, bool forceRefresh
 		emit aboutToChangeSubPage();
 		m_currentSubPageIndex = newSubPageIndex;
 		emit subPageSelected();
+		emit selectionMoved();
 		return;
 	}
 }
@@ -83,6 +84,7 @@ void TeletextDocument::selectSubPageNext()
 		emit aboutToChangeSubPage();
 		m_currentSubPageIndex++;
 		emit subPageSelected();
+		emit selectionMoved();
 	}
 }
 
@@ -92,6 +94,7 @@ void TeletextDocument::selectSubPagePrevious()
 		emit aboutToChangeSubPage();
 		m_currentSubPageIndex--;
 		emit subPageSelected();
+		emit selectionMoved();
 	}
 }
 
@@ -224,6 +227,7 @@ void TeletextDocument::setSelection(int topRow, int leftColumn, int bottomRow, i
 void TeletextDocument::cancelSelection()
 {
 	m_selectionSubPage = nullptr;
+	emit selectionMoved();
 }
 
 int TeletextDocument::levelRequired() const

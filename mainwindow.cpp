@@ -172,6 +172,7 @@ void MainWindow::init()
 	setCentralWidget(m_textView);
 
 	connect(m_textWidget->document(), &TeletextDocument::cursorMoved, this, &MainWindow::updateCursorPosition);
+	connect(m_textWidget->document(), &TeletextDocument::selectionMoved, m_textScene, &LevelOneScene::updateSelection);
 	connect(m_textWidget->document()->undoStack(), &QUndoStack::cleanChanged, this, [=]() { setWindowModified(!m_textWidget->document()->undoStack()->isClean()); } );
 	connect(m_textWidget->document(), &TeletextDocument::aboutToChangeSubPage, m_x26DockWidget, &X26DockWidget::unloadX26List);
 	connect(m_textWidget->document(), &TeletextDocument::subPageSelected, this, &MainWindow::updatePageWidgets);
