@@ -926,6 +926,7 @@ MainWindow *MainWindow::findMainWindow(const QString &fileName) const
 void MainWindow::updateCursorPosition()
 {
 	m_cursorPositionLabel->setText(QString("Row %1 Column %2").arg(m_textWidget->document()->cursorRow()).arg(m_textWidget->document()->cursorColumn()));
+	m_textScene->updateCursor();
 }
 
 void MainWindow::updatePageWidgets()

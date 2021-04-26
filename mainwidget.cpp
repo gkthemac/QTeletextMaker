@@ -109,8 +109,6 @@ void TeletextWidget::paintEvent(QPaintEvent *event)
 		widgetPainter.drawPixmap(0, 0, *m_pageRender.pagePixmap(m_flashPhase), 864-m_pageRender.leftSidePanelColumns()*12, 0, m_pageRender.leftSidePanelColumns()*12, 250);
 	if (m_pageRender.rightSidePanelColumns())
 		widgetPainter.drawPixmap(480+m_pageRender.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(m_flashPhase), 480, 0, m_pageRender.rightSidePanelColumns()*12, 250);
-	if (this->hasFocus())
-		widgetPainter.fillRect((m_teletextDocument->cursorColumn()+m_pageRender.leftSidePanelColumns())*12, m_teletextDocument->cursorRow()*10, 12, 10, QColor(128, 128, 128, 192));
 	if (m_teletextDocument->selectionActive()) {
 		widgetPainter.setPen(QPen(QColor(192, 192, 192, 224), 1, Qt::DashLine));
 		widgetPainter.setBrush(QBrush(QColor(255, 255, 255, 64)));
@@ -347,19 +345,15 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 
 		case Qt::Key_Up:
 			m_teletextDocument->cursorUp();
-			update();
 			break;
 		case Qt::Key_Down:
 			m_teletextDocument->cursorDown();
-			update();
 			break;
 		case Qt::Key_Left:
 			m_teletextDocument->cursorLeft();
-			update();
 			break;
 		case Qt::Key_Right:
 			m_teletextDocument->cursorRight();
-			update();
 			break;
 		case Qt::Key_Return:
 		case Qt::Key_Enter:
@@ -367,11 +361,9 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 			// fall through
 		case Qt::Key_Home:
 			m_teletextDocument->moveCursor(m_teletextDocument->cursorRow(), 0);
-			update();
 			break;
 		case Qt::Key_End:
 			m_teletextDocument->moveCursor(m_teletextDocument->cursorRow(), 39);
-			update();
 			break;
 
 		case Qt::Key_PageUp:
@@ -504,6 +496,12 @@ LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphi
 	m_levelOneProxyWidget->setPos(60, 19);
 	m_levelOneProxyWidget->setAutoFillBackground(false);
 
+	// Cursor
+	m_cursorRectItem = new QGraphicsRectItem(0, 0, 12, 10);
+	m_cursorRectItem->setPen(Qt::NoPen);
+	m_cursorRectItem->setBrush(QBrush(QColor(128, 128, 128, 192)));
+	addItem(m_cursorRectItem);
+
 	// Optional grid overlay for text widget
 	m_mainGridItemGroup = new QGraphicsItemGroup;
 	m_mainGridItemGroup->setVisible(false);
@@ -545,6 +543,9 @@ void LevelOneScene::setBorderDimensions(int sceneWidth, int sceneHeight, int wid
 
 	// Position grid to cover central 40 columns
 	m_mainGridItemGroup->setPos(leftRightBorders + leftSidePanelColumns*12, topBottomBorders);
+
+	updateCursor();
+
 	// Grid for right side panel
 	for (int c=0; c<16; c++)
 		if (rightSidePanelColumns > c) {
@@ -574,6 +575,11 @@ void LevelOneScene::setBorderDimensions(int sceneWidth, int sceneHeight, int wid
 		m_fullRowLeftRectItem[r]->setRect(0, topBottomBorders+r*10, leftRightBorders+1, 10);
 		m_fullRowRightRectItem[r]->setRect(sceneWidth-leftRightBorders-1, topBottomBorders+r*10, leftRightBorders+1, 10);
 	}
+}
+
+void LevelOneScene::updateCursor()
+{
+	m_cursorRectItem->setPos(m_mainGridItemGroup->pos().x() + static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->cursorColumn()*12, m_mainGridItemGroup->pos().y() + static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->cursorRow()*10);
 }
 
 void LevelOneScene::toggleGrid(bool gridOn)

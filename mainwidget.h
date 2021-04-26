@@ -109,6 +109,7 @@ public:
 	void setBorderDimensions(int, int, int, int, int);
 
 public slots:
+	void updateCursor();
 	void toggleGrid(bool);
 	void setFullScreenColour(const QColor &);
 	void setFullRowColour(int, const QColor &);
@@ -117,6 +118,7 @@ private:
 	QGraphicsRectItem *m_fullScreenTopRectItem, *m_fullScreenBottomRectItem;
 	QGraphicsRectItem *m_fullRowLeftRectItem[25], *m_fullRowRightRectItem[25];
 	QGraphicsProxyWidget *m_levelOneProxyWidget;
+	QGraphicsRectItem *m_cursorRectItem;
 	QGraphicsItemGroup *m_mainGridItemGroup, *m_sidePanelGridItemGroup[32];
 	bool m_grid, m_sidePanelGridNeeded[32];
 };
