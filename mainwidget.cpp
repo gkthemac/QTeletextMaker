@@ -338,26 +338,27 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 			break;
 
 		case Qt::Key_Up:
-			m_teletextDocument->cursorUp();
+			m_teletextDocument->cursorUp(event->modifiers() & Qt::ShiftModifier);
 			break;
 		case Qt::Key_Down:
-			m_teletextDocument->cursorDown();
+			m_teletextDocument->cursorDown(event->modifiers() & Qt::ShiftModifier);
 			break;
 		case Qt::Key_Left:
-			m_teletextDocument->cursorLeft();
+			m_teletextDocument->cursorLeft(event->modifiers() & Qt::ShiftModifier);
 			break;
 		case Qt::Key_Right:
-			m_teletextDocument->cursorRight();
+			m_teletextDocument->cursorRight(event->modifiers() & Qt::ShiftModifier);
 			break;
 		case Qt::Key_Return:
 		case Qt::Key_Enter:
 			m_teletextDocument->cursorDown();
-			// fall through
-		case Qt::Key_Home:
 			m_teletextDocument->moveCursor(m_teletextDocument->cursorRow(), 0);
 			break;
+		case Qt::Key_Home:
+			m_teletextDocument->moveCursor(m_teletextDocument->cursorRow(), 0, event->modifiers() & Qt::ShiftModifier);
+			break;
 		case Qt::Key_End:
-			m_teletextDocument->moveCursor(m_teletextDocument->cursorRow(), 39);
+			m_teletextDocument->moveCursor(m_teletextDocument->cursorRow(), 39, event->modifiers() & Qt::ShiftModifier);
 			break;
 
 		case Qt::Key_PageUp:
@@ -416,25 +417,12 @@ void TeletextWidget::mouseMoveEvent(QMouseEvent *event)
 {
 	if (event->buttons() & Qt::LeftButton) {
 		QPair<int, int> position = mouseToRowAndColumn(event->pos());
-		if (m_selectionInProgress || position.first != m_teletextDocument->cursorRow() || position.second != m_teletextDocument->cursorColumn()) {
-			int topRow, bottomRow, leftColumn, rightColumn;
-
-			m_selectionInProgress = true;
-			if (m_teletextDocument->cursorRow() < position.first) {
-				topRow = m_teletextDocument->cursorRow();
-				bottomRow = position.first;
-			} else {
-				topRow = position.first;
-				bottomRow = m_teletextDocument->cursorRow();
+		if (position.first != m_teletextDocument->cursorRow() || position.second != m_teletextDocument->cursorColumn()) {
+			if (!m_selectionInProgress) {
+				m_selectionInProgress = true;
+				m_teletextDocument->setSelectionCorner(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn());
 			}
-			if (m_teletextDocument->cursorColumn() < position.second) {
-				leftColumn = m_teletextDocument->cursorColumn();
-				rightColumn = position.second;
-			} else {
-				leftColumn = position.second;
-				rightColumn = m_teletextDocument->cursorColumn();
-			}
-			m_teletextDocument->setSelection(topRow, leftColumn, bottomRow, rightColumn);
+			m_teletextDocument->moveCursor(position.first, position.second, true);
 		}
 	}
 }

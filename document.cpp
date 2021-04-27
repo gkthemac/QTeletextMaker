@@ -34,6 +34,7 @@ TeletextDocument::TeletextDocument()
 	m_undoStack = new QUndoStack(this);
 	m_cursorRow = 1;
 	m_cursorColumn = 0;
+	m_selectionCornerRow = m_selectionCornerColumn = -1;
 	m_selectionSubPage = nullptr;
 }
 
@@ -171,61 +172,114 @@ void TeletextDocument::setFastTextLinkPageNumberOnAllSubPages(int linkNumber, in
 		subPage->setFastTextLinkPageNumber(linkNumber, pageNumber);
 }
 
-void TeletextDocument::cursorUp()
+void TeletextDocument::cursorUp(bool shiftKey)
 {
+	if (shiftKey && !selectionActive())
+		setSelectionCorner(m_cursorRow, m_cursorColumn);
+
 	if (--m_cursorRow == 0)
 		m_cursorRow = 24;
-	cancelSelection();
+
+	if (shiftKey)
+		emit selectionMoved();
+	else
+		cancelSelection();
+
 	emit cursorMoved();
 }
 
-void TeletextDocument::cursorDown()
+void TeletextDocument::cursorDown(bool shiftKey)
 {
+	if (shiftKey && !selectionActive())
+		setSelectionCorner(m_cursorRow, m_cursorColumn);
+
 	if (++m_cursorRow == 25)
 		m_cursorRow = 1;
-	cancelSelection();
+
+	if (shiftKey)
+		emit selectionMoved();
+	else
+		cancelSelection();
+
 	emit cursorMoved();
 }
 
-void TeletextDocument::cursorLeft()
+void TeletextDocument::cursorLeft(bool shiftKey)
 {
+	if (shiftKey && !selectionActive())
+		setSelectionCorner(m_cursorRow, m_cursorColumn);
+
 	if (--m_cursorColumn == -1) {
 		m_cursorColumn = 39;
-		cursorUp();
+		cursorUp(shiftKey);
 	}
-	cancelSelection();
+
+	if (shiftKey)
+		emit selectionMoved();
+	else
+		cancelSelection();
+
 	emit cursorMoved();
 }
 
-void TeletextDocument::cursorRight()
+void TeletextDocument::cursorRight(bool shiftKey)
 {
+	if (shiftKey && !selectionActive())
+		setSelectionCorner(m_cursorRow, m_cursorColumn);
+
 	if (++m_cursorColumn == 40) {
 		m_cursorColumn = 0;
-		cursorDown();
+		cursorDown(shiftKey);
 	}
-	cancelSelection();
+
+	if (shiftKey)
+		emit selectionMoved();
+	else
+		cancelSelection();
+
 	emit cursorMoved();
 }
 
-void TeletextDocument::moveCursor(int cursorRow, int cursorColumn)
+void TeletextDocument::moveCursor(int cursorRow, int cursorColumn, bool selectionInProgress)
 {
+	if (selectionInProgress && !selectionActive())
+		setSelectionCorner(m_cursorRow, m_cursorColumn);
+
 	if (cursorRow != -1)
 		m_cursorRow = cursorRow;
 	if (cursorColumn != -1)
 		m_cursorColumn = cursorColumn;
-	cancelSelection();
+
+	if (selectionInProgress)
+		emit selectionMoved();
+	else
+		cancelSelection();
+
 	emit cursorMoved();
+}
+
+void TeletextDocument::setSelectionCorner(int row, int column)
+{
+	if (m_selectionCornerRow != row || m_selectionCornerColumn != column) {
+		m_selectionSubPage = currentSubPage();
+		m_selectionCornerRow = row;
+		m_selectionCornerColumn = column;
+
+//		emit selectionMoved();
+	}
 }
 
 void TeletextDocument::setSelection(int topRow, int leftColumn, int bottomRow, int rightColumn)
 {
-	if (m_selectionTopRow != topRow || m_selectionBottomRow != bottomRow || m_selectionLeftColumn != leftColumn || m_selectionRightColumn != rightColumn) {
+	if (selectionTopRow() != topRow || selectionBottomRow() != bottomRow || selectionLeftColumn() != leftColumn || selectionRightColumn() != rightColumn) {
 		m_selectionSubPage = currentSubPage();
-		m_selectionTopRow = topRow;
-		m_selectionBottomRow = bottomRow;
-		m_selectionLeftColumn = leftColumn;
-		m_selectionRightColumn = rightColumn;
+		m_selectionCornerRow = topRow;
+		m_cursorRow = bottomRow;
+		m_selectionCornerColumn = leftColumn;
+		m_cursorColumn = rightColumn;
+
 		emit selectionMoved();
+		emit cursorMoved();
 	}
 }
 
@@ -234,6 +288,7 @@ void TeletextDocument::cancelSelection()
 	if (m_selectionSubPage != nullptr) {
 		m_selectionSubPage = nullptr;
 		emit selectionMoved();
+		m_selectionCornerRow = m_selectionCornerColumn = -1;
 	}
 }
 

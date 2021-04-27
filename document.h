@@ -64,18 +64,19 @@ public:
 	QUndoStack *undoStack() const { return m_undoStack; }
 	int cursorRow() const { return m_cursorRow; }
 	int cursorColumn() const { return m_cursorColumn; }
-	void cursorUp();
-	void cursorDown();
-	void cursorLeft();
-	void cursorRight();
-	void moveCursor(int, int);
-	int selectionTopRow() const { return m_selectionTopRow; }
-	int selectionBottomRow() const { return m_selectionBottomRow; }
-	int selectionLeftColumn() const { return m_selectionLeftColumn; }
-	int selectionRightColumn() const { return m_selectionRightColumn; }
-	int selectionWidth() const { return m_selectionRightColumn - m_selectionLeftColumn + 1; }
-	int selectionHeight() const { return m_selectionBottomRow - m_selectionTopRow + 1; }
+	void cursorUp(bool shiftKey=false);
+	void cursorDown(bool shiftKey=false);
+	void cursorLeft(bool shiftKey=false);
+	void cursorRight(bool shiftKey=false);
+	void moveCursor(int, int, bool selectionInProgress=false);
+	int selectionTopRow() const { return qMin(m_selectionCornerRow, m_cursorRow); }
+	int selectionBottomRow() const { return qMax(m_selectionCornerRow, m_cursorRow); }
+	int selectionLeftColumn() const { return qMin(m_selectionCornerColumn, m_cursorColumn); }
+	int selectionRightColumn() const { return qMax(m_selectionCornerColumn, m_cursorColumn); }
+	int selectionWidth() const { return selectionRightColumn() - selectionLeftColumn() + 1; }
+	int selectionHeight() const { return selectionBottomRow() - selectionTopRow() + 1; }
 	bool selectionActive() const { return m_selectionSubPage == currentSubPage(); }
+	void setSelectionCorner(int, int);
 	void setSelection(int, int, int, int);
 	void cancelSelection();
 	int levelRequired() const;
@@ -99,7 +100,7 @@ private:
 	std::vector<LevelOnePage *> m_subPages;
 	std::vector<LevelOnePage *> m_recycleSubPages;
 	QUndoStack *m_undoStack;
-	int m_cursorRow, m_cursorColumn, m_selectionTopRow, m_selectionBottomRow, m_selectionLeftColumn, m_selectionRightColumn;
+	int m_cursorRow, m_cursorColumn, m_selectionCornerRow, m_selectionCornerColumn;
 	LevelOnePage *m_selectionSubPage;
 };
 
