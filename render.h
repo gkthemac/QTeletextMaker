@@ -197,7 +197,6 @@ public:
 	int level1CharSet(int r, int c) const { return m_cell[r][c].level1CharSet; };
 	int leftSidePanelColumns() const { return m_leftSidePanelColumns; };
 	int rightSidePanelColumns() const { return m_rightSidePanelColumns; };
-	void setGrid(bool);
 
 public slots:
 	void setReveal(bool);
