@@ -24,7 +24,18 @@
 
 #include "document.h"
 
-class TypeCharacterCommand : public QUndoCommand
+class LevelOneCommand : public QUndoCommand
+{
+public:
+	LevelOneCommand(TeletextDocument *, QUndoCommand *parent = 0);
+
+protected:
+	TeletextDocument *m_teletextDocument;
+	int m_subPageIndex, m_row, m_column;
+	bool m_firstDo;
+};
+
+class TypeCharacterCommand : public LevelOneCommand
 {
 public:
 	enum { Id = 101 };
@@ -37,13 +48,12 @@ public:
 	int id() const override { return Id; }
 
 private:
-	TeletextDocument *m_teletextDocument;
 	unsigned char m_newCharacter, m_oldRowContents[40], m_newRowContents[40];
-	int m_subPageIndex, m_row, m_columnStart, m_columnEnd;
-	bool m_firstDo, m_insertMode;
+	int m_columnStart, m_columnEnd;
+	bool m_insertMode;
 };
 
-class ToggleMosaicBitCommand : public QUndoCommand
+class ToggleMosaicBitCommand : public LevelOneCommand
 {
 public:
 	enum { Id = 102 };
@@ -56,12 +66,10 @@ public:
 	int id() const override { return Id; }
 
 private:
-	TeletextDocument *m_teletextDocument;
 	unsigned char m_oldCharacter, m_newCharacter;
-	int m_subPageIndex, m_row, m_column;
 };
 
-class BackspaceKeyCommand : public QUndoCommand
+class BackspaceKeyCommand : public LevelOneCommand
 {
 public:
 	enum { Id = 103 };
@@ -74,13 +82,12 @@ public:
 	int id() const override { return Id; }
 
 private:
-	TeletextDocument *m_teletextDocument;
 	unsigned char m_oldRowContents[40], m_newRowContents[40];
-	int m_subPageIndex, m_row, m_columnStart, m_columnEnd;
-	bool m_firstDo, m_insertMode;
+	int m_columnStart, m_columnEnd;
+	bool m_insertMode;
 };
 
-class DeleteKeyCommand : public QUndoCommand
+class DeleteKeyCommand : public LevelOneCommand
 {
 public:
 	enum { Id = 104 };
@@ -93,12 +100,10 @@ public:
 	int id() const override { return Id; }
 
 private:
-	TeletextDocument *m_teletextDocument;
 	unsigned char m_oldRowContents[40], m_newRowContents[40];
-	int m_subPageIndex, m_row, m_column;
 };
 
-class InsertSubPageCommand : public QUndoCommand
+class InsertSubPageCommand : public LevelOneCommand
 {
 public:
 	InsertSubPageCommand(TeletextDocument *, bool, bool, QUndoCommand *parent = 0);
@@ -107,25 +112,20 @@ public:
 	void undo() override;
 
 private:
-	TeletextDocument *m_teletextDocument;
 	int m_newSubPageIndex;
 	bool m_copySubPage;
 };
 
-class DeleteSubPageCommand : public QUndoCommand
+class DeleteSubPageCommand : public LevelOneCommand
 {
 public:
 	DeleteSubPageCommand(TeletextDocument *, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
-
-private:
-	TeletextDocument *m_teletextDocument;
-	int m_subPageToDelete;
 };
 
-class InsertRowCommand : public QUndoCommand
+class InsertRowCommand : public LevelOneCommand
 {
 public:
 	InsertRowCommand(TeletextDocument *, bool, QUndoCommand *parent = 0);
@@ -134,13 +134,11 @@ public:
 	void undo() override;
 
 private:
-	TeletextDocument *m_teletextDocument;
-	int m_subPageIndex, m_row;
 	bool m_copyRow;
 	unsigned char m_deletedBottomRow[40];
 };
 
-class DeleteRowCommand : public QUndoCommand
+class DeleteRowCommand : public LevelOneCommand
 {
 public:
 	DeleteRowCommand(TeletextDocument *, QUndoCommand *parent = 0);
@@ -149,12 +147,10 @@ public:
 	void undo() override;
 
 private:
-	TeletextDocument *m_teletextDocument;
-	int m_subPageIndex, m_row;
 	unsigned char m_deletedRow[40];
 };
 
-class SetColourCommand : public QUndoCommand
+class SetColourCommand : public LevelOneCommand
 {
 public:
 	SetColourCommand(TeletextDocument *, int, int, QUndoCommand *parent = 0);
@@ -163,11 +159,10 @@ public:
 	void undo() override;
 
 private:
-	TeletextDocument *m_teletextDocument;
-	int m_subPageIndex, m_colourIndex, m_oldColour, m_newColour;
+	int m_colourIndex, m_oldColour, m_newColour;
 };
 
-class ResetCLUTCommand : public QUndoCommand
+class ResetCLUTCommand : public LevelOneCommand
 {
 public:
 	ResetCLUTCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
@@ -176,8 +171,7 @@ public:
 	void undo() override;
 
 private:
-	TeletextDocument *m_teletextDocument;
-	int m_subPageIndex, m_colourTable;
+	int m_colourTable;
 	int m_oldColourEntry[8];
 };
 

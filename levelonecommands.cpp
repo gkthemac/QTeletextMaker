@@ -21,12 +21,18 @@
 
 #include "document.h"
 
-TypeCharacterCommand::TypeCharacterCommand(TeletextDocument *teletextDocument, unsigned char newCharacter, bool insertMode, QUndoCommand *parent) : QUndoCommand(parent)
+LevelOneCommand::LevelOneCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
 {
 	m_teletextDocument = teletextDocument;
 	m_subPageIndex = teletextDocument->currentSubPageIndex();
 	m_row = teletextDocument->cursorRow();
-	m_columnStart = m_columnEnd = teletextDocument->cursorColumn();
+	m_column = teletextDocument->cursorColumn();
+	m_firstDo = true;
+}
+
+TypeCharacterCommand::TypeCharacterCommand(TeletextDocument *teletextDocument, unsigned char newCharacter, bool insertMode, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+{
+	m_columnStart = m_columnEnd = m_column;
 	m_newCharacter = newCharacter;
 	m_insertMode = insertMode;
 
@@ -37,7 +43,6 @@ TypeCharacterCommand::TypeCharacterCommand(TeletextDocument *teletextDocument, u
 		setText(QObject::tr("insert character"));
 	else
 		setText(QObject::tr("overwrite character"));
-	m_firstDo = true;
 }
 
 void TypeCharacterCommand::redo()
@@ -89,12 +94,8 @@ bool TypeCharacterCommand::mergeWith(const QUndoCommand *command)
 }
 
 
-ToggleMosaicBitCommand::ToggleMosaicBitCommand(TeletextDocument *teletextDocument, unsigned char bitToToggle, QUndoCommand *parent) : QUndoCommand(parent)
+ToggleMosaicBitCommand::ToggleMosaicBitCommand(TeletextDocument *teletextDocument, unsigned char bitToToggle, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
-	m_teletextDocument = teletextDocument;
-	m_subPageIndex = teletextDocument->currentSubPageIndex();
-	m_row = teletextDocument->cursorRow();
-	m_column = teletextDocument->cursorColumn();
 	m_oldCharacter = teletextDocument->currentSubPage()->character(m_row, m_column);
 	if (bitToToggle == 0x20 || bitToToggle == 0x7f)
 		m_newCharacter = bitToToggle;
@@ -134,12 +135,10 @@ bool ToggleMosaicBitCommand::mergeWith(const QUndoCommand *command)
 }
 
 
-BackspaceKeyCommand::BackspaceKeyCommand(TeletextDocument *teletextDocument, bool insertMode, QUndoCommand *parent) : QUndoCommand(parent)
+BackspaceKeyCommand::BackspaceKeyCommand(TeletextDocument *teletextDocument, bool insertMode, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
-	m_teletextDocument = teletextDocument;
-	m_subPageIndex = teletextDocument->currentSubPageIndex();
-	m_row = teletextDocument->cursorRow();
-	m_columnStart = teletextDocument->cursorColumn()-1;
+	m_columnStart = m_column - 1;
+
 	if (m_columnStart == -1) {
 		m_columnStart = 39;
 		if (--m_row == 0)
@@ -152,7 +151,6 @@ BackspaceKeyCommand::BackspaceKeyCommand(TeletextDocument *teletextDocument, boo
 		m_oldRowContents[c] = m_newRowContents[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
 
 	setText(QObject::tr("backspace"));
-	m_firstDo = true;
 }
 
 void BackspaceKeyCommand::redo()
@@ -208,13 +206,8 @@ bool BackspaceKeyCommand::mergeWith(const QUndoCommand *command)
 }
 
 
-DeleteKeyCommand::DeleteKeyCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
+DeleteKeyCommand::DeleteKeyCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
-	m_teletextDocument = teletextDocument;
-	m_subPageIndex = teletextDocument->currentSubPageIndex();
-	m_row = teletextDocument->cursorRow();
-	m_column = teletextDocument->cursorColumn();
-
 	for (int c=0; c<40; c++)
 		m_oldRowContents[c] = m_newRowContents[c] = m_teletextDocument->currentSubPage()->character(m_row, c);
 
@@ -262,11 +255,8 @@ bool DeleteKeyCommand::mergeWith(const QUndoCommand *command)
 }
 
 
-InsertRowCommand::InsertRowCommand(TeletextDocument *teletextDocument, bool copyRow, QUndoCommand *parent) : QUndoCommand(parent)
+InsertRowCommand::InsertRowCommand(TeletextDocument *teletextDocument, bool copyRow, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
-	m_teletextDocument = teletextDocument;
-	m_subPageIndex = teletextDocument->currentSubPageIndex();
-	m_row = teletextDocument->cursorRow();
 	m_copyRow = copyRow;
 
 	if (m_copyRow)
@@ -310,12 +300,8 @@ void InsertRowCommand::undo()
 }
 
 
-DeleteRowCommand::DeleteRowCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
+DeleteRowCommand::DeleteRowCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
-	m_teletextDocument = teletextDocument;
-	m_subPageIndex = teletextDocument->currentSubPageIndex();
-	m_row = teletextDocument->cursorRow();
-
 	setText(QObject::tr("delete row"));
 }
 
@@ -354,10 +340,9 @@ void DeleteRowCommand::undo()
 }
 
 
-InsertSubPageCommand::InsertSubPageCommand(TeletextDocument *teletextDocument, bool afterCurrentSubPage, bool copySubPage, QUndoCommand *parent) : QUndoCommand(parent)
+InsertSubPageCommand::InsertSubPageCommand(TeletextDocument *teletextDocument, bool afterCurrentSubPage, bool copySubPage, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
-	m_teletextDocument = teletextDocument;
-	m_newSubPageIndex = teletextDocument->currentSubPageIndex()+afterCurrentSubPage;
+	m_newSubPageIndex = m_subPageIndex + afterCurrentSubPage;
 	m_copySubPage = copySubPage;
 
 	setText(QObject::tr("insert subpage"));
@@ -380,30 +365,26 @@ void InsertSubPageCommand::undo()
 }
 
 
-DeleteSubPageCommand::DeleteSubPageCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
+DeleteSubPageCommand::DeleteSubPageCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
-	m_teletextDocument = teletextDocument;
-	m_subPageToDelete = teletextDocument->currentSubPageIndex();
 	setText(QObject::tr("delete subpage"));
 }
 
 void DeleteSubPageCommand::redo()
 {
-	m_teletextDocument->deleteSubPageToRecycle(m_subPageToDelete);
-	m_teletextDocument->selectSubPageIndex(qMin(m_subPageToDelete, m_teletextDocument->numberOfSubPages()-1), true);
+	m_teletextDocument->deleteSubPageToRecycle(m_subPageIndex);
+	m_teletextDocument->selectSubPageIndex(qMin(m_subPageIndex, m_teletextDocument->numberOfSubPages()-1), true);
 }
 
 void DeleteSubPageCommand::undo()
 {
-	m_teletextDocument->unDeleteSubPageFromRecycle(m_subPageToDelete);
-	m_teletextDocument->selectSubPageIndex(m_subPageToDelete, true);
+	m_teletextDocument->unDeleteSubPageFromRecycle(m_subPageIndex);
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex, true);
 }
 
 
-SetColourCommand::SetColourCommand(TeletextDocument *teletextDocument, int colourIndex, int newColour, QUndoCommand *parent) : QUndoCommand(parent)
+SetColourCommand::SetColourCommand(TeletextDocument *teletextDocument, int colourIndex, int newColour, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
-	m_teletextDocument = teletextDocument;
-	m_subPageIndex = teletextDocument->currentSubPageIndex();
 	m_colourIndex = colourIndex;
 	m_oldColour = teletextDocument->currentSubPage()->CLUT(colourIndex);
 	m_newColour = newColour;
@@ -431,10 +412,8 @@ void SetColourCommand::undo()
 }
 
 
-ResetCLUTCommand::ResetCLUTCommand(TeletextDocument *teletextDocument, int colourTable, QUndoCommand *parent) : QUndoCommand(parent)
+ResetCLUTCommand::ResetCLUTCommand(TeletextDocument *teletextDocument, int colourTable, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
-	m_teletextDocument = teletextDocument;
-	m_subPageIndex = teletextDocument->currentSubPageIndex();
 	m_colourTable = colourTable;
 	for (int i=m_colourTable*8; i<m_colourTable*8+8; i++)
 		m_oldColourEntry[i&7] = teletextDocument->currentSubPage()->CLUT(i);
