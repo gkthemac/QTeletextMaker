@@ -577,20 +577,17 @@ void MainWindow::insertRow(bool copyRow)
 {
 	if (m_textWidget->document()->cursorRow() == 24)
 		return;
-	QUndoCommand *insertRowCommand = new InsertRowCommand(m_textWidget->document(), copyRow);
-	m_textWidget->document()->undoStack()->push(insertRowCommand);
+	m_textWidget->document()->undoStack()->push(new InsertRowCommand(m_textWidget->document(), copyRow));
 }
 
 void MainWindow::deleteRow()
 {
-	QUndoCommand *deleteRowCommand = new DeleteRowCommand(m_textWidget->document());
-	m_textWidget->document()->undoStack()->push(deleteRowCommand);
+	m_textWidget->document()->undoStack()->push(new DeleteRowCommand(m_textWidget->document()));
 }
 
 void MainWindow::insertSubPage(bool afterCurrentSubPage, bool copyCurrentSubPage)
 {
-	QUndoCommand *insertSubPageCommand = new InsertSubPageCommand(m_textWidget->document(), afterCurrentSubPage, copyCurrentSubPage);
-	m_textWidget->document()->undoStack()->push(insertSubPageCommand);
+	m_textWidget->document()->undoStack()->push(new InsertSubPageCommand(m_textWidget->document(), afterCurrentSubPage, copyCurrentSubPage));
 }
 
 void MainWindow::deleteSubPage()

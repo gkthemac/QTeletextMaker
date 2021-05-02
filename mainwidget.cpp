@@ -384,8 +384,7 @@ void TeletextWidget::setCharacter(unsigned char newCharacter)
 
 void TeletextWidget::toggleCharacterBit(unsigned char bitToToggle)
 {
-	QUndoCommand *toggleMosaicBitCommand = new ToggleMosaicBitCommand(m_teletextDocument, bitToToggle);
-	m_teletextDocument->undoStack()->push(toggleMosaicBitCommand);
+	m_teletextDocument->undoStack()->push(new ToggleMosaicBitCommand(m_teletextDocument, bitToToggle));
 }
 
 QPair<int, int> TeletextWidget::mouseToRowAndColumn(const QPoint &mousePosition)
