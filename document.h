@@ -69,12 +69,12 @@ public:
 	void cursorLeft(bool shiftKey=false);
 	void cursorRight(bool shiftKey=false);
 	void moveCursor(int, int, bool selectionInProgress=false);
-	int selectionTopRow() const { return qMin(m_selectionCornerRow, m_cursorRow); }
+	int selectionTopRow() const { return m_selectionCornerRow == -1 ? m_cursorRow : qMin(m_selectionCornerRow, m_cursorRow); }
 	int selectionBottomRow() const { return qMax(m_selectionCornerRow, m_cursorRow); }
-	int selectionLeftColumn() const { return qMin(m_selectionCornerColumn, m_cursorColumn); }
+	int selectionLeftColumn() const { return m_selectionCornerColumn == -1 ? m_cursorColumn : qMin(m_selectionCornerColumn, m_cursorColumn); }
 	int selectionRightColumn() const { return qMax(m_selectionCornerColumn, m_cursorColumn); }
-	int selectionWidth() const { return selectionRightColumn() - selectionLeftColumn() + 1; }
-	int selectionHeight() const { return selectionBottomRow() - selectionTopRow() + 1; }
+	int selectionWidth() const { return m_selectionCornerColumn == -1 ? 1 : selectionRightColumn() - selectionLeftColumn() + 1; }
+	int selectionHeight() const { return m_selectionCornerRow == -1 ? 1 : selectionBottomRow() - selectionTopRow() + 1; }
 	bool selectionActive() const { return m_selectionSubPage == currentSubPage(); }
 	void setSelectionCorner(int, int);
 	void setSelection(int, int, int, int);
