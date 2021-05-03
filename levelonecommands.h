@@ -20,6 +20,7 @@
 #ifndef LEVELONECOMMANDS_H
 #define LEVELONECOMMANDS_H
 
+#include <QByteArrayList>
 #include <QUndoCommand>
 
 #include "document.h"
@@ -149,6 +150,38 @@ public:
 private:
 	unsigned char m_deletedRow[40];
 };
+
+#ifndef QT_NO_CLIPBOARD
+class CutCommand : public LevelOneCommand
+{
+public:
+	CutCommand(TeletextDocument *, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+
+private:
+	QByteArrayList m_deletedCharacters;
+	int m_selectionTopRow, m_selectionBottomRow, m_selectionLeftColumn, m_selectionRightColumn;
+	int m_selectionCornerRow, m_selectionCornerColumn;
+};
+
+class PasteCommand : public LevelOneCommand
+{
+public:
+	PasteCommand(TeletextDocument *, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+
+private:
+	QByteArrayList m_deletedCharacters, m_pastingCharacters;
+	int m_pasteTopRow, m_pasteBottomRow, m_pasteLeftColumn, m_pasteRightColumn;
+	int m_clipboardDataHeight, m_clipboardDataWidth;
+	int m_selectionCornerRow, m_selectionCornerColumn;
+	bool m_selectionActive;
+};
+#endif // !QT_NO_CLIPBOARD
 
 class SetColourCommand : public LevelOneCommand
 {

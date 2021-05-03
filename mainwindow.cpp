@@ -292,36 +292,33 @@ void MainWindow::createActions()
 	redoAction->setShortcuts(QKeySequence::Redo);
 
 	editMenu->addSeparator();
+
 #ifndef QT_NO_CLIPBOARD
-/*	const QIcon cutIcon = QIcon::fromTheme("edit-cut", QIcon(":/images/cut.png"));
+	const QIcon cutIcon = QIcon::fromTheme("edit-cut", QIcon(":/images/cut.png"));
 	QAction *cutAct = new QAction(cutIcon, tr("Cu&t"), this);
 	cutAct->setShortcuts(QKeySequence::Cut);
-	cutAct->setStatusTip(tr("Cut the current selection's contents to the "
-                            "clipboard"));
-	connect(cutAct, &QAction::triggered, textWidget, &QTextEdit::cut);
+	cutAct->setStatusTip(tr("Cut the current selection's contents to the clipboard"));
+	connect(cutAct, &QAction::triggered, m_textWidget, &TeletextWidget::cut);
 	editMenu->addAction(cutAct);
 	editToolBar->addAction(cutAct);
 
 	const QIcon copyIcon = QIcon::fromTheme("edit-copy", QIcon(":/images/copy.png"));
 	QAction *copyAct = new QAction(copyIcon, tr("&Copy"), this);
 	copyAct->setShortcuts(QKeySequence::Copy);
-	copyAct->setStatusTip(tr("Copy the current selection's contents to the "
-                             "clipboard"));
-	connect(copyAct, &QAction::triggered, textWidget, &QTextEdit::copy);
+	copyAct->setStatusTip(tr("Copy the current selection's contents to the clipboard"));
+	connect(copyAct, &QAction::triggered, m_textWidget, &TeletextWidget::copy);
 	editMenu->addAction(copyAct);
 	editToolBar->addAction(copyAct);
 
 	const QIcon pasteIcon = QIcon::fromTheme("edit-paste", QIcon(":/images/paste.png"));
 	QAction *pasteAct = new QAction(pasteIcon, tr("&Paste"), this);
 	pasteAct->setShortcuts(QKeySequence::Paste);
-	pasteAct->setStatusTip(tr("Paste the clipboard's contents into the current "
-                              "selection"));
-	connect(pasteAct, &QAction::triggered, textWidget, &QTextEdit::paste);
+	pasteAct->setStatusTip(tr("Paste the clipboard's contents into the current selection"));
+	connect(pasteAct, &QAction::triggered, m_textWidget, &TeletextWidget::paste);
 	editMenu->addAction(pasteAct);
 	editToolBar->addAction(pasteAct);
 
 	editMenu->addSeparator();
-*/
 #endif // !QT_NO_CLIPBOARD
 
 	QAction *insertBlankRowAct = editMenu->addAction(tr("Insert blank row"));

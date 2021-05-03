@@ -76,6 +76,8 @@ public:
 	int selectionWidth() const { return m_selectionCornerColumn == -1 ? 1 : selectionRightColumn() - selectionLeftColumn() + 1; }
 	int selectionHeight() const { return m_selectionCornerRow == -1 ? 1 : selectionBottomRow() - selectionTopRow() + 1; }
 	bool selectionActive() const { return m_selectionSubPage == currentSubPage(); }
+	int selectionCornerRow() const { return m_selectionCornerRow == -1 ? m_cursorRow : m_selectionCornerRow; }
+	int selectionCornerColumn() const { return m_selectionCornerColumn == -1 ? m_cursorColumn : m_selectionCornerColumn; }
 	void setSelectionCorner(int, int);
 	void setSelection(int, int, int, int);
 	void cancelSelection();

@@ -17,7 +17,9 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <QApplication>
 #include <QBitmap>
+#include <QClipboard>
 #include <QFrame>
 #include <QGraphicsItem>
 #include <QGraphicsItemGroup>
@@ -25,6 +27,7 @@
 #include <QGraphicsScene>
 #include <QKeyEvent>
 #include <QMenu>
+#include <QMimeData>
 #include <QPainter>
 #include <QPair>
 #include <QUndoCommand>
@@ -385,6 +388,48 @@ void TeletextWidget::setCharacter(unsigned char newCharacter)
 void TeletextWidget::toggleCharacterBit(unsigned char bitToToggle)
 {
 	m_teletextDocument->undoStack()->push(new ToggleMosaicBitCommand(m_teletextDocument, bitToToggle));
+}
+
+void TeletextWidget::selectionToClipboard()
+{
+	QByteArray nativeData;
+	QClipboard *clipboard = QApplication::clipboard();
+
+	nativeData.resize(2 + m_teletextDocument->selectionWidth() * m_teletextDocument->selectionHeight());
+	nativeData[0] = m_teletextDocument->selectionHeight();
+	nativeData[1] = m_teletextDocument->selectionWidth();
+
+	int i=2;
+
+	for (int r=m_teletextDocument->selectionTopRow(); r<=m_teletextDocument->selectionBottomRow(); r++)
+		for (int c=m_teletextDocument->selectionLeftColumn(); c<=m_teletextDocument->selectionRightColumn(); c++)
+			nativeData[i++] = m_teletextDocument->currentSubPage()->character(r, c);
+
+	QMimeData *mimeData = new QMimeData();
+	mimeData->setData("application/x-teletext", nativeData);
+	clipboard->setMimeData(mimeData);
+}
+
+void TeletextWidget::cut()
+{
+	if (!m_teletextDocument->selectionActive())
+		return;
+
+	selectionToClipboard();
+	m_teletextDocument->undoStack()->push(new CutCommand(m_teletextDocument));
+}
+
+void TeletextWidget::copy()
+{
+	if (!m_teletextDocument->selectionActive())
+		return;
+
+	selectionToClipboard();
+}
+
+void TeletextWidget::paste()
+{
+	m_teletextDocument->undoStack()->push(new PasteCommand(m_teletextDocument));
 }
 
 QPair<int, int> TeletextWidget::mouseToRowAndColumn(const QPoint &mousePosition)

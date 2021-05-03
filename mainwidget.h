@@ -75,6 +75,11 @@ public slots:
 	void setBlackBackgroundSubst(bool);
 	void setSidePanelWidths(int, int);
 	void setSidePanelAtL35Only(bool);
+
+	void cut();
+	void copy();
+	void paste();
+
 	void changeSize();
 
 protected:
@@ -96,6 +101,7 @@ private:
 	int m_flashTiming, m_flashPhase;
 
 	void timerEvent(QTimerEvent *event) override;
+	void selectionToClipboard();
 
 	QPair<int, int> mouseToRowAndColumn(const QPoint &);
 };

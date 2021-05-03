@@ -17,6 +17,12 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <QApplication>
+#include <QByteArray>
+#include <QByteArrayList>
+#include <QClipboard>
+#include <QMimeData>
+
 #include "levelonecommands.h"
 
 #include "document.h"
@@ -338,6 +344,192 @@ void DeleteRowCommand::undo()
 
 	emit m_teletextDocument->refreshNeeded();
 }
+
+
+#ifndef QT_NO_CLIPBOARD
+CutCommand::CutCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+{
+	m_selectionTopRow = m_teletextDocument->selectionTopRow();
+	m_selectionBottomRow = m_teletextDocument->selectionBottomRow();
+	m_selectionLeftColumn = m_teletextDocument->selectionLeftColumn();
+	m_selectionRightColumn = m_teletextDocument->selectionRightColumn();
+
+	m_selectionCornerRow = m_teletextDocument->selectionCornerRow();
+	m_selectionCornerColumn = m_teletextDocument->selectionCornerColumn();
+
+	// Store copy of the characters that we're about to blank
+	for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++) {
+		QByteArray rowArray;
+
+		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
+			rowArray.append(m_teletextDocument->currentSubPage()->character(r, c));
+
+		m_deletedCharacters.append(rowArray);
+	}
+
+	setText(QObject::tr("cut"));
+}
+
+void CutCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+
+	for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++) {
+		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
+			m_teletextDocument->currentSubPage()->setCharacter(r, c, 0x20);
+		emit m_teletextDocument->contentsChange(r);
+	}
+}
+
+void CutCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+
+	int arrayR = 0;
+	int arrayC;
+
+	for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++) {
+		arrayC = 0;
+		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
+			m_teletextDocument->currentSubPage()->setCharacter(r, c, m_deletedCharacters[arrayR].at(arrayC++));
+
+		emit m_teletextDocument->contentsChange(r);
+		arrayR++;
+	}
+
+	m_teletextDocument->setSelectionCorner(m_selectionCornerRow, m_selectionCornerColumn);
+	m_teletextDocument->moveCursor(m_row, m_column, true);
+}
+
+
+PasteCommand::PasteCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+{
+	const QClipboard *clipboard = QApplication::clipboard();
+	const QMimeData *mimeData = clipboard->mimeData();
+	QByteArray nativeData;
+
+	m_selectionActive = m_teletextDocument->selectionActive();
+	if (m_selectionActive) {
+		m_selectionCornerRow = m_teletextDocument->selectionCornerRow();
+		m_selectionCornerColumn = m_teletextDocument->selectionCornerColumn();
+	}
+
+	m_clipboardDataHeight = m_clipboardDataWidth = 0;
+
+	// Try to get something from the clipboard
+	nativeData = mimeData->data("application/x-teletext");
+	if (nativeData.size() > 2) {
+		// Native clipboard data: we put it there ourselves
+		m_clipboardDataHeight = nativeData.at(0);
+		m_clipboardDataWidth = nativeData.at(1);
+
+		// Guard against invalid dimensions or total size not matching stated dimensions
+		if (m_clipboardDataHeight > 0 && m_clipboardDataWidth > 0 && m_clipboardDataHeight <= 25 && m_clipboardDataWidth <= 40 && nativeData.size() == m_clipboardDataHeight * m_clipboardDataWidth + 2)
+			for (int r=0; r<m_clipboardDataHeight; r++)
+				m_pastingCharacters.append(nativeData.mid(2 + r * m_clipboardDataWidth, m_clipboardDataWidth));
+		else
+			// Invalidate
+			m_clipboardDataHeight = m_clipboardDataWidth = 0;
+	}
+
+	if (m_clipboardDataWidth == 0)
+		return;
+
+	if (m_selectionActive) {
+		m_pasteTopRow = m_teletextDocument->selectionTopRow();
+		m_pasteBottomRow = m_teletextDocument->selectionBottomRow();
+		m_pasteLeftColumn = m_teletextDocument->selectionLeftColumn();
+		m_pasteRightColumn = m_teletextDocument->selectionRightColumn();
+	} else {
+		m_pasteTopRow = m_row;
+		m_pasteBottomRow = m_row + m_clipboardDataHeight - 1;
+		m_pasteLeftColumn = m_column;
+		m_pasteRightColumn = m_column + m_clipboardDataWidth - 1;
+	}
+
+	// Store copy of the characters that we're about to overwrite
+	for (int r=m_pasteTopRow; r<=m_pasteBottomRow; r++) {
+		QByteArray rowArray;
+
+		for (int c=m_pasteLeftColumn; c<=m_pasteRightColumn; c++)
+			// Guard against size of pasted block going beyond last line or column
+			if (r < 25 && c < 40)
+				rowArray.append(m_teletextDocument->currentSubPage()->character(r, c));
+			else
+				// Gone beyond last line or column - store a filler character which we won't see
+				// Not sure if this is really necessary as out-of-bounds access might not occur?
+				rowArray.append(0x7f);
+
+		m_deletedCharacters.append(rowArray);
+	}
+
+	setText(QObject::tr("paste"));
+}
+
+void PasteCommand::redo()
+{
+	if (m_clipboardDataWidth == 0)
+		return;
+
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+
+	int arrayR = 0;
+	int arrayC;
+
+	for (int r=m_pasteTopRow; r<=m_pasteBottomRow; r++) {
+		arrayC = 0;
+		for (int c=m_pasteLeftColumn; c<=m_pasteRightColumn; c++)
+			// Guard against size of pasted block going beyond last line or column
+			if (r < 25 && c < 40) {
+				m_teletextDocument->currentSubPage()->setCharacter(r, c, m_pastingCharacters[arrayR].at(arrayC++));
+
+				// If paste area is wider than clipboard data, repeat the pattern
+				if (arrayC == m_clipboardDataWidth)
+					arrayC = 0;
+			}
+
+		if (r < 25)
+			emit m_teletextDocument->contentsChange(r);
+
+		arrayR++;
+		// If paste area is taller than clipboard data, repeat the pattern
+		if (arrayR == m_clipboardDataHeight)
+			arrayR = 0;
+	}
+
+	if (m_selectionActive) {
+		m_teletextDocument->setSelectionCorner(m_selectionCornerRow, m_selectionCornerColumn);
+		m_teletextDocument->moveCursor(m_row, m_column, true);
+	} else {
+		m_teletextDocument->moveCursor(m_row, m_column+m_clipboardDataWidth-1);
+		m_teletextDocument->cursorRight();
+	}
+}
+
+void PasteCommand::undo()
+{
+	if (m_clipboardDataWidth == 0)
+		return;
+
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+
+	int arrayR = 0;
+	int arrayC;
+
+	for (int r=m_pasteTopRow; r<=m_pasteBottomRow; r++) {
+		arrayC = 0;
+		for (int c=m_pasteLeftColumn; c<=m_pasteRightColumn; c++)
+			// Guard against size of pasted block going beyond last line or column
+			if (r < 25 && c < 40)
+				m_teletextDocument->currentSubPage()->setCharacter(r, c, m_deletedCharacters[arrayR].at(arrayC++));
+
+		if (r < 25)
+			emit m_teletextDocument->contentsChange(r);
+
+		arrayR++;
+	}
+}
+#endif // !QT_NO_CLIPBOARD
 
 
 InsertSubPageCommand::InsertSubPageCommand(TeletextDocument *teletextDocument, bool afterCurrentSubPage, bool copySubPage, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
