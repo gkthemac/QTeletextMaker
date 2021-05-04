@@ -121,7 +121,13 @@ public slots:
 	void setFullScreenColour(const QColor &);
 	void setFullRowColour(int, const QColor &);
 
+signals:
+	void mouseZoomIn();
+	void mouseZoomOut();
+
 private:
+	bool eventFilter(QObject *, QEvent *);
+
 	QGraphicsRectItem *m_fullScreenTopRectItem, *m_fullScreenBottomRectItem;
 	QGraphicsRectItem *m_fullRowLeftRectItem[25], *m_fullRowRightRectItem[25];
 	QGraphicsProxyWidget *m_levelOneProxyWidget;

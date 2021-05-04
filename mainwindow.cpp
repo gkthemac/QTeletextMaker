@@ -181,6 +181,9 @@ void MainWindow::init()
 	connect(m_textWidget->pageRender(), &TeletextPageRender::fullRowColourChanged, m_textScene, &LevelOneScene::setFullRowColour);
 	connect(m_textWidget, &TeletextWidget::insertKeyPressed, this, &MainWindow::toggleInsertMode);
 
+	connect(m_textScene, &LevelOneScene::mouseZoomIn, this, &MainWindow::zoomIn);
+	connect(m_textScene, &LevelOneScene::mouseZoomOut, this, &MainWindow::zoomOut);
+
 	QShortcut *blockShortCut = new QShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_J), m_textView);
 	connect(blockShortCut, &QShortcut::activated, [=]() { m_textWidget->setCharacter(0x7f); });
 

@@ -25,6 +25,7 @@
 #include <QGraphicsItemGroup>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
+#include <QGraphicsSceneEvent>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMimeData>
@@ -560,6 +561,8 @@ LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphi
 				m_sidePanelGridItemGroup[c]->addToGroup(gridPiece);
 			}
 	}
+
+	installEventFilter(this);
 }
 
 void LevelOneScene::setBorderDimensions(int sceneWidth, int sceneHeight, int widgetWidth, int leftSidePanelColumns, int rightSidePanelColumns)
@@ -635,6 +638,22 @@ void LevelOneScene::toggleGrid(bool gridOn)
 	for (int i=0; i<32; i++)
 		if (m_sidePanelGridNeeded[i])
 			m_sidePanelGridItemGroup[i]->setVisible(gridOn);
+}
+
+bool LevelOneScene::eventFilter(QObject *object, QEvent *event)
+{
+	Q_UNUSED(object);
+
+	if (event->type() == QEvent::GraphicsSceneWheel && static_cast<QGraphicsSceneWheelEvent *>(event)->modifiers() == Qt::ControlModifier) {
+		if (static_cast<QGraphicsSceneWheelEvent *>(event)->delta() > 0)
+			emit mouseZoomIn();
+		else if (static_cast<QGraphicsSceneWheelEvent *>(event)->delta() < 0)
+			emit mouseZoomOut();
+
+		event->accept();
+		return true;
+	}
+	return false;
 }
 
 void LevelOneScene::setFullScreenColour(const QColor &newColor)
