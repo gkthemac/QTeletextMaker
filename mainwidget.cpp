@@ -522,6 +522,7 @@ LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphi
 	m_levelOneProxyWidget = addWidget(levelOneWidget);
 	m_levelOneProxyWidget->setPos(60, 19);
 	m_levelOneProxyWidget->setAutoFillBackground(false);
+	m_levelOneProxyWidget->setFocus();
 
 	// Selection
 	m_selectionRectItem = new QGraphicsRectItem(0, 0, 12, 10);

@@ -190,6 +190,8 @@ void MainWindow::init()
 	setUnifiedTitleAndToolBarOnMac(true);
 
 	updatePageWidgets();
+
+	m_textView->setFocus();
 }
 
 void MainWindow::tile(const QMainWindow *previous)
