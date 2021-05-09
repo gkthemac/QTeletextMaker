@@ -113,6 +113,7 @@ class LevelOneScene : public QGraphicsScene
 public:
 	LevelOneScene(QWidget *, QObject *parent = nullptr);
 	void setBorderDimensions(int, int, int, int, int);
+	QGraphicsRectItem *cursorRectItem() const { return m_cursorRectItem; }
 
 public slots:
 	void updateCursor();

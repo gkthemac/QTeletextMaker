@@ -925,6 +925,7 @@ void MainWindow::updateCursorPosition()
 {
 	m_cursorPositionLabel->setText(QString("Row %1 Column %2").arg(m_textWidget->document()->cursorRow()).arg(m_textWidget->document()->cursorColumn()));
 	m_textScene->updateCursor();
+	m_textView->ensureVisible(m_textScene->cursorRectItem(), 16, 24);
 }
 
 void MainWindow::updatePageWidgets()
