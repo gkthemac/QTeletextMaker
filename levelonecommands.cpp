@@ -501,7 +501,7 @@ void PasteCommand::redo()
 		m_teletextDocument->setSelectionCorner(m_selectionCornerRow, m_selectionCornerColumn);
 		m_teletextDocument->moveCursor(m_row, m_column, true);
 	} else {
-		m_teletextDocument->moveCursor(m_row, m_column+m_clipboardDataWidth-1);
+		m_teletextDocument->moveCursor(m_row, qMin(m_column+m_clipboardDataWidth-1, 39));
 		m_teletextDocument->cursorRight();
 	}
 }
