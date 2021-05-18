@@ -26,6 +26,7 @@
 #include "levelonecommands.h"
 
 #include "document.h"
+#include "keymap.h"
 
 LevelOneCommand::LevelOneCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : QUndoCommand(parent)
 {
@@ -417,6 +418,7 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, QUndoCommand *par
 	m_clipboardDataHeight = m_clipboardDataWidth = 0;
 
 	// Try to get something from the clipboard
+	// FIXME is this a correct "custom" mime type? Or should we use vnd?
 	nativeData = mimeData->data("application/x-teletext");
 	if (nativeData.size() > 2) {
 		// Native clipboard data: we put it there ourselves
@@ -430,9 +432,26 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, QUndoCommand *par
 		else
 			// Invalidate
 			m_clipboardDataHeight = m_clipboardDataWidth = 0;
+	} else if (mimeData->hasText()) {
+		// Plain text
+		QStringList plainTextData = mimeData->text().split(QRegExp("\n|\r\n|\r"));
+
+		m_clipboardDataHeight = plainTextData.size();
+		m_clipboardDataWidth = 0;
+
+		for (int r=0; r<m_clipboardDataHeight; r++) {
+			m_pastingCharacters.append(QByteArray());
+			for (int c=0; c<plainTextData.at(r).size(); c++)
+				// TODO deal with Unicode properly
+				m_pastingCharacters[r].append(keymapping[12].value(plainTextData.at(r).at(c), *qPrintable(plainTextData.at(r).at(c))));
+			m_clipboardDataWidth = qMax(m_pastingCharacters.at(r).size(), m_clipboardDataWidth);
+		}
+		// Pad short lines with spaces to make a box
+		for (int r=0; r<m_clipboardDataHeight; r++)
+			m_pastingCharacters[r] = m_pastingCharacters.at(r).leftJustified(m_clipboardDataWidth);
 	}
 
-	if (m_clipboardDataWidth == 0)
+	if (m_clipboardDataWidth == 0 || m_clipboardDataHeight == 0)
 		return;
 
 	if (m_selectionActive) {
@@ -468,7 +487,7 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, QUndoCommand *par
 
 void PasteCommand::redo()
 {
-	if (m_clipboardDataWidth == 0)
+	if (m_clipboardDataWidth == 0 || m_clipboardDataHeight == 0)
 		return;
 
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
@@ -508,7 +527,7 @@ void PasteCommand::redo()
 
 void PasteCommand::undo()
 {
-	if (m_clipboardDataWidth == 0)
+	if (m_clipboardDataWidth == 0 || m_clipboardDataHeight == 0)
 		return;
 
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
@@ -528,6 +547,9 @@ void PasteCommand::undo()
 
 		arrayR++;
 	}
+
+	if (!m_selectionActive)
+		m_teletextDocument->moveCursor(m_row, m_column);
 }
 #endif // !QT_NO_CLIPBOARD
 

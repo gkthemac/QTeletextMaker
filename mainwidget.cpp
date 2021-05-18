@@ -394,20 +394,33 @@ void TeletextWidget::toggleCharacterBit(unsigned char bitToToggle)
 void TeletextWidget::selectionToClipboard()
 {
 	QByteArray nativeData;
+	QString plainTextData;
 	QClipboard *clipboard = QApplication::clipboard();
 
 	nativeData.resize(2 + m_teletextDocument->selectionWidth() * m_teletextDocument->selectionHeight());
 	nativeData[0] = m_teletextDocument->selectionHeight();
 	nativeData[1] = m_teletextDocument->selectionWidth();
 
+	plainTextData.reserve((m_teletextDocument->selectionWidth()+1) * m_teletextDocument->selectionHeight() - 1);
+
 	int i=2;
 
-	for (int r=m_teletextDocument->selectionTopRow(); r<=m_teletextDocument->selectionBottomRow(); r++)
-		for (int c=m_teletextDocument->selectionLeftColumn(); c<=m_teletextDocument->selectionRightColumn(); c++)
+	for (int r=m_teletextDocument->selectionTopRow(); r<=m_teletextDocument->selectionBottomRow(); r++) {
+		for (int c=m_teletextDocument->selectionLeftColumn(); c<=m_teletextDocument->selectionRightColumn(); c++) {
 			nativeData[i++] = m_teletextDocument->currentSubPage()->character(r, c);
+
+			if (m_teletextDocument->currentSubPage()->character(r, c) >= 0x20)
+				plainTextData.append(keymapping[m_pageRender.level1CharSet(r, c)].key(m_teletextDocument->currentSubPage()->character(r, c), m_teletextDocument->currentSubPage()->character(r, c)));
+			else
+				plainTextData.append(' ');
+		}
+
+		plainTextData.append('\n');
+	}
 
 	QMimeData *mimeData = new QMimeData();
 	mimeData->setData("application/x-teletext", nativeData);
+	mimeData->setText(plainTextData);
 	clipboard->setMimeData(mimeData);
 }
 
