@@ -443,7 +443,7 @@ void TeletextWidget::copy()
 
 void TeletextWidget::paste()
 {
-	m_teletextDocument->undoStack()->push(new PasteCommand(m_teletextDocument));
+	m_teletextDocument->undoStack()->push(new PasteCommand(m_teletextDocument, m_pageRender.level1CharSet(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn())));
 }
 
 QPair<int, int> TeletextWidget::mouseToRowAndColumn(const QPoint &mousePosition)

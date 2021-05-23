@@ -403,7 +403,7 @@ void CutCommand::undo()
 }
 
 
-PasteCommand::PasteCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
 	const QClipboard *clipboard = QApplication::clipboard();
 	const QMimeData *mimeData = clipboard->mimeData();
@@ -441,9 +441,26 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, QUndoCommand *par
 
 		for (int r=0; r<m_clipboardDataHeight; r++) {
 			m_pastingCharacters.append(QByteArray());
-			for (int c=0; c<plainTextData.at(r).size(); c++)
-				// TODO deal with Unicode properly
-				m_pastingCharacters[r].append(keymapping[12].value(plainTextData.at(r).at(c), *qPrintable(plainTextData.at(r).at(c))));
+			for (int c=0; c<plainTextData.at(r).size(); c++) {
+				// Try to map the unicode character to the current Level 1 character set of this page
+
+				char convertedChar;
+				const QChar charToConvert = plainTextData.at(r).at(c);
+
+				if (keymapping[pageCharSet].contains(charToConvert))
+					// Remapped character or non-Latin character converted successfully
+					convertedChar = keymapping[pageCharSet].value(charToConvert);
+				else {
+					// Either a Latin character or non-Latin character that can't be converted
+					// See if it's a Latin character
+					convertedChar = charToConvert.toLatin1();
+					if (convertedChar == 0)
+						// Couldn't convert - make it a block character so it doesn't need to be inserted-between later on
+						convertedChar = 0x7f;
+				}
+
+				m_pastingCharacters[r].append(convertedChar);
+			}
 			m_clipboardDataWidth = qMax(m_pastingCharacters.at(r).size(), m_clipboardDataWidth);
 		}
 		// Pad short lines with spaces to make a box

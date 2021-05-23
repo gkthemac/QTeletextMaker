@@ -169,7 +169,7 @@ private:
 class PasteCommand : public LevelOneCommand
 {
 public:
-	PasteCommand(TeletextDocument *, QUndoCommand *parent = 0);
+	PasteCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
