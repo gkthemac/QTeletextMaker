@@ -257,14 +257,14 @@ void MainWindow::createActions()
 
 	setRecentFilesVisible(MainWindow::hasRecentFiles());
 
-	QMenu *exportHashStringSubMenu = fileMenu->addMenu(tr("Export to online editor"));
+	QMenu *exportHashStringSubMenu = fileMenu->addMenu(tr("Export subpage to online editor"));
 
 	QAction *exportZXNetAct = exportHashStringSubMenu->addAction(tr("Open in zxnet.co.uk"));
-	exportZXNetAct->setStatusTip("Export and open page in zxnet.co.uk online editor");
+	exportZXNetAct->setStatusTip("Export and open this subpage in the zxnet.co.uk online editor");
 	connect(exportZXNetAct, &QAction::triggered, this, &MainWindow::exportZXNet);
 
 	QAction *exportEditTFAct = exportHashStringSubMenu->addAction(tr("Open in edit.tf"));
-	exportEditTFAct->setStatusTip("Export and open page in edit.tf online editor");
+	exportEditTFAct->setStatusTip("Export and open this subpage in the edit.tf online editor");
 	connect(exportEditTFAct, &QAction::triggered, this, &MainWindow::exportEditTF);
 
 	fileMenu->addSeparator();
