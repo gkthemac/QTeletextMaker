@@ -58,6 +58,7 @@ private slots:
 	void open();
 	bool save();
 	bool saveAs();
+	void exportPNG();
 	void exportZXNet();
 	void exportEditTF();
 	void updateRecentFileActions();
@@ -82,6 +83,7 @@ private slots:
 
 private:
 	enum { m_MaxRecentFiles = 10 };
+	const float aspectRatioHorizontalScaling[4] = { 0.6, 0.6, 0.8, 0.5 };
 
 	void init();
 	void createActions();

@@ -64,6 +64,7 @@ public slots:
 	void toggleReveal(bool);
 	void toggleMix(bool);
 	void updateFlashTimer(int);
+	void pauseFlash(bool);
 	void refreshRow(int);
 
 	void setControlBit(int, bool);
@@ -119,6 +120,7 @@ public slots:
 	void updateCursor();
 	void updateSelection();
 	void toggleGrid(bool);
+	void hideGUIElements(bool);
 	void setFullScreenColour(const QColor &);
 	void setFullRowColour(int, const QColor &);
 

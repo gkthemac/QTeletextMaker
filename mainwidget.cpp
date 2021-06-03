@@ -140,6 +140,16 @@ void TeletextWidget::timerEvent(QTimerEvent *event)
 		QWidget::timerEvent(event);
 }
 
+void TeletextWidget::pauseFlash(bool pauseNow)
+{
+	if (pauseNow && m_flashTiming != 0) {
+		m_flashTimer.stop();
+		m_flashPhase = 0;
+		update();
+	} else if (m_flashTiming != 0)
+		m_flashTimer.start((m_flashTiming == 1) ? 500 : 167, this);
+}
+
 void TeletextWidget::setInsertMode(bool insertMode)
 {
 	m_insertMode = insertMode;
@@ -652,6 +662,24 @@ void LevelOneScene::toggleGrid(bool gridOn)
 	for (int i=0; i<32; i++)
 		if (m_sidePanelGridNeeded[i])
 			m_sidePanelGridItemGroup[i]->setVisible(gridOn);
+}
+
+void LevelOneScene::hideGUIElements(bool hidden)
+{
+	if (hidden) {
+		m_mainGridItemGroup->setVisible(false);
+		m_cursorRectItem->setVisible(false);
+		m_selectionRectItem->setVisible(false);
+		for (int i=0; i<32; i++)
+			if (m_sidePanelGridNeeded[i])
+				m_sidePanelGridItemGroup[i]->setVisible(false);
+	} else {
+		if (static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionActive())
+			m_selectionRectItem->setVisible(true);
+
+		m_cursorRectItem->setVisible(true);
+		toggleGrid(m_grid);
+	}
 }
 
 bool LevelOneScene::eventFilter(QObject *object, QEvent *event)

@@ -20,9 +20,11 @@
 #include <QApplication>
 #include <QDesktopServices>
 #include <QFileDialog>
+#include <QImage>
 #include <QList>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPainter>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSaveFile>
@@ -118,6 +120,56 @@ bool MainWindow::saveAs()
 		return false;
 
 	return saveFile(fileName);
+}
+
+void MainWindow::exportPNG()
+{
+	QString exportFileName = QFileDialog::getSaveFileName(this, tr("Export PNG"), QString(), "PNG image (*.png)");
+	if (exportFileName.isEmpty())
+		return;
+
+	// Prepare widget image for extraction
+	m_textWidget->pauseFlash(true);
+	m_textScene->hideGUIElements(true);
+	bool reshowCodes = m_textWidget->pageRender()->showCodes();
+	if (reshowCodes)
+		m_textWidget->pageRender()->setShowCodes(false);
+	// Disable exporting in Mix mode as it corrupts the background
+	bool reMix = m_textWidget->pageRender()->mix();
+	if (reMix)
+		m_textWidget->pageRender()->setMix(false);
+
+	// Extract the image from the scene
+	QImage interImage = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+//	This ought to make the background transparent in Mix mode, but it doesn't
+//	if (m_textWidget->pageRender()->mix())
+//		interImage.fill(QColor(0, 0, 0, 0));
+	QPainter interPainter(&interImage);
+	m_textScene->render(&interPainter);
+
+	// Now we're extracted the image we can put the GUI things back
+	m_textScene->hideGUIElements(false);
+	if (reshowCodes)
+		m_textWidget->pageRender()->setShowCodes(true);
+	if (reMix)
+		m_textWidget->pageRender()->setMix(true);
+	m_textWidget->pauseFlash(false);
+
+	// Now scale the extracted image to the selected aspect ratio
+	// We do this in two steps so that anti-aliasing only occurs on vertical lines
+
+	// Double the vertical height first
+	const QImage doubleHeightImage = interImage.scaled(interImage.width(), interImage.height()*2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+
+	// If aspect ratio is Pixel 1:2 we're already at the correct scale
+	if (m_viewAspectRatio != 3) {
+		// Scale it horizontally to the selected aspect ratio
+		const QImage scaledImage = doubleHeightImage.scaled((int)((float)doubleHeightImage.width() * aspectRatioHorizontalScaling[m_viewAspectRatio] * 2), doubleHeightImage.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+		if (!scaledImage.save(exportFileName, "PNG"))
+			QMessageBox::warning(this, tr("QTeletextMaker"), tr("Cannot export file %1.").arg(QDir::toNativeSeparators(exportFileName)));
+	} else if (!doubleHeightImage.save(exportFileName, "PNG"))
+		QMessageBox::warning(this, tr("QTeletextMaker"), tr("Cannot export file %1.").arg(QDir::toNativeSeparators(exportFileName)));
 }
 
 void MainWindow::exportZXNet()
@@ -256,6 +308,10 @@ void MainWindow::createActions()
 	m_recentFileSeparator = fileMenu->addSeparator();
 
 	setRecentFilesVisible(MainWindow::hasRecentFiles());
+
+	QAction *exportPNGAct = fileMenu->addAction(tr("Export subpage as PNG..."));
+	exportPNGAct->setStatusTip("Export a PNG image of this subpage");
+	connect(exportPNGAct, &QAction::triggered, this, &MainWindow::exportPNG);
 
 	QMenu *exportHashStringSubMenu = fileMenu->addMenu(tr("Export subpage to online editor"));
 
@@ -555,7 +611,6 @@ void MainWindow::createActions()
 
 void MainWindow::setSceneDimensions()
 {
-	const float aspectRatioHorizontalScaling[4] = { 0.6, 0.6, 0.8, 0.5 };
 	const int topBottomBorders[3] = { 0, 10, 19 };
 	const int pillarBoxSizes[3] = { 672, 720, 854 };
 	const int leftRightBorders[3] = { 0, 24, 77 };

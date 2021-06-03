@@ -189,6 +189,8 @@ public:
 	void decodePage();
 	void renderPage();
 	void renderPage(int r);
+	bool mix() const { return m_mix; };
+	bool showCodes() const { return m_showCodes; };
 	void setTeletextPage(LevelOnePage *);
 	void updateSidePanels();
 	void buildEnhanceMap(TextLayer *, int=0);
