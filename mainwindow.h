@@ -75,6 +75,7 @@ private slots:
 	void setSceneDimensions();
 	void setBorder(int);
 	void setAspectRatio(int);
+	void setSmoothTransform(bool);
 	void zoomIn();
 	void zoomOut();
 	void zoomReset();
@@ -106,6 +107,7 @@ private:
 	QGraphicsView *m_textView;
 
 	int m_viewBorder, m_viewAspectRatio, m_viewZoom;
+	bool m_viewSmoothTransform;
 	PageOptionsDockWidget *m_pageOptionsDockWidget;
 	PageEnhancementsDockWidget *m_pageEnhancementsDockWidget;
 	X26DockWidget *m_x26DockWidget;
@@ -117,6 +119,7 @@ private:
 	QAction *m_deleteSubPageAction;
 	QAction *m_borderActs[3];
 	QAction *m_aspectRatioActs[4];
+	QAction *m_smoothTransformAction;
 
 	QLabel *m_subPageLabel, *m_cursorPositionLabel;
 	QToolButton *m_previousSubPageButton, *m_nextSubPageButton;

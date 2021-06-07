@@ -147,7 +147,7 @@ void MainWindow::exportPNG()
 	QPainter interPainter(&interImage);
 	m_textScene->render(&interPainter);
 
-	// Now we're extracted the image we can put the GUI things back
+	// Now we've extracted the image we can put the GUI things back
 	m_textScene->hideGUIElements(false);
 	if (reshowCodes)
 		m_textWidget->pageRender()->setShowCodes(true);
@@ -218,7 +218,8 @@ void MainWindow::init()
 
 	m_textView = new QGraphicsView(this);
 	m_textView->setScene(m_textScene);
-	m_textView->setRenderHints(QPainter::SmoothPixmapTransform);
+	if (m_viewSmoothTransform)
+		m_textView->setRenderHints(QPainter::SmoothPixmapTransform);
 	m_textView->setBackgroundBrush(QBrush(QColor(32, 48, 96)));
 	setSceneDimensions();
 	setCentralWidget(m_textView);
@@ -474,6 +475,13 @@ void MainWindow::createActions()
 		borderGroup->addAction(m_borderActs[i]);
 	}
 
+	viewMenu->addSeparator();
+
+	m_smoothTransformAction = viewMenu->addAction(tr("Smooth font scaling"));
+	m_smoothTransformAction->setCheckable(true);
+	m_smoothTransformAction->setStatusTip(tr("Toggle smooth font scaling"));
+	connect(m_smoothTransformAction, &QAction::toggled, this, &MainWindow::setSmoothTransform);
+
 	QAction *zoomInAct = viewMenu->addAction(tr("Zoom In"));
 	zoomInAct->setShortcuts(QKeySequence::ZoomIn);
 	zoomInAct->setStatusTip(tr("Zoom in"));
@@ -667,6 +675,15 @@ void MainWindow::setAspectRatio(int newViewAspectRatio)
 	setSceneDimensions();
 }
 
+void MainWindow::setSmoothTransform(bool smoothTransform)
+{
+	m_viewSmoothTransform = smoothTransform;
+	if (smoothTransform)
+		m_textView->setRenderHints(QPainter::SmoothPixmapTransform);
+	else
+		m_textView->setRenderHints({ });
+}
+
 void MainWindow::zoomIn()
 {
 	if (m_viewZoom < 4)
@@ -760,6 +777,10 @@ void MainWindow::readSettings()
 	m_viewAspectRatio = settings.value("aspectratio", 0).toInt();
 	m_viewAspectRatio = (m_viewAspectRatio < 0 || m_viewAspectRatio > 2) ? 0 : m_viewAspectRatio;
 	m_aspectRatioActs[m_viewAspectRatio]->setChecked(true);
+	m_viewSmoothTransform = settings.value("smoothTransform", 0).toBool();
+	m_smoothTransformAction->blockSignals(true);
+	m_smoothTransformAction->setChecked(m_viewSmoothTransform);
+	m_smoothTransformAction->blockSignals(false);
 	m_viewZoom = settings.value("zoom", 2).toInt();
 	m_viewZoom = (m_viewZoom < 0 || m_viewZoom > 4) ? 2 : m_viewZoom;
 
@@ -798,6 +819,7 @@ void MainWindow::writeSettings()
 	settings.setValue("windowState", saveState());
 	settings.setValue("border", m_viewBorder);
 	settings.setValue("aspectratio", m_viewAspectRatio);
+	settings.setValue("smoothTransform", m_viewSmoothTransform);
 	settings.setValue("zoom", m_viewZoom);
 }
 
