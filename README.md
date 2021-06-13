@@ -5,6 +5,8 @@ Features
 - Load and save teletext pages in .tti format.
 - Rendering of teletext pages in Levels 1, 1.5, 2.5 and 3.5
 - Rendering of Local Objects and side panels.
+- Export PNG images of teletext pages.
+- Undo and redo of editing actions.
 - Interactive X/26 Local Enhancement Data triplet editor.
 - Editing of X/27/4 and X/27/5 compositional links to enhancement data pages.
 - Palette editor.
