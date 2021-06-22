@@ -37,11 +37,11 @@ LevelOnePage::LevelOnePage(const PageBase &other)
 	clearPage();
 
 	for (int i=0; i<26; i++)
-		if (other.packetNeeded(i))
+		if (other.packetExists(i))
 			setPacket(i, other.packet(i));
 	for (int i=26; i<30; i++)
 		for (int j=0; j<16; j++)
-			if (other.packetNeeded(i, j))
+			if (other.packetExists(i, j))
 				setPacket(i, j, other.packet(i));
 
 	for (int i=PageBase::C4ErasePage; i<=PageBase::C14NOS; i++)
@@ -254,7 +254,7 @@ bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray p
 	return PageBase::setPacket(packetNumber, designationCode, packetContents);
 }
 
-bool LevelOnePage::packetNeeded(int packetNumber) const
+bool LevelOnePage::packetExists(int packetNumber) const
 {
 	if (packetNumber <= 24) {
 		for (int c=0; c<40; c++)
@@ -263,10 +263,10 @@ bool LevelOnePage::packetNeeded(int packetNumber) const
 		return false;
 	}
 
-	return PageBase::packetNeeded(packetNumber);
+	return PageBase::packetExists(packetNumber);
 }
 
-bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
+bool LevelOnePage::packetExists(int packetNumber, int designationCode) const
 {
 	if (packetNumber == 26)
 		return packetFromEnhancementListNeeded(designationCode);
@@ -298,7 +298,7 @@ bool LevelOnePage::packetNeeded(int packetNumber, int designationCode) const
 			return !isPaletteDefault(0,15);
 	}
 
-	return PageBase::packetNeeded(packetNumber, designationCode);
+	return PageBase::packetExists(packetNumber, designationCode);
 }
 
 bool LevelOnePage::controlBit(int bitNumber) const

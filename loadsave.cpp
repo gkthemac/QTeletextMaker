@@ -182,7 +182,7 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 
 	auto write7bitPacket=[&](int packetNumber)
 	{
-		if (document.subPage(p)->packetNeeded(packetNumber)) {
+		if (document.subPage(p)->packetExists(packetNumber)) {
 			QByteArray outLine = document.subPage(p)->packet(packetNumber);
 
 			outStream << QString("OL,%1,").arg(packetNumber);
@@ -203,7 +203,7 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 
 	auto writeHammingPacket=[&](int packetNumber, int designationCode=0)
 	{
-		if (document.subPage(p)->packetNeeded(packetNumber, designationCode)) {
+		if (document.subPage(p)->packetExists(packetNumber, designationCode)) {
 			QByteArray outLine = document.subPage(p)->packet(packetNumber, designationCode);
 
 			outStream << QString("OL,%1,").arg(packetNumber);
@@ -279,7 +279,7 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 
 		// FastText links
 		bool writeFLCommand = false;
-		if (document.pageFunction() == TeletextDocument::PFLevelOnePage && document.subPage(p)->packetNeeded(27,0)) {
+		if (document.pageFunction() == TeletextDocument::PFLevelOnePage && document.subPage(p)->packetExists(27,0)) {
 			// Subpage has FastText links - if any link to a specific subpage, we need to write X/27/0 as raw
 			// otherwise we write the links as a human-readable FL command later on
 			writeFLCommand = true;
@@ -337,7 +337,7 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 
 QByteArray rowPacketAlways(PageBase *subPage, int packetNumber)
 {
-	if (subPage->packetNeeded(packetNumber))
+	if (subPage->packetExists(packetNumber))
 		return subPage->packet(packetNumber);
 	else
 		return QByteArray(40, ' ');
@@ -388,7 +388,7 @@ QString exportHashStringPackets(LevelOnePage *subPage)
 	const char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 	QString result;
 
-	if (subPage->packetNeeded(28,0) || subPage->packetNeeded(28,4)) {
+	if (subPage->packetExists(28,0) || subPage->packetExists(28,4)) {
 		// X/28/0 and X/28/4 are duplicates apart from the CLUT definitions
 		// Assemble the duplicate beginning and ending of both packets
 		QString x28StringBegin, x28StringEnd;
@@ -399,9 +399,9 @@ QString exportHashStringPackets(LevelOnePage *subPage)
 
 		x28StringEnd = QString("%1%2%3%4").arg(subPage->defaultScreenColour(), 2, 16, QChar('0')).arg(subPage->defaultRowColour(), 2, 16, QChar('0')).arg(subPage->blackBackgroundSubst(), 1, 10).arg(subPage->colourTableRemap(), 1, 10);
 
-		if (subPage->packetNeeded(28,0))
+		if (subPage->packetExists(28,0))
 			result.append(":X280=" + x28StringBegin + colourToHexString(2) + colourToHexString(3) + x28StringEnd);
-		if (subPage->packetNeeded(28,4))
+		if (subPage->packetExists(28,4))
 			result.append(":X284=" + x28StringBegin + colourToHexString(0) + colourToHexString(1) + x28StringEnd);
 	}
 

@@ -37,8 +37,8 @@ public:
 
 	virtual QByteArray packet(int) const;
 	virtual QByteArray packet(int, int) const;
-	virtual bool packetNeeded(int i) const { return m_displayPackets[i] != nullptr; }
-	virtual bool packetNeeded(int i, int j) const { return m_designationPackets[i-26][j] != nullptr; }
+	virtual bool packetExists(int i) const { return m_displayPackets[i] != nullptr; }
+	virtual bool packetExists(int i, int j) const { return m_designationPackets[i-26][j] != nullptr; }
 	virtual bool setPacket(int, QByteArray);
 	virtual bool setPacket(int, int, QByteArray);
 //	bool deletePacket(int);
