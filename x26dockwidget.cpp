@@ -17,6 +17,7 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <QAbstractListModel>
 #include <QActionGroup>
 #include <QButtonGroup>
 #include <QCheckBox>
@@ -34,7 +35,41 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
+#include "render.h"
 #include "x26dockwidget.h"
+
+CharacterListModel::CharacterListModel(QObject *parent): QAbstractListModel(parent)
+{
+	m_characterSet = 0;
+}
+
+int CharacterListModel::rowCount(const QModelIndex & /*parent*/) const
+{
+	return 96;
+}
+
+QVariant CharacterListModel::data(const QModelIndex &index, int role) const
+{
+	if (!index.isValid())
+		return QVariant();
+
+	if (role == Qt::DisplayRole)
+		return QString("0x%1").arg(index.row()+0x20, 2, 16);
+
+	if (role == Qt::DecorationRole)
+		return m_fontBitmap.rawBitmap()->copy(index.row()*12, m_characterSet*10, 12, 10);
+
+	return QVariant();
+}
+
+void CharacterListModel::setCharacterSet(int characterSet)
+{
+	if (characterSet != m_characterSet) {
+		m_characterSet = characterSet;
+		emit dataChanged(createIndex(0, 0), createIndex(95, 0), QVector<int>(Qt::DecorationRole));
+	}
+}
+
 
 X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 {
@@ -181,8 +216,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	QHBoxLayout *characterCodeLayout = new QHBoxLayout;
 
 	m_characterCodeComboBox = new QComboBox;
-	for (int i=32; i<128; i++)
-		m_characterCodeComboBox->addItem(QString("0x%1").arg(i, 2, 16), i);
+	m_characterCodeComboBox->setModel(&m_characterListModel);
 	characterCodeLayout->addWidget(m_characterCodeComboBox);
 	connect(m_characterCodeComboBox, QOverload<int>::of(&QComboBox::activated), this, [=](const int value) { updateModelFromCookedWidget(value+32, Qt::UserRole+1); } );
 
@@ -705,7 +739,16 @@ void X26DockWidget::updateCookedTripletParameters(const QModelIndex &index)
 		case 0x29: // G0 character
 		case 0x2b: // G3 character at Level 2.5
 		case 0x2f ... 0x3f: // G2 character, G0 character with diacritical
+			// TODO non-Latin G0 and G2 character sets
 			m_characterCodeComboBox->blockSignals(true);
+			if (modeExt == 0x22 || modeExt == 0x2b)
+				m_characterListModel.setCharacterSet(26);
+			else if (modeExt == 0x2f)
+				m_characterListModel.setCharacterSet(7);
+			else if (modeExt == 0x21)
+				m_characterListModel.setCharacterSet(24);
+			else
+				m_characterListModel.setCharacterSet(0);
 			m_characterCodeComboBox->setCurrentIndex(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt()-32);
 			m_characterCodeComboBox->blockSignals(false);
 			m_tripletParameterStackedLayout->setCurrentIndex(2);

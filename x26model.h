@@ -22,6 +22,7 @@
 
 #include <QAbstractListModel>
 #include "mainwidget.h"
+#include "render.h"
 
 class X26Model : public QAbstractListModel
 {
@@ -49,6 +50,7 @@ public:
 private:
 	TeletextWidget *m_parentMainWidget;
 	bool m_listLoaded;
+	TeletextFontBitmap m_fontBitmap;
 };
 
 static const QString modeTripletName[64] {

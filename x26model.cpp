@@ -21,6 +21,7 @@
 
 #include <QList>
 
+#include "render.h"
 #include "x26commands.h"
 
 X26Model::X26Model(TeletextWidget *parent): QAbstractListModel(parent)
@@ -309,14 +310,35 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 		return QString("Reserved 0x%1").arg(m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data(), 2, 16, QChar('0'));
 	}
 
+	if (role == Qt::DecorationRole && index.column() == 3)
+		switch (mode) {
+			case 0x21: // G1 mosaic character
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() & 0x20)
+					return m_fontBitmap.rawBitmap()->copy((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data()-32)*12, 24*10, 12, 10);
+				break;
+			case 0x22: // G3 mosaic character at level 1.5
+			case 0x2b: // G3 mosaic character at level >=2.5
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >= 0x20)
+					return m_fontBitmap.rawBitmap()->copy((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data()-32)*12, 26*10, 12, 10);
+				break;
+			case 0x2f: // G2 character
+				// TODO non-Latin G2 character sets
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >= 0x20)
+					return m_fontBitmap.rawBitmap()->copy((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data()-32)*12, 7*10, 12, 10);
+				break;
+			case 0x29: // G0 character
+			case 0x30 ... 0x3f: // G0 diacritical mark
+				// TODO non-Latin G0 character sets
+				if (m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data() >= 0x20)
+					return m_fontBitmap.rawBitmap()->copy((m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).data()-32)*12, 0, 12, 10);
+				break;
+		};
+
 	if (role == Qt::EditRole && index.column() == 2) {
 		if (!m_parentMainWidget->document()->currentSubPage()->enhancements()->at(index.row()).isRowTriplet())
 			mode |= 0x20;
 		return mode;
 	}
-
-	if (role <= Qt::UserRole)
-		return QVariant();
 
 	switch (role) {
 		case Qt::UserRole+1:

@@ -20,6 +20,7 @@
 #ifndef X26DOCKWIDGET_H
 #define X26DOCKWIDGET_H
 
+#include <QAbstractListModel>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDockWidget>
@@ -31,7 +32,24 @@
 #include <QTableView>
 
 #include "mainwidget.h"
+#include "render.h"
 #include "x26model.h"
+
+class CharacterListModel : public QAbstractListModel
+{
+	Q_OBJECT
+
+public:
+	CharacterListModel(QObject *parent = 0);
+
+	int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+	void setCharacterSet(int);
+
+private:
+	TeletextFontBitmap m_fontBitmap;
+	int m_characterSet;
+};
 
 class X26DockWidget : public QDockWidget
 {
@@ -63,6 +81,7 @@ public slots:
 
 protected:
 	void keyPressEvent(QKeyEvent *event) override;
+	CharacterListModel m_characterListModel;
 
 private:
 	QTableView *m_x26View;
