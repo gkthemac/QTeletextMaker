@@ -26,11 +26,26 @@
 
 #include "render.h"
 
+int TeletextFontBitmap::s_instances = 0;
+
+QBitmap *TeletextFontBitmap::s_fontBitmap = nullptr;
+
+TeletextFontBitmap::TeletextFontBitmap()
+{
+	if (s_instances == 0)
+		s_fontBitmap = new QBitmap(":/images/teletextfont.png");
+	s_instances++;
+}
+
+TeletextFontBitmap::~TeletextFontBitmap()
+{
+	s_instances--;
+	if (s_instances == 0)
+		delete s_fontBitmap;
+}
+
 TeletextPageRender::TeletextPageRender()
 {
-	QPainter pixmapPainter;
-
-	m_fontBitmap = new QBitmap(":/images/teletextfont.png");
 	for (int i=0; i<6; i++)
 		m_pagePixmap[i] = new QPixmap(864, 250);
 	m_pagePixmap[0]->fill(Qt::transparent);
@@ -58,7 +73,6 @@ TeletextPageRender::~TeletextPageRender()
 	}
 	for (int i=0; i<6; i++)
 		delete m_pagePixmap[i];
-	delete m_fontBitmap;
 }
 
 void TeletextPageRender::setTeletextPage(LevelOnePage *newCurrentPage)
@@ -348,10 +362,10 @@ void TeletextPageRender::renderPage(int r)
 				pixmapPainter.setBackground(QBrush(backQColour));
 			}
 			pixmapPainter.setPen(foreQColour);
-			pixmapPainter.drawPixmap(c*12, r*10, charWidth, charHeight, *m_fontBitmap, (resultCharacter.code-32)*12, resultCharacter.set*10, 12, 10);
+			pixmapPainter.drawPixmap(c*12, r*10, charWidth, charHeight, *m_fontBitmap.rawBitmap(), (resultCharacter.code-32)*12, resultCharacter.set*10, 12, 10);
 			if (resultCharacter.diacritical) {
 				pixmapPainter.setBackgroundMode(Qt::TransparentMode);
-				pixmapPainter.drawPixmap(c*12, r*10, charWidth, charHeight, *m_fontBitmap, 384+resultCharacter.diacritical*12, 70, 12, 10);
+				pixmapPainter.drawPixmap(c*12, r*10, charWidth, charHeight, *m_fontBitmap.rawBitmap(), 384+resultCharacter.diacritical*12, 70, 12, 10);
 				pixmapPainter.setBackgroundMode(Qt::OpaqueMode);
 			}
 		}
@@ -483,7 +497,7 @@ void TeletextPageRender::renderPage(int r)
 		if (m_showCodes && c < 40 && m_levelOnePage->character(r, c)<0x20 && !m_level1Layer.isRowBottomHalf(r) && !m_cell[r][c].bottomHalf) {
 			pixmapPainter.setBackground(QBrush(QColor(0, 0, 0, 128)));
 			pixmapPainter.setPen(QColor(255, 255, 255, 224));
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap, (m_levelOnePage->character(r, c)+32)*12, 250, 12, 10);
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (m_levelOnePage->character(r, c)+32)*12, 250, 12, 10);
 		}
 
 		if (resultAttributes.display.doubleHeight)

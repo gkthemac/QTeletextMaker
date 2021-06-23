@@ -179,6 +179,18 @@ private:
 	enum rowHeightEnum { RHnormal=-1, RHtophalf, RHbottomhalf } m_rowHeight[25];
 };
 
+class TeletextFontBitmap
+{
+public:
+	TeletextFontBitmap();
+	~TeletextFontBitmap();
+	QBitmap *rawBitmap() const { return s_fontBitmap; }
+
+private:
+	static int s_instances;
+	static QBitmap* s_fontBitmap;
+};
+
 class TeletextPageRender : public QObject
 {
 	Q_OBJECT
@@ -217,7 +229,7 @@ protected:
 	inline void setFullScreenColour(int);
 	inline void setFullRowColour(int, int);
 
-	QBitmap* m_fontBitmap;
+	TeletextFontBitmap m_fontBitmap;
 	QPixmap* m_pagePixmap[6];
 	int m_finalFullScreenColour, m_renderLevel;
 	QColor m_finalFullScreenQColor;
