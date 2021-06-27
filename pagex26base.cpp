@@ -74,7 +74,7 @@ void PageX26Base::setEnhancementListFromPacket(int packetNumber, QByteArray pack
 		newX26Triplet.setAddress(packetContents.at(i*3+1) & 0x3f);
 		newX26Triplet.setMode(packetContents.at(i*3+2) & 0x1f);
 		newX26Triplet.setData(((packetContents.at(i*3+3) & 0x3f) << 1) | ((packetContents.at(i*3+2) & 0x20) >> 5));
-		m_enhancements[enhanceListPointer] = newX26Triplet;
+		m_enhancements.replace(enhanceListPointer, newX26Triplet);
 	}
 	if (newX26Triplet.mode() == 0x1f && newX26Triplet.address() == 0x3f && newX26Triplet.data() & 0x01)
 		// Last triplet was a Termination Marker (without ..follows) so clean up the repeated ones

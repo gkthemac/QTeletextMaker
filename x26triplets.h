@@ -20,6 +20,8 @@
 #ifndef X26TRIPLETS_H
 #define X26TRIPLETS_H
 
+#include <QList>
+
 class X26Triplet
 {
 public:
@@ -46,7 +48,25 @@ public:
 
 private:
 	int m_address, m_mode, m_data;
+};
 
+class X26TripletList
+{
+public:
+	void append(const X26Triplet &);
+	void insert(int, const X26Triplet &);
+	void removeAt(int);
+	void replace(int, const X26Triplet &);
+
+	void removeLast() { m_list.removeLast(); }
+
+	const X26Triplet &at(int i) const { return m_list.at(i); }
+	bool isEmpty() const { return m_list.isEmpty(); }
+	void reserve(int alloc) { m_list.reserve(alloc); }
+	int size() const { return m_list.size(); }
+
+private:
+	QList<X26Triplet> m_list;
 };
 
 #endif

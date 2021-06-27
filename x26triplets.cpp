@@ -50,3 +50,24 @@ void X26Triplet::setAddressColumn(int addressColumn)
 {
 	m_address = addressColumn;
 }
+
+
+void X26TripletList::append(const X26Triplet &value)
+{
+	m_list.append(value);
+}
+
+void X26TripletList::insert(int i, const X26Triplet &value)
+{
+	m_list.insert(i, value);
+}
+
+void X26TripletList::removeAt(int i)
+{
+	m_list.removeAt(i);
+}
+
+void X26TripletList::replace(int i, const X26Triplet &value)
+{
+	m_list.replace(i, value);
+}

@@ -164,7 +164,7 @@ void EditTripletCommand::redo()
 	if (m_teletextDocument->currentSubPageIndex() != m_subPageIndex)
 		m_teletextDocument->selectSubPageIndex(m_subPageIndex, true);
 
-	m_teletextDocument->currentSubPage()->enhancements()->operator[](m_row) = m_newTriplet;
+	m_teletextDocument->currentSubPage()->enhancements()->replace(m_row, m_newTriplet);
 	m_x26Model->emit dataChanged(m_x26Model->createIndex(m_row, 0), m_x26Model->createIndex(m_row, 3), {m_role});
 	m_teletextDocument->emit refreshNeeded();
 
@@ -179,7 +179,7 @@ void EditTripletCommand::undo()
 	if (m_teletextDocument->currentSubPageIndex() != m_subPageIndex)
 		m_teletextDocument->selectSubPageIndex(m_subPageIndex, true);
 
-	m_teletextDocument->currentSubPage()->enhancements()->operator[](m_row) = m_oldTriplet;
+	m_teletextDocument->currentSubPage()->enhancements()->replace(m_row, m_oldTriplet);
 	m_x26Model->emit dataChanged(m_x26Model->createIndex(m_row, 0), m_x26Model->createIndex(m_row, 3), {m_role});
 	m_teletextDocument->emit refreshNeeded();
 	m_teletextDocument->emit tripletCommandHighlight(m_row);

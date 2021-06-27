@@ -273,7 +273,7 @@ void TeletextPageRender::decodePage()
 		setFullRowColour(r ,downwardsFullRowColour);
 
 	m_textLayer[1]->enhanceMap.clear();
-	if (m_renderLevel == 0 || m_levelOnePage->enhancements()->empty())
+	if (m_renderLevel == 0 || m_levelOnePage->enhancements()->isEmpty())
 		return;
 
 	m_textLayer[1]->setFullScreenColour(-1);
