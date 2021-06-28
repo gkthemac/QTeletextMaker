@@ -25,6 +25,8 @@
 class X26Triplet
 {
 public:
+	enum X26TripletError { NoError, ActivePositionMovedUp, ActivePositionMovedLeft };
+
 	X26Triplet() {}
 //	X26Triplet(const X26Triplet &other);
 
@@ -46,8 +48,17 @@ public:
 	void setAddressRow(int);
 	void setAddressColumn(int);
 
+	int activePositionRow() const { return m_activePositionRow; }
+	int activePositionColumn() const { return m_activePositionColumn; }
+	X26TripletError error() const { return m_error; }
+
+	friend class X26TripletList;
+
 private:
 	int m_address, m_mode, m_data;
+	int m_activePositionRow = -1;
+	int m_activePositionColumn = -1;
+	X26TripletError m_error = NoError;
 };
 
 class X26TripletList
@@ -66,7 +77,27 @@ public:
 	int size() const { return m_list.size(); }
 
 private:
+	void updateInternalData(int);
+
 	QList<X26Triplet> m_list;
+
+	class ActivePosition
+	{
+	public:
+		ActivePosition();
+		void reset();
+//		int row() const { return (m_row == -1) ? 0 : m_row; }
+//		int column() const { return (m_column == -1) ? 0 : m_column; }
+		int row() const { return m_row; }
+		int column() const { return m_column; }
+		bool isDeployed() const { return m_row != -1; }
+		bool setRow(int);
+		bool setColumn(int);
+//		bool setRowAndColumn(int, int);
+
+	private:
+		int m_row, m_column;
+	};
 };
 
 #endif

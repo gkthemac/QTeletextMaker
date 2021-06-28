@@ -51,87 +51,98 @@ private:
 	TeletextWidget *m_parentMainWidget;
 	bool m_listLoaded;
 	TeletextFontBitmap m_fontBitmap;
-};
 
-static const QString modeTripletName[64] {
-	// Row triplet modes
-	"Full screen colour",
-	"Full row colour",
-	"Reserved 0x02",
-	"Reserved 0x03",
+	const QString m_modeTripletName[64] {
+		// Row triplet modes
+		"Full screen colour",
+		"Full row colour",
+		"Reserved 0x02",
+		"Reserved 0x03",
 
-	"Set Active Position",
-	"Reserved 0x05",
-	"Reserved 0x06",
-	"Address row 0",
+		"Set Active Position",
+		"Reserved 0x05",
+		"Reserved 0x06",
+		"Address row 0",
 
-	"PDC origin, source",
-	"PDC month and day",
-	"PDC cursor and start hour",
-	"PDC cursor and end hour",
+		"PDC origin, source",
+		"PDC month and day",
+		"PDC cursor and start hour",
+		"PDC cursor and end hour",
 
-	"PDC cursor local offset",
-	"PDC series ID and code",
-	"Reserved 0x0e",
-	"Reserved 0x0f",
+		"PDC cursor local offset",
+		"PDC series ID and code",
+		"Reserved 0x0e",
+		"Reserved 0x0f",
 
-	"Origin modifier",
-	"Invoke active object",
-	"Invoke adaptive object",
-	"Invoke passive object",
+		"Origin modifier",
+		"Invoke active object",
+		"Invoke adaptive object",
+		"Invoke passive object",
 
-	"Reserved 0x14",
-	"Define active object",
-	"Define adaptive object",
-	"Define passive object",
+		"Reserved 0x14",
+		"Define active object",
+		"Define adaptive object",
+		"Define passive object",
 
-	"DRCS mode",
-	"Reserved 0x19",
-	"Reserved 0x1a",
-	"Reserved 0x1b",
+		"DRCS mode",
+		"Reserved 0x19",
+		"Reserved 0x1a",
+		"Reserved 0x1b",
 
-	"Reserved 0x1c",
-	"Reserved 0x1d",
-	"Reserved 0x1e",
-	"Termination marker",
+		"Reserved 0x1c",
+		"Reserved 0x1d",
+		"Reserved 0x1e",
+		"Termination marker",
 
-	// Column triplet modes
-	"Foreground colour",
-	"G1 character",
-	"G3 character, level 1.5",
-	"Background colour",
+		// Column triplet modes
+		"Foreground colour",
+		"G1 character",
+		"G3 character, level 1.5",
+		"Background colour",
 
-	"Reserved 0x04",
-	"Reserved 0x05",
-	"PDC cursor, start end min",
-	"Additional flash functions",
+		"Reserved 0x04",
+		"Reserved 0x05",
+		"PDC cursor, start end min",
+		"Additional flash functions",
 
-	"Modified G0/G2 character set",
-	"G0 character",
-	"Reserved 0x0a",
-	"G3 character, level 2.5",
+		"Modified G0/G2 character set",
+		"G0 character",
+		"Reserved 0x0a",
+		"G3 character, level 2.5",
 
-	"Display attributes",
-	"DRCS character",
-	"Font style",
-	"G2 character",
+		"Display attributes",
+		"DRCS character",
+		"Font style",
+		"G2 character",
 
-	"G0 character no diacritical",
-	"G0 character diacritical 1",
-	"G0 character diacritical 2",
-	"G0 character diacritical 3",
-	"G0 character diacritical 4",
-	"G0 character diacritical 5",
-	"G0 character diacritical 6",
-	"G0 character diacritical 7",
-	"G0 character diacritical 8",
-	"G0 character diacritical 9",
-	"G0 character diacritical A",
-	"G0 character diacritical B",
-	"G0 character diacritical C",
-	"G0 character diacritical D",
-	"G0 character diacritical E",
-	"G0 character diacritical F"
+		"G0 character no diacritical",
+		"G0 character diacritical 1",
+		"G0 character diacritical 2",
+		"G0 character diacritical 3",
+		"G0 character diacritical 4",
+		"G0 character diacritical 5",
+		"G0 character diacritical 6",
+		"G0 character diacritical 7",
+		"G0 character diacritical 8",
+		"G0 character diacritical 9",
+		"G0 character diacritical A",
+		"G0 character diacritical B",
+		"G0 character diacritical C",
+		"G0 character diacritical D",
+		"G0 character diacritical E",
+		"G0 character diacritical F"
+	};
+
+	struct tripletErrorShow {
+		QString message;
+		int columnHighlight;
+	};
+
+	const tripletErrorShow m_tripletErrors[3] {
+		{ "", 0 }, // No error
+		{ "Active Position can't move up", 0 },
+		{ "Active Position can't move left within row", 1 }
+	};
 };
 
 #endif

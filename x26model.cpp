@@ -64,6 +64,16 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				return QVariant();
 		}
 
+	// Error colours from KDE Plasma Breeze (light) theme
+	if (role == Qt::ForegroundRole && triplet.error() != X26Triplet::NoError && index.column() == m_tripletErrors[triplet.error()].columnHighlight)
+		return QColor(252, 252, 252);
+
+	if (role == Qt::BackgroundRole && triplet.error() != X26Triplet::NoError && index.column() == m_tripletErrors[triplet.error()].columnHighlight)
+		return QColor(218, 68, 63);
+
+	if (role == Qt::ToolTipRole && triplet.error() != X26Triplet::NoError)
+		return m_tripletErrors[triplet.error()].message;
+
 	if (role == Qt::DisplayRole || role == Qt::EditRole)
 		switch (index.column()) {
 			case 0:
@@ -94,7 +104,7 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 
 	if (role == Qt::DisplayRole) {
 		if (index.column() == 2)
-			return (modeTripletName[triplet.modeExt()]);
+			return (m_modeTripletName[triplet.modeExt()]);
 		// Column 3 - describe effects of data/address triplet parameters in plain English
 		switch (triplet.modeExt()) {
 			case 0x01: // Full row colour
