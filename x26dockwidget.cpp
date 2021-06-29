@@ -892,28 +892,36 @@ void X26DockWidget::updateCookedTripletParameters(const QModelIndex &index)
 	// Now deal with cooked row and column spinboxes
 	m_cookedRowSpinBox->blockSignals(true);
 	m_cookedColumnSpinBox->blockSignals(true);
-	QVariant rowVariant = index.model()->data(index.model()->index(index.row(), 0), Qt::EditRole);
+	const QVariant rowVariant = index.model()->data(index.model()->index(index.row(), 0), Qt::EditRole);
 	if (rowVariant.isNull()) {
 		m_cookedRowSpinBox->setEnabled(false);
 		m_cookedRowSpinBox->setValue(0);
+		m_cookedRowSpinBox->setPrefix("");
 	} else {
 		m_cookedRowSpinBox->setEnabled(true);
-		if (index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole) == 0x10)
+		if (modeExt == 0x10) {
 			m_cookedRowSpinBox->setRange(0, 23);
-		else
+			m_cookedRowSpinBox->setPrefix("+");
+		} else {
 			m_cookedRowSpinBox->setRange(1, 24);
+			m_cookedRowSpinBox->setPrefix("");
+		}
 		m_cookedRowSpinBox->setValue(rowVariant.toInt());
 	}
-	QVariant columnVariant = index.model()->data(index.model()->index(index.row(), 1), Qt::EditRole);
+	const QVariant columnVariant = index.model()->data(index.model()->index(index.row(), 1), Qt::EditRole);
 	if (columnVariant.isNull()) {
 		m_cookedColumnSpinBox->setEnabled(false);
 		m_cookedColumnSpinBox->setValue(0);
+		m_cookedColumnSpinBox->setPrefix("");
 	} else {
 		m_cookedColumnSpinBox->setEnabled(true);
-		if (index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole) == 0x10)
+		if (modeExt == 0x10) {
 			m_cookedColumnSpinBox->setMaximum(71);
-		else
+			m_cookedColumnSpinBox->setPrefix("+");
+		} else {
 			m_cookedColumnSpinBox->setMaximum(39);
+			m_cookedColumnSpinBox->setPrefix("");
+		}
 		m_cookedColumnSpinBox->setValue(columnVariant.toInt());
 	}
 	m_cookedRowSpinBox->blockSignals(false);

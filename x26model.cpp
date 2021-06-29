@@ -77,14 +77,14 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 	if (role == Qt::DisplayRole || role == Qt::EditRole)
 		switch (index.column()) {
 			case 0:
-				// Show row number only if address part of triplet actually represents a row
-				// i.e. Full row colour, Set Active Position and Origin Modifier
+				// Show row number only if address part of triplet actually represents a row:
+				// Full row colour, Set Active Position and Origin Modifier
 				// For Origin Modifier address of 40 refers to same row, so show it as 0
 				if (triplet.modeExt() == 0x10) {
 					if (triplet.address() == 40)
-						return 0;
+						return "+0";
 					else
-						return triplet.addressRow();
+						return QString("+%1").arg(triplet.addressRow());
 				}
 				if (triplet.modeExt() == 0x01 || triplet.modeExt() == 0x04)
 					return triplet.addressRow();
@@ -94,8 +94,10 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				if (!triplet.isRowTriplet())
 					return triplet.addressColumn();
 				// For Set Active Position and Origin Modifier, data is the column
-				else if (triplet.modeExt() == 0x04 || triplet.modeExt() == 0x10)
+				else if (triplet.modeExt() == 0x04)
 					return triplet.data();
+				else if (triplet.modeExt() == 0x10)
+					return QString("+%1").arg(triplet.data());
 				else
 					return QVariant();
 		}
