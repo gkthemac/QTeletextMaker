@@ -25,6 +25,7 @@
 #include <QComboBox>
 #include <QDockWidget>
 #include <QGroupBox>
+#include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSpinBox>
@@ -98,6 +99,7 @@ private:
 	QComboBox *m_textSizeComboBox;
 	QCheckBox *m_displayAttributeBoxingCheckBox, *m_displayAttributeConcealCheckBox, *m_displayAttributeInvertCheckBox, *m_displayAttributeUnderlineCheckBox;
 	QComboBox *m_objectSourceComboBox, *m_objectRequiredAtLevelsComboBox;
+	QLabel *m_invokeLocalObjectDesignationCodeLabel, *m_invokeLocalObjectTripletNumberLabel;
 	QSpinBox *m_invokeLocalObjectDesignationCodeSpinBox, *m_invokeLocalObjectTripletNumberSpinBox;
 	QSpinBox *m_invokePOPSubPageSpinBox, *m_invokePOPPacketNumberSpinBox;
 	QComboBox *m_invokePOPTripletNumberComboBox, *m_invokePOPPointerBitsComboBox;

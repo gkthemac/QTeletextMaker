@@ -287,13 +287,15 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	// Invoke Local Objects
 	QHBoxLayout *invokeLocalObjectLayout = new QHBoxLayout;
 
-	invokeLocalObjectLayout->addWidget(new QLabel(tr("Designation")));
+	m_invokeLocalObjectDesignationCodeLabel = new QLabel(tr("Designation"));
+	invokeLocalObjectLayout->addWidget(m_invokeLocalObjectDesignationCodeLabel);
 	m_invokeLocalObjectDesignationCodeSpinBox = new QSpinBox;
 	m_invokeLocalObjectDesignationCodeSpinBox->setMaximum(15);
 	invokeLocalObjectLayout->addWidget(m_invokeLocalObjectDesignationCodeSpinBox);
 	connect(m_invokeLocalObjectDesignationCodeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+2); } );
 
-	invokeLocalObjectLayout->addWidget(new QLabel(tr("Triplet")));
+	m_invokeLocalObjectTripletNumberLabel = new QLabel(tr("Triplet"));
+	invokeLocalObjectLayout->addWidget(m_invokeLocalObjectTripletNumberLabel);
 	m_invokeLocalObjectTripletNumberSpinBox = new QSpinBox;
 	m_invokeLocalObjectTripletNumberSpinBox->setMaximum(12);
 	invokeLocalObjectLayout->addWidget(m_invokeLocalObjectTripletNumberSpinBox);
@@ -799,14 +801,22 @@ void X26DockWidget::updateCookedTripletParameters(const QModelIndex &index)
 			// BUG we're only dealing with Local Object Definitions at the moment!
 			if (index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt() == 0 || (index.model()->data(index.model()->index(index.row(), 1), Qt::UserRole).toInt() & 0x04)) {
 //			if (triplet.objectSource() == X26Triplet::LocalObjectSource) {
+				const bool tripletLocationWidgetsVisible = (modeExt & 0x04) != 0x04;
+
+				m_invokeLocalObjectDesignationCodeLabel->setVisible(tripletLocationWidgetsVisible);
+				m_invokeLocalObjectDesignationCodeSpinBox->setVisible(tripletLocationWidgetsVisible);
+				m_invokeLocalObjectTripletNumberLabel->setVisible(tripletLocationWidgetsVisible);
+				m_invokeLocalObjectTripletNumberSpinBox->setVisible(tripletLocationWidgetsVisible);
 				m_objectSourceComboBox->setCurrentIndex(0);
 				m_invokeObjectSourceStackedLayout->setCurrentIndex(0);
-				m_invokeLocalObjectDesignationCodeSpinBox->blockSignals(true);
-				m_invokeLocalObjectTripletNumberSpinBox->blockSignals(true);
-				m_invokeLocalObjectDesignationCodeSpinBox->setValue(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+2).toInt());
-				m_invokeLocalObjectTripletNumberSpinBox->setValue(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+3).toInt());
-				m_invokeLocalObjectDesignationCodeSpinBox->blockSignals(false);
-				m_invokeLocalObjectTripletNumberSpinBox->blockSignals(false);
+				if (tripletLocationWidgetsVisible) {
+					m_invokeLocalObjectDesignationCodeSpinBox->blockSignals(true);
+					m_invokeLocalObjectTripletNumberSpinBox->blockSignals(true);
+					m_invokeLocalObjectDesignationCodeSpinBox->setValue(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+2).toInt());
+					m_invokeLocalObjectTripletNumberSpinBox->setValue(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+3).toInt());
+					m_invokeLocalObjectDesignationCodeSpinBox->blockSignals(false);
+					m_invokeLocalObjectTripletNumberSpinBox->blockSignals(false);
+				}
 			} else { // if (triplet.objectSource() != X26Triplet::IllegalObjectSource) {
 				m_objectSourceComboBox->setCurrentIndex(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt());
 				m_invokeObjectSourceStackedLayout->setCurrentIndex(1);

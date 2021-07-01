@@ -92,6 +92,13 @@ void X26TripletList::updateInternalData(int r)
 					break;
 				case 0x15 ... 0x17: // Define Object
 					activePosition.reset();
+					// Make sure data field holds correct place of triplet
+					// otherwise the object won't appear
+					triplet->m_address &= 0x3c;
+					if (i >= 104) // Triplet 8
+						triplet->m_address |= 0x01;
+					triplet->m_data = (((i / 13) & 0x07) << 4) | (i % 13);
+					break;
 			};
 		// Column triplet: make sure that PDC and reserved triplets don't affect the Active Position
 		} else if (triplet->modeExt() != 0x24 && triplet->modeExt() != 0x25 && triplet->modeExt() != 0x26 && triplet->modeExt() != 0x2a)

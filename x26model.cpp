@@ -145,20 +145,19 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					result.append("1-9");
 				return result;
 			case 0x15 ... 0x17: // Define object
-				result = (QString("Local: d%1 t%2, ").arg((triplet.data() >> 4) | ((triplet.address() & 1) << 3)).arg(triplet.data() & 0x0f));
 				switch (triplet.address() & 0x18) {
 					case 0x08:
-						result.append("L2.5 only");
+						return "Local: L2.5 only";
 						break;
 					case 0x10:
-						result.append("L3.5 only");
+						return "Local: L3.5 only";
 						break;
 					case 0x18:
-						result.append("L2.5 and 3.5");
+						return "Local: L2.5 and 3.5";
 						break;
 					// case 0x00: shouldn't happen since that would make a column triplet, not a row triplet
 				}
-				return result;
+				break;
 			case 0x18: // DRCS mode
 				result = (triplet.data() & 0x40) == 0x40 ? "Normal" : "Global";
 				result.append(QString(": subpage %1, ").arg(triplet.data() & 0x0f));
