@@ -343,134 +343,120 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 	if (role == Qt::EditRole && index.column() == 2)
 		return triplet.modeExt();
 
-	switch (role) {
-		case Qt::UserRole+1:
-			switch (triplet.modeExt()) {
-				case 0x00: // Full screen colour
-				case 0x01: // Full row colour
-				case 0x07: // Address row 0
-				case 0x20: // Foreground colour
-				case 0x23: // Background colour
-					// Colour index
-					return triplet.data() & 0x1f;
-				case 0x11 ... 0x13: // Invoke object
-					// Object source: Local, POP or GPOP
-					return ((triplet.address() & 0x18) >> 3) - 1;
-					break;
-				case 0x15 ... 0x17: // Define object
-					// Required at which levels
-					return ((triplet.address() & 0x18) >> 3) - 1;
-				case 0x18: // DRCS mode
-					// Required at which levels
-					return ((triplet.data() & 0x30) >> 4) - 1;
-				case 0x1f: // Termination
-					// Intermed POP subpage|Last POP subpage|Local Object|Local enhance
-					return ((triplet.data() & 0x06) >> 1);
-				case 0x27: // Flash functions
-					// Flash mode
-					return triplet.data() & 0x03;
-				case 0x2c: // Display attributes
-					// Text size
-					return (triplet.data() & 0x01) | ((triplet.data() & 0x40) >> 5);
-				case 0x2d: // DRCS character
-					// Normal or Global
-					return (triplet.data() & 0x40) == 0x40;
-				case 0x2e: // Font style
-					// Proportional
-					return (triplet.data() & 0x01) == 0x01;
-				default:
-					return triplet.data();
-			}
-			break;
+	if (role < Qt::UserRole)
+		return QVariant();
 
-		case Qt::UserRole+2:
-			switch (triplet.modeExt()) {
-				case 0x01: // Full row colour
-				case 0x07: // Address row 0
-					// "this row only" or "down to bottom"
-					return (triplet.data() & 0x60) == 0x60;
-				case 0x11 ... 0x13: // Invoke object
-					if ((triplet.address() & 0x08) == 0x08)
+	switch (triplet.modeExt()) {
+		case 0x01: // Full row colour
+		case 0x07: // Address row 0
+			if (role == Qt::UserRole+2) // "this row only" or "down to bottom"
+				return (triplet.data() & 0x60) == 0x60;
+			// fall-through
+		case 0x00: // Full screen colour
+		case 0x20: // Foreground colour
+		case 0x23: // Background colour
+			if (role == Qt::UserRole+1) // Colour index
+				return triplet.data() & 0x1f;
+			break;
+		case 0x11 ... 0x13: // Invoke object
+			switch (role) {
+				case Qt::UserRole+1: // Object source: Local, POP or GPOP
+					return ((triplet.address() & 0x18) >> 3) - 1;
+				case Qt::UserRole+2:
+					if ((triplet.address() & 0x18) == 0x08)
 						// Local object: Designation code
 						return ((triplet.address() & 0x01) << 3) | ((triplet.data() & 0x70) >> 4);
 					else
 						// (G)POP object: Subpage
 						return triplet.data() & 0x0f;
-					break;
-				case 0x15 ... 0x17: // Define object
-					// Local object: Designation code
-					return ((triplet.address() & 0x01) << 3) | ((triplet.data() & 0x70) >> 4);
-				case 0x1f: // Termination
-					// More follows/Last
-					return (triplet.data() & 0x01) == 0x01;
-				case 0x27: // Flash functions
-					// Flash rate and phase
-					return triplet.data() >> 2;
-				case 0x2c: // Display attributes
-					// Boxing/window
-					return (triplet.data() & 0x02) == 0x02;
-				case 0x2d: // DRCS character
-					// Character number
-					return triplet.data() & 0x3f;
-				case 0x2e: // Font style
-					// Bold
-					return (triplet.data() & 0x02) == 0x02;
-			}
-			break;
-
-		case Qt::UserRole+3:
-			switch (triplet.modeExt()) {
-				case 0x11 ... 0x13: // Invoke object
+				case Qt::UserRole+3:
 					if ((triplet.address() & 0x08) == 0x08)
 						// Local object: Triplet number
 						return triplet.data() & 0x0f;
 					else
 						// (G)POP object: Pointer location
 						return (triplet.address() & 0x03) + 1;
-					break;
-				case 0x15 ... 0x17: // Define object
-					// Local object: Triplet number
-					return triplet.data() & 0x0f;
-				case 0x18: // DRCS mode
-					// Normal or Global
-					return (triplet.data() & 0x40) == 0x40;
-				case 0x2c: // Display attributes
-					// Conceal
-					return (triplet.data() & 0x04) == 0x04;
-				case 0x2e: // Font style
-					// Italics
-					return (triplet.data() & 0x04) == 0x04;
-			}
-			break;
-
-		case Qt::UserRole+4:
-			switch (triplet.modeExt()) {
-				case 0x11 ... 0x13: // Invoke object
-					// (G)POP object: Triplet number
+				case Qt::UserRole+4: // (G)POP object: Triplet number
 					return triplet.data() >> 5;
-				case 0x18: // DRCS mode
-					// Subpage
-					return triplet.data() & 0x0f;
-				case 0x2c: // Display attributes
-					// Invert
-					return (triplet.data() & 0x10) == 0x10;
-				case 0x2e: // Font style
-					// Number of rows
-					return triplet.data() >> 4;
+				case Qt::UserRole+5: // (G)POP object: Pointer position
+					return (triplet.data() & 0x10) >> 4;
 			}
 			break;
-
-		case Qt::UserRole+5:
-			switch (triplet.modeExt()) {
-				case 0x11 ... 0x13: // Invoke object
-					// (G)POP object: Pointer position
-					return (triplet.data() & 0x10) >> 4;
-				case 0x2c: // Display attributes
-					// Underline/Separated
+		case 0x15 ... 0x17: // Define object
+			switch (role) {
+				case Qt::UserRole+1: // Required at which levels
+					return ((triplet.address() & 0x18) >> 3) - 1;
+				case Qt::UserRole+2: // Local object: Designation code
+					return ((triplet.address() & 0x01) << 3) | ((triplet.data() & 0x70) >> 4);
+				case Qt::UserRole+3: // Local object: Triplet number
+					return triplet.data() & 0x0f;
+			}
+			break;
+		case 0x18: // DRCS mode
+			switch (role) {
+				case Qt::UserRole+1: // Required at which levels
+					return ((triplet.data() & 0x30) >> 4) - 1;
+				case Qt::UserRole+3: // Normal or Global
+					return (triplet.data() & 0x40) == 0x40;
+				case Qt::UserRole+4: // Subpage
+					return triplet.data() & 0x0f;
+			}
+			break;
+		case 0x1f: // Termination
+			switch (role) {
+				case Qt::UserRole+1: // Intermed POP subpage|Last POP subpage|Local Object|Local enhance
+					return ((triplet.data() & 0x06) >> 1);
+				case Qt::UserRole+2: // More follows/Last
+					return (triplet.data() & 0x01) == 0x01;
+			}
+			break;
+		case 0x27: // Flash functions
+			switch (role) {
+				case Qt::UserRole+1: // Flash mode
+					return triplet.data() & 0x03;
+				case Qt::UserRole+2: // Flash rate and phase
+					return triplet.data() >> 2;
+			}
+			break;
+		case 0x2c: // Display attributes
+			switch (role) {
+				case Qt::UserRole+1: // Text size
+					return (triplet.data() & 0x01) | ((triplet.data() & 0x40) >> 5);
+				case Qt::UserRole+2: // Boxing/window
+					return (triplet.data() & 0x02) == 0x02;
+				case Qt::UserRole+3: // Conceal
+					return (triplet.data() & 0x04) == 0x04;
+				case Qt::UserRole+4: // Invert
+					return (triplet.data() & 0x10) == 0x10;
+				case Qt::UserRole+5: // Underline/Separated
 					return (triplet.data() & 0x20) == 0x20;
 			}
 			break;
-	}
+		case 0x2d: // DRCS character
+			switch (role) {
+				case Qt::UserRole+1: // Normal or Global
+					return (triplet.data() & 0x40) == 0x40;
+				case Qt::UserRole+2: // Character number
+					return triplet.data() & 0x3f;
+			}
+			break;
+		case 0x2e: // Font style
+			switch (role) {
+				case Qt::UserRole+1: // Proportional
+					return (triplet.data() & 0x01) == 0x01;
+				case Qt::UserRole+2: // Bold
+					return (triplet.data() & 0x02) == 0x02;
+				case Qt::UserRole+3: // Italic
+					return (triplet.data() & 0x04) == 0x04;
+				case Qt::UserRole+4: // Number of rows
+					return triplet.data() >> 4;
+			}
+			break;
+	};
+
+	// Fpr other triplet modes, return the complete data value
+	if (role == Qt::UserRole+1)
+		return triplet.data();
 
 	return QVariant();
 }
@@ -624,167 +610,157 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 						if ((triplet.data() & 0x3f) >= 48)
 							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x40, 0x77, role));
 						break;
-				};
+				}
 				return true;
 		}
 		return false;
 	}
 
-	// Triplet data
-	switch (role) {
-		case Qt::UserRole+1:
-			switch (triplet.modeExt()) {
-				case 0x01: // Full row colour
-				case 0x07: // Address row 0
-					// Colour index
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x60, intValue, role));
-					break;
-				case 0x11 ... 0x13: // Invoke object
-					// Object source: Local, POP or GPOP
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x27, (intValue+1) << 3, role));
-					break;
-				case 0x15 ... 0x17: // Define object
-					// Required at which levels
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x27, (intValue+1) << 3, role));
-					break;
-				case 0x18: // DRCS Mode
-					// Required at which levels
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x4f, (intValue+1) << 4, role));
-					break;
-				case 0x1f: // Termination
-					// Intermed POP subpage|Last POP subpage|Local Object|Local enhance
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x01, intValue << 1, role));
-					break;
-				case 0x27: // Flash functions
-					// Flash mode
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x1c, intValue, role));
-					break;
-				case 0x2c: // Display attributes
-					// Text size
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x36, ((intValue & 0x02) << 5) | (intValue & 0x01), role));
-					break;
-				case 0x2d: // DRCS character
-					// Normal or Global
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x3f, intValue << 6, role));
-					break;
-				case 0x2e: // Font style
-					// Proportional
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7e, intValue, role));
-					break;
-				default: // Others set the complete data value
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, intValue, role));
-			}
-			break;
+	if (role < Qt::UserRole)
+		return false;
 
-		case Qt::UserRole+2:
-			switch (triplet.modeExt()) {
-				case 0x00: // Full screen colour
-				case 0x01: // Full row colour
-				case 0x07: // Address row 0
-					// "this row only" or "down to bottom"
+	switch (triplet.modeExt()) {
+		case 0x01: // Full row colour
+		case 0x07: // Address row 0
+			switch (role) {
+				case Qt::UserRole+1: // Colour index
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x60, intValue, role));
+					return true;
+				case Qt::UserRole+2: // "this row only" or "down to bottom"
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x1f, intValue * 0x60, role));
 					break;
-				case 0x11 ... 0x13: // Invoke object
-					if ((triplet.address() & 0x08) == 0x08) {
+			}
+			break;
+		case 0x11 ... 0x13: // Invoke object
+			switch (role) {
+				case Qt::UserRole+1: // Object source: Local, POP or GPOP
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x27, (intValue+1) << 3, role));
+					return true;
+				case Qt::UserRole+2:
+					if ((triplet.address() & 0x18) == 0x08) {
 						// Local object: Designation code
 						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x0f, (intValue & 0x07) << 4, role));
 						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x38, intValue >> 3, role));
 					} else
 						// (G)POP object: Subpage
 						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x30, intValue, role));
-					break;
-				case 0x15 ... 0x17: // Define object
-					// Local object: Designation code
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x0f, (intValue & 0x07) << 4, role));
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x38, intValue >> 3, role));
-					break;
-				case 0x1f: // Termination
-					// More follows/Last
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x06, intValue, role));
-					break;
-				case 0x27: // Flash functions
-					// Flash rate and phase
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x03, intValue << 2, role));
-					break;
-				case 0x2c: // Display attributes
-					// Boxing/window
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7d, intValue << 1, role));
-					break;
-				case 0x2d: // DRCS character
-					// Character number
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x40, intValue, role));
-					break;
-				case 0x2e: // Font style
-					// Bold
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7d, intValue << 1, role));
-					break;
-			}
-			break;
-
-		case Qt::UserRole+3:
-			switch (triplet.modeExt()) {
-				case 0x11 ... 0x13: // Invoke object
-					if ((triplet.address() & 0x08) == 0x08)
+					return true;
+				case Qt::UserRole+3: // Invoke object
+					if ((triplet.address() & 0x18) == 0x08)
 						// Local object: triplet number
 						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x70, intValue, role));
 					else
 						// (G)POP object: Pointer location
 						m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x7c, intValue - 1, role));
-					break;
-				case 0x15 ... 0x17: // Define object
-					// Local object: triplet number
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x70, intValue, role));
-					break;
-				case 0x18: // DRCS Mode
-					// Normal or Global
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x3f, intValue << 6, role));
-					break;
-				case 0x2c: // Display attributes
-					// Conceal
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7b, intValue << 2, role));
-					break;
-				case 0x2e: // Font style
-					// Italics
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7b, intValue << 2, role));
-					break;
-			}
-			break;
-
-		case Qt::UserRole+4:
-			switch (triplet.modeExt()) {
-				case 0x11 ... 0x13: // Invoke object
-					// (G)POP object: Triplet number
+					return true;
+				case Qt::UserRole+4: // (G)POP object: Triplet number
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x1f, intValue << 5, role));
-					break;
-				case 0x18: // DRCS Mode
-					// Subpage
+					return true;
+				case Qt::UserRole+5: // (G)POP object: Pointer position
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x6f, intValue << 4, role));
+					return true;
+			}
+			break;
+		case 0x15 ... 0x17: // Define object
+			switch (role) {
+				case Qt::UserRole+1: // Required at which levels
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x27, (intValue+1) << 3, role));
+					return true;
+				case Qt::UserRole+2: // Local object: Designation code
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x0f, (intValue & 0x07) << 4, role));
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x38, intValue >> 3, role));
+					return true;
+				case Qt::UserRole+3: // Local object: triplet number
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x70, intValue, role));
 					break;
-				case 0x2c: // Display attributes
-					// Invert
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x6f, intValue << 4, role));
-					break;
-				case 0x2e: // Font style
-					// Number of rows
-					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x07, intValue << 4, role));
+			}
+			break;
+		case 0x18: // DRCS Mode
+			switch (role) {
+				case Qt::UserRole+1: // Required at which levels
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x4f, (intValue+1) << 4, role));
+					return true;
+				case Qt::UserRole+3: // Normal or Global
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x3f, intValue << 6, role));
+					return true;
+				case Qt::UserRole+4: // Subpage
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x70, intValue, role));
+					return true;
+			}
+			break;
+		case 0x1f: // Termination
+			switch (role) {
+				case Qt::UserRole+1: // Intermed POP subpage|Last POP subpage|Local Object|Local enhance
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x01, intValue << 1, role));
+					return true;
+				case Qt::UserRole+2: // More follows/Last
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x06, intValue, role));
+					return true;
+			}
+			break;
+		case 0x27: // Flash functions
+			switch (role) {
+				case Qt::UserRole+1: // Flash mode
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x1c, intValue, role));
+					return true;
+				case Qt::UserRole+2: // Flash rate and phase
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x03, intValue << 2, role));
 					break;
 			}
 			break;
-
-		case Qt::UserRole+5:
-			switch (triplet.modeExt()) {
-				case 0x11 ... 0x13: // Invoke object
-					// (G)POP object: Pointer position
+		case 0x2c: // Display attributes
+			switch (role) {
+				case Qt::UserRole+1: // Text size
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x36, ((intValue & 0x02) << 5) | (intValue & 0x01), role));
+					return true;
+				case Qt::UserRole+2: // Boxing/window
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7d, intValue << 1, role));
+					return true;
+				case Qt::UserRole+3: // Conceal
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7b, intValue << 2, role));
+					return true;
+				case Qt::UserRole+4: // Invert
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x6f, intValue << 4, role));
-					break;
-				case 0x2c: // Display attributes
-					// Underline/Separated
+					return true;
+				case Qt::UserRole+5: // Underline/Separated
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x5f, intValue << 5, role));
+					return true;
+			}
+			break;
+		case 0x2d: // DRCS character
+			switch (role) {
+				case Qt::UserRole+1: // Normal or Global
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x3f, intValue << 6, role));
+					return true;
+				case Qt::UserRole+2: // Character number
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x40, intValue, role));
 					break;
 			}
 			break;
-
+		case 0x2e: // Font style
+			switch (role) {
+				case Qt::UserRole+1: // Proportional
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7e, intValue, role));
+					return true;
+				case Qt::UserRole+2: // Bold
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7d, intValue << 1, role));
+					return true;
+				case Qt::UserRole+3: // Italic
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x7b, intValue << 2, role));
+					return true;
+				case Qt::UserRole+4: // Number of rows
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x07, intValue << 4, role));
+					return true;
+			}
+			break;
 	}
+
+	// Fpr other triplet modes, set the complete data value
+	if (role == Qt::UserRole+1) {
+		m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, intValue, role));
+		return true;
+	}
+
 	return false;
 }
 
