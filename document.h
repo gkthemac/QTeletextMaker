@@ -20,10 +20,27 @@
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
 
+#include <QAbstractListModel>
 #include <QObject>
 #include <QUndoStack>
 #include <vector>
+
 #include "levelonepage.h"
+
+class ClutModel : public QAbstractListModel
+{
+	Q_OBJECT
+
+public:
+	ClutModel(QObject *parent = 0);
+
+	int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+	void setSubPage(LevelOnePage *page);
+
+private:
+	LevelOnePage *m_subPage;
+};
 
 class TeletextDocument : public QObject
 {
@@ -62,6 +79,7 @@ public:
 	void setDescription(QString);
 	void setFastTextLinkPageNumberOnAllSubPages(int, int);
 	QUndoStack *undoStack() const { return m_undoStack; }
+	ClutModel *clutModel() const { return m_clutModel; }
 	int cursorRow() const { return m_cursorRow; }
 	int cursorColumn() const { return m_cursorColumn; }
 	void cursorUp(bool shiftKey=false);
@@ -104,6 +122,7 @@ private:
 	QUndoStack *m_undoStack;
 	int m_cursorRow, m_cursorColumn, m_selectionCornerRow, m_selectionCornerColumn;
 	LevelOnePage *m_selectionSubPage;
+	ClutModel *m_clutModel;
 };
 
 #endif

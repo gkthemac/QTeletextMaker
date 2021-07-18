@@ -196,9 +196,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	QHBoxLayout *colourAndRowLayout = new QHBoxLayout;
 
 	m_colourComboBox = new QComboBox;
-	for (int c=0; c<=3; c++)
-		for (int e=0; e<=7; e++)
-			m_colourComboBox->addItem(tr("CLUT %1:%2").arg(c).arg(e));
+	m_colourComboBox->setModel(m_parentMainWidget->document()->clutModel());
 	colourAndRowLayout->addWidget(m_colourComboBox);
 	connect(m_colourComboBox, QOverload<int>::of(&QComboBox::activated), this, [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+1); } );
 

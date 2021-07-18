@@ -17,11 +17,45 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <QAbstractListModel>
 #include <vector>
 
 #include "document.h"
 
 #include "levelonepage.h"
+
+ClutModel::ClutModel(QObject *parent): QAbstractListModel(parent)
+{
+	m_subPage = nullptr;
+}
+
+int ClutModel::rowCount(const QModelIndex & /*parent*/) const
+{
+	return 32;
+}
+
+QVariant ClutModel::data(const QModelIndex &index, int role) const
+{
+	if (!index.isValid())
+		return QVariant();
+
+	if (role == Qt::DisplayRole)
+		return QString("CLUT %1:%2").arg(index.row() >> 3).arg(index.row() & 0x07);
+
+	if (role == Qt::DecorationRole && m_subPage != nullptr)
+		return m_subPage->CLUTtoQColor(index.row());
+
+	return QVariant();
+}
+
+void ClutModel::setSubPage(LevelOnePage *subPage)
+{
+	if (subPage != m_subPage) {
+		m_subPage = subPage;
+		emit dataChanged(createIndex(0, 0), createIndex(31, 0), QVector<int>(Qt::DecorationRole));
+	}
+}
+
 
 TeletextDocument::TeletextDocument()
 {
@@ -36,10 +70,15 @@ TeletextDocument::TeletextDocument()
 	m_cursorColumn = 0;
 	m_selectionCornerRow = m_selectionCornerColumn = -1;
 	m_selectionSubPage = nullptr;
+
+	m_clutModel = new ClutModel;
+	m_clutModel->setSubPage(m_subPages[0]);
 }
 
 TeletextDocument::~TeletextDocument()
 {
+	delete m_clutModel;
+
 	for (auto &subPage : m_subPages)
 		delete(subPage);
 	for (auto &recycleSubPage : m_recycleSubPages)
@@ -72,7 +111,10 @@ void TeletextDocument::selectSubPageIndex(int newSubPageIndex, bool forceRefresh
 	// forceRefresh overrides "beyond the last subpage" check, so inserting a subpage after the last one still shows - dangerous workaround?
 	if (forceRefresh || (newSubPageIndex != m_currentSubPageIndex && newSubPageIndex < m_subPages.size())) {
 		emit aboutToChangeSubPage();
+
 		m_currentSubPageIndex = newSubPageIndex;
+
+		m_clutModel->setSubPage(m_subPages[m_currentSubPageIndex]);
 		emit subPageSelected();
 		emit selectionMoved();
 		return;
@@ -83,7 +125,10 @@ void TeletextDocument::selectSubPageNext()
 {
 	if (m_currentSubPageIndex < m_subPages.size()-1) {
 		emit aboutToChangeSubPage();
+
 		m_currentSubPageIndex++;
+
+		m_clutModel->setSubPage(m_subPages[m_currentSubPageIndex]);
 		emit subPageSelected();
 		emit selectionMoved();
 	}
@@ -93,7 +138,10 @@ void TeletextDocument::selectSubPagePrevious()
 {
 	if (m_currentSubPageIndex > 0) {
 		emit aboutToChangeSubPage();
+
 		m_currentSubPageIndex--;
+
+		m_clutModel->setSubPage(m_subPages[m_currentSubPageIndex]);
 		emit subPageSelected();
 		emit selectionMoved();
 	}
@@ -116,6 +164,8 @@ void TeletextDocument::insertSubPage(int beforeSubPageIndex, bool copySubPage)
 
 void TeletextDocument::deleteSubPage(int subPageToDelete)
 {
+	m_clutModel->setSubPage(nullptr);
+
 	delete(m_subPages[subPageToDelete]);
 	m_subPages.erase(m_subPages.begin()+subPageToDelete);
 }

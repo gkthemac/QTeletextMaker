@@ -47,12 +47,9 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 	x28Layout->addWidget(new QLabel(tr("Default screen colour")), 0, 0, 1, 1);
 	x28Layout->addWidget(new QLabel(tr("Default row colour")), 1, 0, 1, 1);
 	m_defaultScreenColourCombo = new QComboBox;
+	m_defaultScreenColourCombo->setModel(m_parentMainWidget->document()->clutModel());
 	m_defaultRowColourCombo = new QComboBox;
-	for (int r=0; r<=3; r++)
-		for (int c=0; c<=7; c++) {
-			m_defaultScreenColourCombo->addItem(tr("CLUT %1:%2").arg(r).arg(c));
-			m_defaultRowColourCombo->addItem(tr("CLUT %1:%2").arg(r).arg(c));
-		}
+	m_defaultRowColourCombo->setModel(m_parentMainWidget->document()->clutModel());
 	x28Layout->addWidget(m_defaultScreenColourCombo, 0, 1, 1, 1, Qt::AlignTop);
 	connect(m_defaultScreenColourCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->setDefaultScreenColour(index); });
 	x28Layout->addWidget(m_defaultRowColourCombo, 1, 1, 1, 1, Qt::AlignTop);

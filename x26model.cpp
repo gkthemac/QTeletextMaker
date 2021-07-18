@@ -318,6 +318,17 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 
 	if (role == Qt::DecorationRole && index.column() == 3)
 		switch (triplet.modeExt()) {
+			case 0x00: // Full screen colour
+			case 0x20: // Foreground colour
+			case 0x23: // Background colour
+				if (!(triplet.data() & 0x60))
+					return m_parentMainWidget->document()->currentSubPage()->CLUTtoQColor(triplet.data());
+				break;
+			case 0x01: // Full row colour
+			case 0x07: // Address row 0
+				if (((triplet.data() & 0x60) == 0x00) || ((triplet.data() & 0x60) == 0x60))
+					return m_parentMainWidget->document()->currentSubPage()->CLUTtoQColor(triplet.data() & 0x1f);
+				break;
 			case 0x21: // G1 mosaic character
 				if (triplet.data() & 0x20)
 					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, 24*10, 12, 10);
