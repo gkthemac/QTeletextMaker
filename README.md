@@ -51,11 +51,9 @@ The Active Position, whether set explicitly by a "Set Active Position" triplet o
 - The Active Position can never be moved up to a lesser numbered row.
 - The Active Position can never be moved left *within the same row* to a lesser numbered column, but it can be moved left at the same time as it is moved down to a greater numbered row.
 
-If this rule is not followed then triplets in earlier screen addresses will be ignored.
+If this rule is not followed then triplets in earlier screen addresses will be ignored. Triplets that break this rule will be highlighted red in the X/26 triplet editor.
 
 ### Objects
-"Define ... Object" triplets need to declare that they are in the correct place in the triplet list e.g. if the Define Object triplet is at `d1 t3` in the list then the data field must show `Local: d1 t3`, otherwise the Object won't appear.
-
-Insert and deleting triplets from the list will upset the Object pointers on both "Define" and "Invoke" triplets and will need to be corrected afterwards. A future version of the editor may adjust these pointers automatically.
+Insert and deleting triplets from the list will upset the Object pointers on "Invoke" triplets and will need to be corrected afterwards. A future version of the editor may adjust these pointers automatically.
 
 "Invoke ... Object" triplets must point to a "Define ... Object" of the same type e.g. "Invoke *Active* Object" must point to a "Define *Active* Object", otherwise the Object won't appear.
