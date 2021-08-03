@@ -146,6 +146,12 @@ void loadTTI(QFile *inFile, TeletextDocument *document)
 					}
 					for (int i=1; i<=39; i++)
 						inLine[i] = inLine.at(i) & 0x3f;
+					// Import M/29 whole-magazine packets as X/28 per-page packets
+					if (lineNumber == 29) {
+						if ((document->pageNumber() & 0xff) != 0xff)
+							qDebug("M/29/%d packet found, but page number is not xFF!", designationCode);
+						lineNumber = 28;
+					}
 					loadingPage->setPacket(lineNumber, designationCode, inLine);
 				}
 			}
@@ -291,7 +297,7 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 				}*/
 		}
 
-		// X27 then X28 always come first
+		// X/27 then X/28 always come first
 		for (int i=(writeFLCommand ? 1 : 0); i<16; i++)
 			writeHammingPacket(27, i);
 		for (int i=0; i<16; i++)
