@@ -182,17 +182,12 @@ void TeletextDocument::unDeleteSubPageFromRecycle(int subPage)
 	m_recycleSubPages.pop_back();
 }
 
-void TeletextDocument::setPageNumber(QString pageNumberString)
+void TeletextDocument::setPageNumber(int pageNumber)
 {
-	bool pageNumberOk;
-	int pageNumberRead = pageNumberString.toInt(&pageNumberOk, 16);
-	if ((!pageNumberOk) || pageNumberRead < 0x100 || pageNumberRead > 0x8ff)
-		return;
-
 	// If the magazine number was changed, we need to update the relative magazine numbers in FastText
 	// and page enhancement links
 	int oldMagazine = (m_pageNumber & 0xf00);
-	int newMagazine = (pageNumberRead & 0xf00);
+	int newMagazine = (pageNumber & 0xf00);
 	// Fix magazine 0 to 8
 	if (oldMagazine == 0x800)
 		oldMagazine = 0x000;
@@ -200,7 +195,7 @@ void TeletextDocument::setPageNumber(QString pageNumberString)
 		newMagazine = 0x000;
 	int magazineFlip = oldMagazine ^ newMagazine;
 
-	m_pageNumber = pageNumberRead;
+	m_pageNumber = pageNumber;
 
 	for (auto &subPage : m_subPages)
 		if (magazineFlip) {
@@ -209,6 +204,17 @@ void TeletextDocument::setPageNumber(QString pageNumberString)
 			for (int i=0; i<8; i++)
 				subPage->setComposeLinkPageNumber(i, subPage->composeLinkPageNumber(i) ^ magazineFlip);
 	}
+}
+
+void TeletextDocument::setPageNumberFromString(QString pageNumberString)
+{
+	bool pageNumberOk;
+	int pageNumberRead = pageNumberString.toInt(&pageNumberOk, 16);
+
+	if ((!pageNumberOk) || pageNumberRead < 0x100 || pageNumberRead > 0x8ff)
+		return;
+
+	setPageNumber(pageNumberRead);
 }
 
 void TeletextDocument::setDescription(QString newDescription)

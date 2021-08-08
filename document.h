@@ -74,7 +74,8 @@ public:
 	void deleteSubPageToRecycle(int);
 	void unDeleteSubPageFromRecycle(int);
 	int pageNumber() const { return m_pageNumber; }
-	void setPageNumber(QString);
+	void setPageNumber(int);
+	void setPageNumberFromString(QString);
 	QString description() const { return m_description; }
 	void setDescription(QString);
 	void setFastTextLinkPageNumberOnAllSubPages(int, int);

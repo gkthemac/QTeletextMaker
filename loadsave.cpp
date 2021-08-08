@@ -52,7 +52,7 @@ void loadTTI(QFile *inFile, TeletextDocument *document)
 				document->insertSubPage(document->numberOfSubPages(), false);
 				loadingPage = document->subPage(document->numberOfSubPages()-1);
 			} else {
-				document->setPageNumber(inLine.mid(3,3));
+				document->setPageNumberFromString(inLine.mid(3,3));
 				firstSubPageAlreadyFound = true;
 			}
 		}

@@ -47,7 +47,7 @@ PageOptionsDockWidget::PageOptionsDockWidget(TeletextWidget *parent): QDockWidge
 	m_pageNumberEdit->setInputMask("DHH");
 	//TODO restrict first digit of page number to 1-8
 	pageNumberLayout->addWidget(m_pageNumberEdit);
-	connect(m_pageNumberEdit, &QLineEdit::textEdited, m_parentMainWidget->document(), &TeletextDocument::setPageNumber);
+	connect(m_pageNumberEdit, &QLineEdit::textEdited, m_parentMainWidget->document(), &TeletextDocument::setPageNumberFromString);
 
 	pageOptionsLayout->addLayout(pageNumberLayout);
 
