@@ -2,6 +2,7 @@ QT += widgets
 requires(qtConfig(filedialog))
 
 HEADERS       = document.h \
+                hamming.h \
                 keymap.h \
                 levelonecommands.h \
                 levelonepage.h \
@@ -36,6 +37,8 @@ SOURCES       = document.cpp \
                 x26model.cpp \
                 x26triplets.cpp
 RESOURCES     = qteletextmaker.qrc
+
+CONFIG += debug
 
 # install
 target.path = /usr/local/bin

@@ -26,6 +26,7 @@
 #include <QTextStream>
 
 #include "document.h"
+#include "hamming.h"
 #include "levelonepage.h"
 #include "pagebase.h"
 
@@ -164,6 +165,195 @@ void loadTTI(QFile *inFile, TeletextDocument *document)
 			document->subPage(i)->setCycleValue(mostRecentCycleValue);
 			document->subPage(i)->setCycleType(mostRecentCycleType);
 		}
+}
+
+void importT42(QFile *inFile, TeletextDocument *document)
+{
+	unsigned char inLine[42];
+	int readMagazineNumber, readPacketNumber;
+	int foundMagazineNumber = -1;
+	int foundPageNumber = -1;
+	bool firstPacket0Found = false;
+	bool pageBodyPacketsFound = false;
+
+	for (;;) {
+		if (inFile->read((char *)inLine, 42) != 42)
+			// Reached end of .t42 file, or less than 42 bytes left
+			break;
+
+		// Magazine and packet numbers
+		inLine[0] = hamming_8_4_decode[inLine[0]];
+		inLine[1] = hamming_8_4_decode[inLine[1]];
+		if (inLine[0] == 0xff || inLine[1] == 0xff)
+			// Error decoding magazine or packet number
+			continue;
+		readMagazineNumber = inLine[0] & 0x07;
+		readPacketNumber = (inLine[0] >> 3) | (inLine[1] << 1);
+
+		if (readPacketNumber == 0) {
+			// Hamming decode page number, subcodes and control bits
+			for (int i=2; i<10; i++)
+				inLine[i] = hamming_8_4_decode[inLine[i]];
+			// See if the page number is valid
+			if (inLine[2] == 0xff || inLine[3] == 0xff)
+				// Error decoding page number
+				continue;
+
+			const int readPageNumber = (inLine[3] << 4) | inLine[2];
+
+			if (readPageNumber == 0xff)
+				// Time filling header
+				continue;
+
+			// A second or subsequent X/0 has been found
+			if (firstPacket0Found) {
+				if (readMagazineNumber != foundMagazineNumber)
+					// Packet from different magazine broadcast in parallel mode
+					continue;
+				if ((readPageNumber == foundPageNumber) && pageBodyPacketsFound)
+					// X/0 with same page number found after page body packets loaded - assume end of page
+					break;
+				if (readPageNumber != foundPageNumber) {
+					// More than one page in .t42 file - end of current page reached
+					qDebug("More than one page in .t42 file");
+					break;
+				}
+				// Could get here if X/0 with same page number was found with no body packets inbetween
+				continue;
+			} else {
+				// First X/0 found
+				foundMagazineNumber = readMagazineNumber;
+				foundPageNumber = readPageNumber;
+				firstPacket0Found = true;
+
+				document->setPageNumber((foundMagazineNumber << 8) | foundPageNumber);
+
+				document->subPage(0)->setControlBit(PageBase::C4ErasePage, inLine[5] & 0x08);
+				document->subPage(0)->setControlBit(PageBase::C5Newsflash, inLine[7] & 0x04);
+				document->subPage(0)->setControlBit(PageBase::C6Subtitle, inLine[7] & 0x08);
+				for (int i=0; i<4; i++)
+					document->subPage(0)->setControlBit(PageBase::C7SuppressHeader+i, inLine[8] & (1 << i));
+				document->subPage(0)->setControlBit(PageBase::C11SerialMagazine, inLine[9] & 0x01);
+				document->subPage(0)->setControlBit(PageBase::C12NOS, inLine[9] & 0x08);
+				document->subPage(0)->setControlBit(PageBase::C13NOS, inLine[9] & 0x04);
+				document->subPage(0)->setControlBit(PageBase::C14NOS, inLine[9] & 0x02);
+
+				continue;
+			}
+		}
+
+		// No X/0 has been found yet, keep looking for one
+		if (!firstPacket0Found)
+			continue;
+
+		// Disregard whole-magazine packets
+		if (readPacketNumber > 28)
+			continue;
+
+		// We get here when a page-body packet belonging to the found X/0 header was found
+		pageBodyPacketsFound = true;
+
+		// At the moment this only loads a Level One Page properly
+		// because it assumes X/1 to X/25 is odd partity
+		if (readPacketNumber < 25) {
+			for (int i=2; i<42; i++)
+				// TODO - obey odd parity?
+				inLine[i] &= 0x7f;
+			document->subPage(0)->setPacket(readPacketNumber, QByteArray((const char *)&inLine[2], 40));
+			continue;
+		}
+
+		// X/26, X/27 or X/28
+		int readDesignationCode = hamming_8_4_decode[inLine[2]];
+
+		if (readDesignationCode == 0xff)
+			// Error decoding designation code
+			continue;
+
+		if (readPacketNumber == 27 && readDesignationCode < 4) {
+			// X/27/0 to X/27/3 for Editorial Linking
+			// Decode Hamming 8/4 on each of the six links, checking for errors on the way
+			for (int i=0; i<6; i++) {
+				bool decodingError = false;
+				const int b = 3 + i*6; // First byte of this link
+
+				for (int j=0; j<6; j++) {
+					inLine[b+j] = hamming_8_4_decode[inLine[b+j]];
+					if (inLine[b+j] == 0xff) {
+						decodingError = true;
+						break;
+					}
+				}
+
+				if (decodingError) {
+					// Error found in at least one byte of the link
+					// Neutralise the whole link to same magazine, page FF, subcode 3F7F
+					qDebug("X/27/%d link %d decoding error", readDesignationCode, i);
+					inLine[b]   = 0xf;
+					inLine[b+1] = 0xf;
+					inLine[b+2] = 0xf;
+					inLine[b+3] = 0x7;
+					inLine[b+4] = 0xf;
+					inLine[b+5] = 0x3;
+				}
+			}
+			document->subPage(0)->setPacket(readPacketNumber, readDesignationCode, QByteArray((const char *)&inLine[2], 40));
+
+			continue;
+		}
+
+		// X/26, or X/27/4 to X/27/15, or X/28
+		// Decode Hamming 24/18
+		for (int i=0; i<13; i++) {
+			const int b = 3 + i*3; // First byte of triplet
+
+			const int p0 = inLine[b];
+			const int p1 = inLine[b+1];
+			const int p2 = inLine[b+2];
+
+			unsigned int D1_D4;
+			unsigned int D5_D11;
+			unsigned int D12_D18;
+			unsigned int ABCDEF;
+			int32_t d;
+
+			D1_D4 = hamming_24_18_decode_d1_d4[p0 >> 2];
+			D5_D11 = p1 & 0x7f;
+			D12_D18 = p2 & 0x7f;
+
+			d = D1_D4 | (D5_D11 << 4) | (D12_D18 << 11);
+
+			ABCDEF = (hamming_24_18_parities[0][p0] ^ hamming_24_18_parities[1][p1]  ^ hamming_24_18_parities[2][p2]);
+
+			d ^= (int)hamming_24_18_decode_correct[ABCDEF];
+
+			if ((d & 0x80000000) == 0x80000000) {
+				// Error decoding Hamming 24/18
+				qDebug("X/%d/%d triplet %d decoding error", readPacketNumber, readDesignationCode, i);
+				if (readPacketNumber == 26) {
+					// Enhancements packet, set to "dummy" Address 41, Mode 0x1e, Data 0
+					inLine[b]   = 41;
+					inLine[b+1] = 0x1e;
+					inLine[b+2] = 0;
+				} else {
+					// Zero out whole decoded triplet, bound to make things go wrong...
+					inLine[b]   = 0x00;
+					inLine[b+1] = 0x00;
+					inLine[b+2] = 0x00;
+				}
+			} else {
+				inLine[b]   = d & 0x0003f;
+				inLine[b+1] = (d & 0x00fc0) >> 6;
+				inLine[b+2] = d >> 12;
+			}
+		}
+		document->subPage(0)->setPacket(readPacketNumber, readDesignationCode, QByteArray((const char *)&inLine[2], 40));
+	}
+
+	if (!firstPacket0Found)
+		qDebug("No X/0 found");
+	else if (!pageBodyPacketsFound)
+		qDebug("X/0 found, but no page body packets were found");
 }
 
 // Used by saveTTI and HashString

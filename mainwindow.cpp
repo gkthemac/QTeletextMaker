@@ -844,14 +844,27 @@ void MainWindow::loadFile(const QString &fileName)
 	int levelSeen;
 
 	QFile file(fileName);
-	if (!file.open(QFile::ReadOnly | QFile::Text)) {
+	const QFileInfo fileInfo(file);
+	QIODevice::OpenMode fileOpenMode;
+
+	if (fileInfo.suffix() == "t42")
+		fileOpenMode = QFile::ReadOnly;
+	else
+		fileOpenMode = QFile::ReadOnly | QFile::Text;
+
+	if (!file.open(fileOpenMode)) {
 		QMessageBox::warning(this, tr("QTeletextMaker"), tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
 		setCurrentFile(QString());
 		return;
 	}
 
 	QApplication::setOverrideCursor(Qt::WaitCursor);
-	loadTTI(&file, m_textWidget->document());
+
+	if (fileInfo.suffix() == "t42")
+		importT42(&file, m_textWidget->document());
+	else
+		loadTTI(&file, m_textWidget->document());
+
 	levelSeen = m_textWidget->document()->levelRequired();
 	m_levelRadioButton[levelSeen]->toggle();
 	m_textWidget->pageRender()->setRenderLevel(levelSeen);

@@ -30,7 +30,8 @@
 #include "levelonepage.h"
 #include "pagebase.h"
 
-void loadTTI(QFile *inFile, TeletextDocument *document);
+void loadTTI(QFile *, TeletextDocument *);
+void importT42(QFile *, TeletextDocument *);
 
 int controlBitsToPS(PageBase *);
 
