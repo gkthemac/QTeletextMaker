@@ -108,14 +108,28 @@ void MainWindow::openFile(const QString &fileName)
 	other->show();
 }
 
+static inline bool hasTTISuffix(const QString &filename)
+{
+	return filename.endsWith(".tti", Qt::CaseInsensitive) || filename.endsWith(".ttix", Qt::CaseInsensitive);
+}
+
 bool MainWindow::save()
 {
-	return m_isUntitled ? saveAs() : saveFile(m_curFile);
+	// If imported from non-.tti, force "Save As" so we don't clobber the original imported file
+	return m_isUntitled || !hasTTISuffix(m_curFile) ? saveAs() : saveFile(m_curFile);
 }
 
 bool MainWindow::saveAs()
 {
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), m_curFile);
+	QString suggestedName = m_curFile;
+
+	// If imported from non-.tti, change extension so we don't clobber the original imported file
+	if (suggestedName.endsWith(".t42", Qt::CaseInsensitive)) {
+		suggestedName.chop(4);
+		suggestedName.append(".tti");
+	}
+
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), suggestedName, "TTI teletext page (*.tti *.ttix)");
 	if (fileName.isEmpty())
 		return false;
 
