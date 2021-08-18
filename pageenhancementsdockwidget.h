@@ -24,6 +24,7 @@
 #include <QComboBox>
 #include <QDockWidget>
 #include <QLineEdit>
+#include <QRegExpValidator>
 #include <QSpinBox>
 #include <QString>
 
@@ -51,6 +52,8 @@ private:
 	QCheckBox *m_composeLinkLevelCheckbox[4][2]; // For links 0-3
 	QComboBox *m_composeLinkFunctionComboBox[4]; // For links 4-7; remember to subtract 4!
 	QLineEdit *m_composeLinkPageNumberLineEdit[8], *m_composeLinkSubPageNumbersLineEdit[8];
+
+	QRegExpValidator *m_pageNumberValidator;
 };
 
 #endif

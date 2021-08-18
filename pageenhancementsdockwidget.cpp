@@ -25,6 +25,7 @@
 #include <QLineEdit>
 #include <QMap>
 #include <QPair>
+#include <QRegExpValidator>
 #include <QSpinBox>
 #include <QString>
 
@@ -114,6 +115,8 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 	level3p5OnlyLabel->setAlignment(Qt::AlignCenter);
 	x27Layout->addWidget(level3p5OnlyLabel, 5, 0, 1, 5);
 
+	m_pageNumberValidator = new QRegExpValidator(QRegExp("[1-8][0-9A-Fa-f][0-9A-Fa-f]"), this);
+
 	for (int i=0; i<8; i++) {
 		if (i < 4) {
 			// Required at which Levels
@@ -136,8 +139,8 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 		// Page link
 		m_composeLinkPageNumberLineEdit[i] = new QLineEdit("100");
 		m_composeLinkPageNumberLineEdit[i]->setMaxLength(3);
-		m_composeLinkPageNumberLineEdit[i]->setInputMask("DHH");
-		// TODO restrict first digit of page number to 1-8
+		m_composeLinkPageNumberLineEdit[i]->setInputMask(">DHH");
+		m_composeLinkPageNumberLineEdit[i]->setValidator(m_pageNumberValidator);
 		x27Layout->addWidget(m_composeLinkPageNumberLineEdit[i], i+(i<4 ? 1 : 2), 3, 1, 1);
 		connect(m_composeLinkPageNumberLineEdit[i], &QLineEdit::textEdited, [=](QString value) { setComposeLinkPageNumber(i, value); } );
 

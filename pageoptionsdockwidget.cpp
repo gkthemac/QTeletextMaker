@@ -24,6 +24,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QRegExpValidator>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
@@ -40,12 +41,14 @@ PageOptionsDockWidget::PageOptionsDockWidget(TeletextWidget *parent): QDockWidge
 	this->setWindowTitle("Page options");
 
 	// Page number
+	m_pageNumberValidator = new QRegExpValidator(QRegExp("[1-8][0-9A-Fa-f][0-9A-Fa-f]"), this);
+
 	QHBoxLayout *pageNumberLayout = new QHBoxLayout;
 	pageNumberLayout->addWidget(new QLabel(tr("Page number")));
 	m_pageNumberEdit = new QLineEdit("100");
 	m_pageNumberEdit->setMaxLength(3);
-	m_pageNumberEdit->setInputMask("DHH");
-	//TODO restrict first digit of page number to 1-8
+	m_pageNumberEdit->setInputMask(">DHH");
+	m_pageNumberEdit->setValidator(m_pageNumberValidator);
 	pageNumberLayout->addWidget(m_pageNumberEdit);
 	connect(m_pageNumberEdit, &QLineEdit::textEdited, m_parentMainWidget->document(), &TeletextDocument::setPageNumberFromString);
 
@@ -66,8 +69,8 @@ PageOptionsDockWidget::PageOptionsDockWidget(TeletextWidget *parent): QDockWidge
 		fastTextLayout->addWidget(new QLabel(fastTextLabel[i]), 0, i, 1, 1, Qt::AlignCenter);
 		m_fastTextEdit[i] = new QLineEdit;
 		m_fastTextEdit[i]->setMaxLength(3);
-		m_fastTextEdit[i]->setInputMask("DHH");
-		//TODO restrict first digit of page number to 1-8
+		m_fastTextEdit[i]->setInputMask(">DHH");
+		m_fastTextEdit[i]->setValidator(m_pageNumberValidator);
 		fastTextLayout->addWidget(m_fastTextEdit[i], 1, i, 1, 1);
 		connect(m_fastTextEdit[i], &QLineEdit::textEdited, [=](QString value) { setFastTextLinkPageNumber(i, value); } );
 	}
