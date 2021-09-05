@@ -227,7 +227,10 @@ void importT42(QFile *inFile, TeletextDocument *document)
 				foundPageNumber = readPageNumber;
 				firstPacket0Found = true;
 
-				document->setPageNumber((foundMagazineNumber << 8) | foundPageNumber);
+				if (foundMagazineNumber == 0)
+					document->setPageNumber(0x800 | foundPageNumber);
+				else
+					document->setPageNumber((foundMagazineNumber << 8) | foundPageNumber);
 
 				document->subPage(0)->setControlBit(PageBase::C4ErasePage, inLine[5] & 0x08);
 				document->subPage(0)->setControlBit(PageBase::C5Newsflash, inLine[7] & 0x04);
