@@ -20,6 +20,7 @@
 #include "loadsave.h"
 
 #include <QByteArray>
+#include <QDataStream>
 #include <QFile>
 #include <QSaveFile>
 #include <QString>
@@ -528,6 +529,138 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 		}
 
 		subPageNumber++;
+	}
+}
+
+void exportT42File(QSaveFile &file, const TeletextDocument &document)
+{
+	const PageBase &subPage = *document.currentSubPage();
+
+	QDataStream outStream(&file);
+	// Displayable row header we export as spaces, hence the (odd parity valid) 0x20 init value
+	QByteArray outLine(42, 0x20);
+	int magazineNumber = (document.pageNumber() & 0xf00) >> 8;
+
+	auto write7bitPacket=[&](int packetNumber)
+	{
+		if (subPage.packetExists(packetNumber)) {
+			outLine[0] = hamming_8_4_encode[magazineNumber | ((packetNumber & 0x01) << 3)];
+			outLine[1] = hamming_8_4_encode[packetNumber >> 1];
+			outLine.replace(2, 40, subPage.packet(packetNumber));
+
+			// Odd parity encoding
+			for (int c=0; c<outLine.size(); c++) {
+				char p = outLine.at(c);
+
+				// Recursively divide integer into two equal halves and take their XOR until only 1 bit is left
+				p ^= p >> 4;
+				p ^= p >> 2;
+				p ^= p >> 1;
+				// If last bit left is 0 then it started with an even number of bits, so do the odd parity
+				if (!(p & 1))
+					outLine[c] = outLine.at(c) | 0x80;
+			}
+			outStream.writeRawData(outLine.constData(), 42);
+		}
+	};
+
+	auto writeHamming8_4Packet=[&](int packetNumber, int designationCode=0)
+	{
+		if (subPage.packetExists(packetNumber, designationCode)) {
+			outLine[0] = hamming_8_4_encode[magazineNumber | ((packetNumber & 0x01) << 3)];
+			outLine[1] = hamming_8_4_encode[packetNumber >> 1];
+			outLine.replace(2, 40, subPage.packet(packetNumber, designationCode));
+			outLine[2] = hamming_8_4_encode[designationCode];
+
+			for (int c=3; c<outLine.size(); c++)
+				outLine[c] = hamming_8_4_encode[(int)outLine.at(c)];
+
+			outStream.writeRawData(outLine.constData(), 42);
+		}
+	};
+
+	auto writeHamming24_18Packet=[&](int packetNumber, int designationCode=0)
+	{
+		if (subPage.packetExists(packetNumber, designationCode)) {
+			outLine[0] = hamming_8_4_encode[magazineNumber | ((packetNumber & 0x01) << 3)];
+			outLine[1] = hamming_8_4_encode[packetNumber >> 1];
+			outLine.replace(2, 40, subPage.packet(packetNumber, designationCode));
+			outLine[2] = hamming_8_4_encode[designationCode];
+
+			for (int c=3; c<outLine.size(); c+=3) {
+				unsigned int D5_D11;
+				unsigned int D12_D18;
+				unsigned int P5, P6;
+				unsigned int Byte_0;
+
+				const unsigned int toEncode = outLine[c] | (outLine[c+1] << 6) | (outLine[c+2] << 12);
+
+				Byte_0 = (hamming_24_18_forward[0][(toEncode >> 0) & 0xff] ^ hamming_24_18_forward[1][(toEncode >> 8) & 0xff] ^ hamming_24_18_forward_2[(toEncode >> 16) & 0x03]);
+				outLine[c] = Byte_0;
+
+				D5_D11 = (toEncode >> 4) & 0x7f;
+				D12_D18 = (toEncode >> 11) & 0x7f;
+
+				P5 = 0x80 & ~(hamming_24_18_parities[0][D12_D18] << 2);
+				outLine[c+1] = D5_D11 | P5;
+
+				P6 = 0x80 & ((hamming_24_18_parities[0][Byte_0] ^ hamming_24_18_parities[0][D5_D11]) << 2);
+				outLine[c+2] = D12_D18 | P6;
+			}
+
+			outStream.writeRawData(outLine.constData(), 42);
+		}
+	};
+
+
+	if (magazineNumber == 8)
+		magazineNumber = 0;
+
+	// Write X/0 separately as it features both Hamming 8/4 and 7-bit odd parity within
+	outLine[0] = magazineNumber & 0x07;
+	outLine[1] = 0; // Packet number 0
+	outLine[2] = document.pageNumber() & 0x00f;
+	outLine[3] = (document.pageNumber() & 0x0f0) >> 4;
+	outLine[4] = 0; // Subcode S1 - always export as 0
+	outLine[5] = subPage.controlBit(PageBase::C4ErasePage) << 3;
+	outLine[6] = 0; // Subcode S3 - always export as 0
+	outLine[7] = (subPage.controlBit(PageBase::C5Newsflash) << 2) | (subPage.controlBit(PageBase::C6Subtitle) << 3);
+	outLine[8] = subPage.controlBit(PageBase::C7SuppressHeader) | (subPage.controlBit(PageBase::C8Update) << 2) | (subPage.controlBit(PageBase::C9InterruptedSequence) << 2) | (subPage.controlBit(PageBase::C10InhibitDisplay) << 3);
+	outLine[9] = subPage.controlBit(PageBase::C11SerialMagazine) | (subPage.controlBit(PageBase::C14NOS) << 2) | (subPage.controlBit(PageBase::C13NOS) << 2) | (subPage.controlBit(PageBase::C12NOS) << 3);
+
+	for (int i=0; i<10; i++)
+		outLine[i] = hamming_8_4_encode[(int)outLine.at(i)];
+
+	// If we allow text in the row header, we'd odd-parity encode it here
+
+	outStream.writeRawData(outLine.constData(), 42);
+
+	// After X/0, X/27 then X/28 always come next
+	for (int i=0; i<4; i++)
+		writeHamming8_4Packet(27, i);
+	for (int i=4; i<16; i++)
+		writeHamming24_18Packet(27, i);
+	for (int i=0; i<16; i++)
+		writeHamming24_18Packet(28, i);
+
+	if (document.packetCoding() == TeletextDocument::Coding7bit) {
+		// For 7 bit coding i.e. Level One Pages, X/26 are written before X/1 to X/25
+		for (int i=0; i<16; i++)
+			writeHamming24_18Packet(26, i);
+		for (int i=1; i<=24; i++)
+			write7bitPacket(i);
+	} else {
+		// For others (especially (G)POP pages) X/1 to X/25 are written before X/26
+		if (document.packetCoding() == TeletextDocument::Coding18bit)
+			for (int i=1; i<=25; i++)
+				writeHamming24_18Packet(i);
+		else if (document.packetCoding() == TeletextDocument::Coding4bit)
+			for (int i=1; i<=25; i++)
+				writeHamming8_4Packet(i);
+		else
+			qDebug("Exported broken file as page coding is not supported");
+		for (int i=0; i<16; i++)
+			writeHamming24_18Packet(26, i);
 	}
 }
 

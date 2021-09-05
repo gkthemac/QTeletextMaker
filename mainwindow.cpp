@@ -113,6 +113,17 @@ static inline bool hasTTISuffix(const QString &filename)
 	return filename.endsWith(".tti", Qt::CaseInsensitive) || filename.endsWith(".ttix", Qt::CaseInsensitive);
 }
 
+static inline void changeSuffixFromTTI(QString &filename, const QString &newSuffix)
+{
+	if (filename.endsWith(".tti", Qt::CaseInsensitive)) {
+		filename.chop(4);
+		filename.append("." + newSuffix);
+	} else if (filename.endsWith(".ttix", Qt::CaseInsensitive)) {
+		filename.chop(5);
+		filename.append("." + newSuffix);
+	}
+}
+
 bool MainWindow::save()
 {
 	// If imported from non-.tti, force "Save As" so we don't clobber the original imported file
@@ -324,9 +335,9 @@ void MainWindow::createActions()
 
 	setRecentFilesVisible(MainWindow::hasRecentFiles());
 
-	QAction *exportPNGAct = fileMenu->addAction(tr("Export subpage as PNG..."));
-	exportPNGAct->setStatusTip("Export a PNG image of this subpage");
-	connect(exportPNGAct, &QAction::triggered, this, &MainWindow::exportPNG);
+	QAction *exportT42Act = fileMenu->addAction(tr("Export subpage as t42..."));
+	exportT42Act->setStatusTip("Export this subpage as a t42 file");
+	connect(exportT42Act, &QAction::triggered, this, &MainWindow::exportT42);
 
 	QMenu *exportHashStringSubMenu = fileMenu->addMenu(tr("Export subpage to online editor"));
 
@@ -337,6 +348,10 @@ void MainWindow::createActions()
 	QAction *exportEditTFAct = exportHashStringSubMenu->addAction(tr("Open in edit.tf"));
 	exportEditTFAct->setStatusTip("Export and open this subpage in the edit.tf online editor");
 	connect(exportEditTFAct, &QAction::triggered, this, &MainWindow::exportEditTF);
+
+	QAction *exportPNGAct = fileMenu->addAction(tr("Export subpage as PNG..."));
+	exportPNGAct->setStatusTip("Export a PNG image of this subpage");
+	connect(exportPNGAct, &QAction::triggered, this, &MainWindow::exportPNG);
 
 	fileMenu->addSeparator();
 
@@ -976,7 +991,7 @@ bool MainWindow::saveFile(const QString &fileName)
 	if (file.open(QFile::WriteOnly | QFile::Text)) {
 		saveTTI(file, *m_textWidget->document());
 		if (!file.commit())
-			errorMessage = tr("Cannot write file %1:\n%2.") .arg(QDir::toNativeSeparators(fileName), file.errorString());
+			errorMessage = tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString());
 	} else
 		errorMessage = tr("Cannot open file %1 for writing:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString());
 	QApplication::restoreOverrideCursor();
@@ -989,6 +1004,31 @@ bool MainWindow::saveFile(const QString &fileName)
 	setCurrentFile(fileName);
 	statusBar()->showMessage(tr("File saved"), 2000);
 	return true;
+}
+
+void MainWindow::exportT42()
+{
+	QString errorMessage;
+	QString exportFileName = m_curFile;
+
+	changeSuffixFromTTI(exportFileName, "t42");
+
+	exportFileName = QFileDialog::getSaveFileName(this, tr("Export t42"), exportFileName, "t42 stream (*.t42)");
+	if (exportFileName.isEmpty())
+		return;
+
+	QApplication::setOverrideCursor(Qt::WaitCursor);
+	QSaveFile file(exportFileName);
+	if (file.open(QFile::WriteOnly)) {
+		exportT42File(file, *m_textWidget->document());
+		if (!file.commit())
+			errorMessage = tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
+	} else
+		errorMessage = tr("Cannot open file %1 for writing:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
+	QApplication::restoreOverrideCursor();
+
+	if (!errorMessage.isEmpty())
+		QMessageBox::warning(this, tr("QTeletextMaker"), errorMessage);
 }
 
 void MainWindow::setCurrentFile(const QString &fileName)

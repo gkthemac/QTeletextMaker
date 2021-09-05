@@ -58,9 +58,10 @@ private slots:
 	void open();
 	bool save();
 	bool saveAs();
-	void exportPNG();
+	void exportT42();
 	void exportZXNet();
 	void exportEditTF();
+	void exportPNG();
 	void updateRecentFileActions();
 	void openRecentFile();
 	void about();
