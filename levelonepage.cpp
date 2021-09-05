@@ -129,8 +129,8 @@ QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
 			result[i*6+5] = (m_fastTextLink[i].subPageNumber & 0x0f00) >> 8;
 			result[i*6+6] = ((m_fastTextLink[i].subPageNumber & 0x3000) >> 12) | ((m_fastTextLink[i].pageNumber & 0x600) >> 7);
 		}
-		result[43] = 0xf;
-		result[44] = result[45] = 0;
+		result[37] = 0xf;
+		result[38] = result[39] = 0;
 
 		return result;
 	}
