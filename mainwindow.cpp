@@ -27,6 +27,7 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QRegExp>
 #include <QSaveFile>
 #include <QScreen>
 #include <QSettings>
@@ -352,6 +353,10 @@ void MainWindow::createActions()
 	QAction *exportPNGAct = fileMenu->addAction(tr("Export subpage as PNG..."));
 	exportPNGAct->setStatusTip("Export a PNG image of this subpage");
 	connect(exportPNGAct, &QAction::triggered, this, &MainWindow::exportPNG);
+
+	QAction *exportM29Act = fileMenu->addAction(tr("Export subpage X/28 as M/29..."));
+	exportM29Act->setStatusTip("Export this subpage's X/28 packets as a tti file with M/29 packets");
+	connect(exportM29Act, &QAction::triggered, this, &MainWindow::exportM29);
 
 	fileMenu->addSeparator();
 
@@ -1021,6 +1026,57 @@ void MainWindow::exportT42()
 	QSaveFile file(exportFileName);
 	if (file.open(QFile::WriteOnly)) {
 		exportT42File(file, *m_textWidget->document());
+		if (!file.commit())
+			errorMessage = tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
+	} else
+		errorMessage = tr("Cannot open file %1 for writing:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
+	QApplication::restoreOverrideCursor();
+
+	if (!errorMessage.isEmpty())
+		QMessageBox::warning(this, tr("QTeletextMaker"), errorMessage);
+}
+
+void MainWindow::exportM29()
+{
+	QString errorMessage;
+	QString exportFileName = m_curFile;
+
+	if (m_isUntitled || !QFileInfo(m_curFile).exists())
+		exportFileName = QString("P%1FF.tti").arg(m_textWidget->document()->pageNumber() >> 8, 1, 16);
+	else {
+		exportFileName = QFileInfo(m_curFile).fileName();
+		// Suggest a new filename to avoid clobbering the original file
+		if (QRegExp(("^[Pp]?[1-8][0-9A-Fa-f][0-9A-Fa-f]")).indexIn(exportFileName) != -1) {
+			// Page number forms start of file name, change it to xFF
+			if (exportFileName.at(0) == 'P' || exportFileName.at(0) == 'p') {
+				exportFileName[2] = 'F';
+				exportFileName[3] = 'F';
+			} else {
+				exportFileName[1] = 'F';
+				exportFileName[2] = 'F';
+			}
+		// No page number at start of file name. Try to insert "-m29" while preserving .tti(x) suffix
+		} else if (exportFileName.endsWith(".tti", Qt::CaseInsensitive)) {
+			exportFileName.chop(4);
+			exportFileName.append("-m29.tti");
+		} else if (exportFileName.endsWith(".ttix", Qt::CaseInsensitive)) {
+			exportFileName.chop(5);
+			exportFileName.append("-m29.ttix");
+		} else
+			// Shouldn't get here, bit of a messy escape but still better than clobbering the original file
+			exportFileName.append("-m29.tti");
+
+		exportFileName = QDir(QFileInfo(m_curFile).absoluteDir()).filePath(exportFileName);
+	}
+
+	exportFileName = QFileDialog::getSaveFileName(this, tr("Export M/29 tti"), exportFileName, "TTI teletext page (*.tti *.ttix)");
+	if (exportFileName.isEmpty())
+		return;
+
+	QApplication::setOverrideCursor(Qt::WaitCursor);
+	QSaveFile file(exportFileName);
+	if (file.open(QFile::WriteOnly | QFile::Text)) {
+		exportM29File(file, *m_textWidget->document());
 		if (!file.commit())
 			errorMessage = tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
 	} else

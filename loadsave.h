@@ -37,6 +37,7 @@ int controlBitsToPS(PageBase *);
 
 void saveTTI(QSaveFile &, const TeletextDocument &);
 void exportT42File(QSaveFile &, const TeletextDocument &);
+void exportM29File(QSaveFile &, const TeletextDocument &);
 
 QByteArray rowPacketAlways(PageBase *, int);
 

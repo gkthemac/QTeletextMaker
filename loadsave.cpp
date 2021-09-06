@@ -535,6 +535,58 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 	}
 }
 
+void exportM29File(QSaveFile &file, const TeletextDocument &document)
+{
+	const PageBase &subPage = *document.currentSubPage();
+	QTextStream outStream(&file);
+
+	auto writeM29Packet=[&](int designationCode)
+	{
+		if (subPage.packetExists(28, designationCode)) {
+			QByteArray outLine = subPage.packet(28, designationCode);
+
+			outStream << QString("OL,29,");
+			// TTI stores raw values with bit 6 set, doesn't do Hamming encoding
+			outLine[0] = designationCode | 0x40;
+			for (int c=1; c<outLine.size(); c++)
+				outLine[c] = outLine.at(c) | 0x40;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+			outStream << outLine << Qt::endl;
+#else
+			outStream << outLine << endl;
+#endif
+		}
+	};
+
+	outStream.setCodec("ISO-8859-1");
+
+	if (!document.description().isEmpty())
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	outStream << "DE," << document.description() << Qt::endl;
+#else
+	outStream << "DE," << document.description() << endl;
+#endif
+
+	// Force page number to xFF
+	outStream << QString("PN,%1ff00").arg(document.pageNumber() >> 8, 1, 16);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	outStream << Qt::endl;
+#else
+	outStream << endl;
+#endif
+
+	outStream << "PS,8000";
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	outStream << Qt::endl;
+#else
+	outStream << endl;
+#endif
+
+	writeM29Packet(0);
+	writeM29Packet(1);
+	writeM29Packet(4);
+}
+
 void exportT42File(QSaveFile &file, const TeletextDocument &document)
 {
 	const PageBase &subPage = *document.currentSubPage();

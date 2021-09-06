@@ -62,6 +62,7 @@ private slots:
 	void exportZXNet();
 	void exportEditTF();
 	void exportPNG();
+	void exportM29();
 	void updateRecentFileActions();
 	void openRecentFile();
 	void about();
