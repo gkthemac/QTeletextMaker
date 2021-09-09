@@ -98,8 +98,8 @@ private:
 
 		// Column triplet modes
 		"Foreground colour",
-		"G1 character",
-		"G3 character, level 1.5",
+		"G1 block mosaic",
+		"G3 smooth mosaic, level 1.5",
 		"Background colour",
 
 		"Reserved 0x04",
@@ -110,12 +110,12 @@ private:
 		"Modified G0/G2 character set",
 		"G0 character",
 		"Reserved 0x0a",
-		"G3 character, level 2.5",
+		"G3 smooth mosaic, level 2.5",
 
 		"Display attributes",
 		"DRCS character",
 		"Font style",
-		"G2 character",
+		"G2 supplementary character",
 
 		"G0 character no diacritical",
 		"G0 character diacritical 1",
