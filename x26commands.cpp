@@ -50,12 +50,25 @@ void InsertTripletCommand::redo()
 	for (int i=0; i<m_count; i++)
 		m_teletextDocument->currentSubPage()->enhancements()->insert(m_row+i, m_insertedTriplet);
 
+	if (!changingSubPage)
+		m_x26Model->endInsertRows();
+
+	// Preserve pointers to local object definitions that have moved
+	for (int i=0; i<m_teletextDocument->currentSubPage()->enhancements()->size(); i++) {
+		X26Triplet triplet = m_teletextDocument->currentSubPage()->enhancements()->at(i);
+
+		if (triplet.modeExt() >= 0x11 && triplet.modeExt() <= 0x13 && ((triplet.address() & 0x18) == 0x08) && triplet.objectLocalIndex() >= m_row) {
+			triplet.setObjectLocalIndex(triplet.objectLocalIndex() + m_count);
+			m_teletextDocument->currentSubPage()->enhancements()->replace(i, triplet);
+			if (!changingSubPage)
+				m_x26Model->emit dataChanged(m_x26Model->createIndex(i, 0), m_x26Model->createIndex(i, 3));
+		}
+	}
+
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
-	else {
-		m_x26Model->endInsertRows();
+	else
 		m_teletextDocument->emit refreshNeeded();
-	}
 
 	if (m_firstDo)
 		m_firstDo = false;
@@ -76,12 +89,25 @@ void InsertTripletCommand::undo()
 	for (int i=0; i<m_count; i++)
 		m_teletextDocument->currentSubPage()->enhancements()->removeAt(m_row);
 
+	if (!changingSubPage)
+		m_x26Model->endRemoveRows();
+
+	// Preserve pointers to local object definitions that have moved
+	for (int i=0; i<m_teletextDocument->currentSubPage()->enhancements()->size(); i++) {
+		X26Triplet triplet = m_teletextDocument->currentSubPage()->enhancements()->at(i);
+
+		if (triplet.modeExt() >= 0x11 && triplet.modeExt() <= 0x13 && ((triplet.address() & 0x18) == 0x08) && triplet.objectLocalIndex() >= m_row) {
+			triplet.setObjectLocalIndex(triplet.objectLocalIndex() - m_count);
+			m_teletextDocument->currentSubPage()->enhancements()->replace(i, triplet);
+			if (!changingSubPage)
+				m_x26Model->emit dataChanged(m_x26Model->createIndex(i, 0), m_x26Model->createIndex(i, 3));
+		}
+	}
+
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
-	else {
-		m_x26Model->endRemoveRows();
+	else
 		m_teletextDocument->emit refreshNeeded();
-	}
 }
 
 
@@ -109,6 +135,17 @@ void DeleteTripletCommand::redo()
 		m_teletextDocument->currentSubPage()->enhancements()->removeAt(m_row);
 	m_x26Model->endRemoveRows();
 
+	// Preserve pointers to local object definitions that have moved
+	for (int i=0; i<m_teletextDocument->currentSubPage()->enhancements()->size(); i++) {
+		X26Triplet triplet = m_teletextDocument->currentSubPage()->enhancements()->at(i);
+
+		if (triplet.modeExt() >= 0x11 && triplet.modeExt() <= 0x13 && ((triplet.address() & 0x18) == 0x08) && triplet.objectLocalIndex() >= m_row) {
+			triplet.setObjectLocalIndex(triplet.objectLocalIndex() - m_count);
+			m_teletextDocument->currentSubPage()->enhancements()->replace(i, triplet);
+			m_x26Model->emit dataChanged(m_x26Model->createIndex(i, 0), m_x26Model->createIndex(i, 3));
+		}
+	}
+
 	m_teletextDocument->emit subPageSelected();
 }
 
@@ -125,12 +162,25 @@ void DeleteTripletCommand::undo()
 	for (int i=0; i<m_count; i++)
 		m_teletextDocument->currentSubPage()->enhancements()->insert(m_row+i, m_deletedTriplet);
 
+	if (!changingSubPage)
+		m_x26Model->endInsertRows();
+
+	// Preserve pointers to local object definitions that have moved
+	for (int i=0; i<m_teletextDocument->currentSubPage()->enhancements()->size(); i++) {
+		X26Triplet triplet = m_teletextDocument->currentSubPage()->enhancements()->at(i);
+
+		if (triplet.modeExt() >= 0x11 && triplet.modeExt() <= 0x13 && ((triplet.address() & 0x18) == 0x08) && triplet.objectLocalIndex() >= m_row) {
+			triplet.setObjectLocalIndex(triplet.objectLocalIndex() + m_count);
+			m_teletextDocument->currentSubPage()->enhancements()->replace(i, triplet);
+			if (!changingSubPage)
+				m_x26Model->emit dataChanged(m_x26Model->createIndex(i, 0), m_x26Model->createIndex(i, 3));
+		}
+	}
+
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
-	else {
-		m_x26Model->endInsertRows();
+	else
 		m_teletextDocument->emit refreshNeeded();
-	}
 
 	m_teletextDocument->emit tripletCommandHighlight(m_row);
 }
