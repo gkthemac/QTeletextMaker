@@ -722,12 +722,16 @@ void MainWindow::zoomIn()
 {
 	if (m_viewZoom < 4)
 		m_viewZoom++;
+	else if (m_viewZoom < 12)
+		m_viewZoom += 2;
 	setSceneDimensions();
 }
 
 void MainWindow::zoomOut()
 {
-	if (m_viewZoom > 0)
+	if (m_viewZoom > 4)
+		m_viewZoom -= 2;
+	else if (m_viewZoom > 0)
 		m_viewZoom--;
 	setSceneDimensions();
 }
@@ -816,7 +820,7 @@ void MainWindow::readSettings()
 	m_smoothTransformAction->setChecked(m_viewSmoothTransform);
 	m_smoothTransformAction->blockSignals(false);
 	m_viewZoom = settings.value("zoom", 2).toInt();
-	m_viewZoom = (m_viewZoom < 0 || m_viewZoom > 4) ? 2 : m_viewZoom;
+	m_viewZoom = (m_viewZoom < 0 || m_viewZoom > 12) ? 2 : m_viewZoom;
 
 	// zoom 0 = 420,426px, 1 = 620,570px, 2 = 780,720px
 	if (geometry.isEmpty()) {
