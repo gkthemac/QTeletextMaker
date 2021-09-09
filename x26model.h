@@ -41,6 +41,8 @@ public:
 	bool removeRows(int position, int rows, const QModelIndex &index);
 //	Qt::ItemFlags flags(const QModelIndex &index) const;
 
+	const QString modeTripletName(int i) const { return m_modeTripletName[i]; }
+
 	// The x26commands classes manipulate the model but beginInsertRows and endInsertRows
 	// are protected methods, so we need to friend them
 	friend class InsertTripletCommand;

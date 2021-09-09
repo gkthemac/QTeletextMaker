@@ -105,16 +105,6 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	// "Cooked" or user-friendly triplet type, row and column selection
 	QHBoxLayout *cookedTripletLayout = new QHBoxLayout;
 
-	m_cookedModeTypeComboBox = new QComboBox;
-	m_cookedModeTypeComboBox->addItem("Set Active Position");
-	m_cookedModeTypeComboBox->addItem("Row triplet");
-	m_cookedModeTypeComboBox->addItem("Column triplet");
-	m_cookedModeTypeComboBox->addItem("Object");
-	m_cookedModeTypeComboBox->addItem("Terminator");
-	m_cookedModeTypeComboBox->addItem("PDC/reserved");
-	cookedTripletLayout->addWidget(m_cookedModeTypeComboBox);
-	connect(m_cookedModeTypeComboBox, QOverload<int>::of(&QComboBox::activated), this, &X26DockWidget::updateCookedModeFromCookedType);
-
 	// Cooked row spinbox
 	QLabel *rowLabel = new QLabel(tr("Row"));
 	rowLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
@@ -137,10 +127,81 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	connect(m_cookedColumnSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &X26DockWidget::cookedColumnSpinBoxChanged);
 
 	// Cooked triplet mode
-	m_cookedModeComboBox = new QComboBox;
-	m_cookedModeComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-	cookedTripletLayout->addWidget(m_cookedModeComboBox);
-	connect(m_cookedModeComboBox, QOverload<int>::of(&QComboBox::activated), this, &X26DockWidget::cookedModeComboBoxChanged);
+	QLabel *modeLabel = new QLabel(tr("Mode"));
+	modeLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+	cookedTripletLayout->addWidget(modeLabel);
+	m_cookedModePushButton = new QPushButton;
+	cookedTripletLayout->addWidget(m_cookedModePushButton);
+
+	auto newModeMenuAction=[&](QMenu *menu, int mode)
+	{
+		QAction *action = menu->addAction(m_x26Model->modeTripletName(mode));
+		connect(action, &QAction::triggered, [=]() { cookedModeMenuSelected(mode); });
+	};
+
+	// Cooked triplet menu
+	m_cookedModeMenu = new QMenu(this);
+	newModeMenuAction(m_cookedModeMenu, 0x04);
+	QMenu *rowTripletSubMenu = m_cookedModeMenu->addMenu(tr("Row triplet"));
+	newModeMenuAction(rowTripletSubMenu, 0x00);
+	newModeMenuAction(rowTripletSubMenu, 0x01);
+	newModeMenuAction(rowTripletSubMenu, 0x07);
+	newModeMenuAction(rowTripletSubMenu, 0x18);
+	QMenu *columnTripletSubMenu = m_cookedModeMenu->addMenu(tr("Column triplet"));
+	newModeMenuAction(columnTripletSubMenu, 0x20);
+	newModeMenuAction(columnTripletSubMenu, 0x23);
+	newModeMenuAction(columnTripletSubMenu, 0x27);
+	newModeMenuAction(columnTripletSubMenu, 0x2c);
+	newModeMenuAction(columnTripletSubMenu, 0x2e);
+	newModeMenuAction(columnTripletSubMenu, 0x28);
+	columnTripletSubMenu->addSeparator();
+	newModeMenuAction(columnTripletSubMenu, 0x29);
+	newModeMenuAction(columnTripletSubMenu, 0x2f);
+	newModeMenuAction(columnTripletSubMenu, 0x21);
+	newModeMenuAction(columnTripletSubMenu, 0x22);
+	newModeMenuAction(columnTripletSubMenu, 0x2b);
+	newModeMenuAction(columnTripletSubMenu, 0x2d);
+	QMenu *diacriticalSubMenu = columnTripletSubMenu->addMenu(tr("G0 diacritical"));
+	for (int i=0; i<16; i++)
+		newModeMenuAction(diacriticalSubMenu, 0x30 + i);
+	QMenu *objectSubMenu = m_cookedModeMenu->addMenu(tr("Object"));
+	newModeMenuAction(objectSubMenu, 0x10);
+	newModeMenuAction(objectSubMenu, 0x11);
+	newModeMenuAction(objectSubMenu, 0x12);
+	newModeMenuAction(objectSubMenu, 0x13);
+	newModeMenuAction(objectSubMenu, 0x15);
+	newModeMenuAction(objectSubMenu, 0x16);
+	newModeMenuAction(objectSubMenu, 0x17);
+	newModeMenuAction(m_cookedModeMenu, 0x1f);
+	m_cookedModeMenu->addSeparator();
+	QMenu *pdcSubMenu = m_cookedModeMenu->addMenu(tr("PDC/reserved"));
+	newModeMenuAction(pdcSubMenu, 0x08);
+	newModeMenuAction(pdcSubMenu, 0x09);
+	newModeMenuAction(pdcSubMenu, 0x0a);
+	newModeMenuAction(pdcSubMenu, 0x0b);
+	newModeMenuAction(pdcSubMenu, 0x0c);
+	newModeMenuAction(pdcSubMenu, 0x0d);
+	newModeMenuAction(pdcSubMenu, 0x26);
+	QMenu *reservedRowSubMenu = pdcSubMenu->addMenu(tr("Reserved row"));
+	newModeMenuAction(reservedRowSubMenu, 0x02);
+	newModeMenuAction(reservedRowSubMenu, 0x03);
+	newModeMenuAction(reservedRowSubMenu, 0x05);
+	newModeMenuAction(reservedRowSubMenu, 0x06);
+	newModeMenuAction(reservedRowSubMenu, 0x0e);
+	newModeMenuAction(reservedRowSubMenu, 0x0f);
+	newModeMenuAction(reservedRowSubMenu, 0x14);
+	newModeMenuAction(reservedRowSubMenu, 0x19);
+	newModeMenuAction(reservedRowSubMenu, 0x1a);
+	newModeMenuAction(reservedRowSubMenu, 0x1b);
+	newModeMenuAction(reservedRowSubMenu, 0x1c);
+	newModeMenuAction(reservedRowSubMenu, 0x1d);
+	newModeMenuAction(reservedRowSubMenu, 0x1e);
+	QMenu *reservedColumnSubMenu = pdcSubMenu->addMenu(tr("Reserved column"));
+	newModeMenuAction(reservedColumnSubMenu, 0x24);
+	newModeMenuAction(reservedColumnSubMenu, 0x25);
+	newModeMenuAction(reservedColumnSubMenu, 0x26);
+
+	m_cookedModePushButton->setMenu(m_cookedModeMenu);
 
 	// Raw triplet values
 	QHBoxLayout *rawTripletLayout = new QHBoxLayout;
@@ -272,7 +333,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	m_objectSourceComboBox->addItem("POP");
 	m_objectSourceComboBox->addItem("GPOP");
 	invokeObjectLayout->addWidget(m_objectSourceComboBox);
-	connect(m_objectSourceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+1); updateCookedTripletParameters(m_x26View->currentIndex()); } );
+	connect(m_objectSourceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](const int value) { updateModelFromCookedWidget(value, Qt::UserRole+1); updateAllCookedTripletWidgets(m_x26View->currentIndex()); } );
 
 	// Object required at which levels
 	m_objectRequiredAtLevelsComboBox = new QComboBox;
@@ -580,135 +641,7 @@ void X26DockWidget::updateAllCookedTripletWidgets(const QModelIndex &index)
 {
 	const int modeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
 
-	// Find which triplettype the triplet is
-	const int oldCookedModeType = m_cookedModeTypeComboBox->currentIndex();
-	switch (modeExt) {
-		case 0x04:
-			m_cookedModeTypeComboBox->setCurrentIndex(0);
-			break;
-		case 0x00:
-		case 0x01:
-		case 0x07:
-		case 0x18:
-			m_cookedModeTypeComboBox->setCurrentIndex(1);
-			break;
-		case 0x20 ... 0x23:
-		case 0x27 ... 0x29:
-		case 0x2b ... 0x3f:
-			m_cookedModeTypeComboBox->setCurrentIndex(2);
-			break;
-		case 0x10 ... 0x13:
-		case 0x15 ... 0x17:
-			m_cookedModeTypeComboBox->setCurrentIndex(3);
-			break;
-		case 0x1f:
-			m_cookedModeTypeComboBox->setCurrentIndex(4);
-			break;
-		default:
-			m_cookedModeTypeComboBox->setCurrentIndex(5);
-	}
-
-	// If the triplettype has changed, update the triplet mode combobox
-	if (oldCookedModeType != m_cookedModeTypeComboBox->currentIndex())
-		updateCookedModeFromCookedType(-1);
-	for (int i=0; i<m_cookedModeComboBox->count(); i++)
-		if (m_cookedModeComboBox->itemData(i) == modeExt) {
-			m_cookedModeComboBox->blockSignals(true);
-			m_cookedModeComboBox->setCurrentIndex(i);
-			m_cookedModeComboBox->blockSignals(false);
-			break;
-		}
-
-	updateCookedTripletParameters(index);
-}
-
-void X26DockWidget::updateCookedModeFromCookedType(const int value)
-{
-	while (m_cookedModeComboBox->count() > 0)
-		m_cookedModeComboBox->removeItem(0);
-	// When called as a slot, "value" parameter would be the same as this currentIndex
-	switch (m_cookedModeTypeComboBox->currentIndex()) {
-		case 1:
-			m_cookedModeComboBox->addItem("select...", -1);
-			m_cookedModeComboBox->addItem("Full screen colour", 0x00);
-			m_cookedModeComboBox->addItem("Full row colour", 0x01);
-			m_cookedModeComboBox->addItem("Address row 0", 0x07);
-			m_cookedModeComboBox->addItem("DRCS mode", 0x18);
-			break;
-		case 2:
-			m_cookedModeComboBox->addItem("select...", -1);
-			m_cookedModeComboBox->addItem("Foreground colour", 0x20);
-			m_cookedModeComboBox->addItem("Background colour", 0x23);
-			m_cookedModeComboBox->addItem("Flash functions", 0x27);
-			m_cookedModeComboBox->addItem("Display attrs", 0x2c);
-			m_cookedModeComboBox->addItem("Font style L 3.5", 0x2e);
-			m_cookedModeComboBox->addItem("Mod G0 and G2", 0x28);
-			m_cookedModeComboBox->addItem("G0 character", 0x29);
-			m_cookedModeComboBox->addItem("G2 character", 0x2f);
-			m_cookedModeComboBox->addItem("G1 block mosaic", 0x21);
-			m_cookedModeComboBox->addItem("G3 at L 1.5", 0x22);
-			m_cookedModeComboBox->addItem("G3 at L 2.5", 0x2b);
-			m_cookedModeComboBox->addItem("DRCS character", 0x2d);
-			for (int i=0; i<16; i++)
-				m_cookedModeComboBox->addItem(QString("G0 diactricial ")+QString("%1").arg(i, 1, 16).toUpper(), 0x30 | i);
-			break;
-		case 3:
-			m_cookedModeComboBox->addItem("select...", -1);
-			m_cookedModeComboBox->addItem("Origin modifier", 0x10);
-			m_cookedModeComboBox->addItem("Invoke active obj", 0x11);
-			m_cookedModeComboBox->addItem("Invoke adaptive obj", 0x12);
-			m_cookedModeComboBox->addItem("Invoke passive obj", 0x13);
-			m_cookedModeComboBox->addItem("Define active obj", 0x15);
-			m_cookedModeComboBox->addItem("Define adaptive obj", 0x16);
-			m_cookedModeComboBox->addItem("Define passive obj", 0x17);
-			break;
-		case 5:
-			m_cookedModeComboBox->addItem("select...", -1);
-			m_cookedModeComboBox->addItem("Origin and Source", 0x08);
-			m_cookedModeComboBox->addItem("Month and day", 0x09);
-			m_cookedModeComboBox->addItem("Row + start hours", 0x0a);
-			m_cookedModeComboBox->addItem("Row + end hours", 0x0b);
-			m_cookedModeComboBox->addItem("Row + time offset", 0x0c);
-			m_cookedModeComboBox->addItem("Series ID and code", 0x0d);
-			m_cookedModeComboBox->addItem("Col + start/end mins", 0x26);
-			m_cookedModeComboBox->addItem("Reserved row 0x02", 0x02);
-			m_cookedModeComboBox->addItem("Reserved row 0x03", 0x03);
-			m_cookedModeComboBox->addItem("Reserved row 0x05", 0x05);
-			m_cookedModeComboBox->addItem("Reserved row 0x06", 0x06);
-			m_cookedModeComboBox->addItem("Reserved row 0x0e", 0x0e);
-			m_cookedModeComboBox->addItem("Reserved row 0x0f", 0x0f);
-			m_cookedModeComboBox->addItem("Reserved row 0x14", 0x14);
-			m_cookedModeComboBox->addItem("Reserved row 0x19", 0x19);
-			m_cookedModeComboBox->addItem("Reserved row 0x1a", 0x1a);
-			m_cookedModeComboBox->addItem("Reserved row 0x1b", 0x1b);
-			m_cookedModeComboBox->addItem("Reserved row 0x1c", 0x1c);
-			m_cookedModeComboBox->addItem("Reserved row 0x1d", 0x1d);
-			m_cookedModeComboBox->addItem("Reserved row 0x1e", 0x1e);
-			m_cookedModeComboBox->addItem("Reserved col 0x04", 0x04);
-			m_cookedModeComboBox->addItem("Reserved col 0x05", 0x05);
-			m_cookedModeComboBox->addItem("Reserved col 0x0a", 0x0a);
-			break;
-		case 0:
-			// When called as a slot the user set the combobox themself, so set the triplet mode immediately
-			if (value != -1) {
-				m_x26Model->setData(m_x26Model->index(m_x26View->currentIndex().row(), 2), 4, Qt::EditRole);
-				updateAllRawTripletSpinBoxes(m_x26View->currentIndex());
-				updateCookedTripletParameters(m_x26View->currentIndex());
-			}
-			break;
-		case 4:
-			if (value != -1) {
-				m_x26Model->setData(m_x26Model->index(m_x26View->currentIndex().row(), 2), 31, Qt::EditRole);
-				updateAllRawTripletSpinBoxes(m_x26View->currentIndex());
-				updateCookedTripletParameters(m_x26View->currentIndex());
-			}
-			break;
-	}
-}
-
-void X26DockWidget::updateCookedTripletParameters(const QModelIndex &index)
-{
-	const int modeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
+	m_cookedModePushButton->setText(m_x26Model->modeTripletName(modeExt));
 
 	switch (modeExt) {
 		case 0x04: // Set active position
@@ -1004,20 +937,17 @@ void X26DockWidget::cookedColumnSpinBoxChanged(const int value)
 	updateAllRawTripletSpinBoxes(m_x26View->currentIndex());
 }
 
-void X26DockWidget::cookedModeComboBoxChanged(const int value)
+void X26DockWidget::cookedModeMenuSelected(const int value)
 {
 	if (!m_x26View->currentIndex().isValid())
 		return;
 
-	// Avoid "select..."
-	if (m_cookedModeComboBox->itemData(value) == -1)
-		return;
-
-	m_x26Model->setData(m_x26Model->index(m_x26View->currentIndex().row(), 2), m_cookedModeComboBox->itemData(value).toInt(), Qt::EditRole);
+	m_x26Model->setData(m_x26Model->index(m_x26View->currentIndex().row(), 2), value, Qt::EditRole);
 
 	updateAllRawTripletSpinBoxes(m_x26View->currentIndex());
-	updateCookedTripletParameters(m_x26View->currentIndex());
+	updateAllCookedTripletWidgets(m_x26View->currentIndex());
 }
+
 
 void X26DockWidget::updateModelFromCookedWidget(const int value, const int role)
 {

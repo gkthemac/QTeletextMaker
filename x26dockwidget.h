@@ -26,6 +26,7 @@
 #include <QDockWidget>
 #include <QGroupBox>
 #include <QLabel>
+#include <QMenu>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSpinBox>
@@ -69,14 +70,12 @@ public slots:
 	void updateAllRawTripletSpinBoxes(const QModelIndex &);
 	void updateRawTripletDataSpinBox(const QModelIndex &);
 	void updateAllCookedTripletWidgets(const QModelIndex &);
-	void updateCookedModeFromCookedType(const int);
-	void updateCookedTripletParameters(const QModelIndex &);
 	void rawTripletAddressSpinBoxChanged(int);
 	void rawTripletModeSpinBoxChanged(int);
 	void rawTripletDataSpinBoxChanged(int);
 	void cookedRowSpinBoxChanged(const int);
 	void cookedColumnSpinBoxChanged(const int);
-	void cookedModeComboBoxChanged(const int);
+	void cookedModeMenuSelected(const int);
 	void updateModelFromCookedWidget(const int, const int);
 	void selectX26ListRow(int);
 
@@ -87,9 +86,9 @@ protected:
 private:
 	QTableView *m_x26View;
 	X26Model *m_x26Model;
-	QComboBox *m_cookedModeTypeComboBox;
 	QSpinBox *m_cookedRowSpinBox, *m_cookedColumnSpinBox;
-	QComboBox *m_cookedModeComboBox;
+	QMenu *m_cookedModeMenu;
+	QPushButton *m_cookedModePushButton;
 	QSpinBox *m_rawTripletAddressSpinBox, *m_rawTripletModeSpinBox, *m_rawTripletDataSpinBox;
 	QStackedLayout *m_rawOrCookedStackedLayout;
 	QComboBox *m_colourComboBox;
