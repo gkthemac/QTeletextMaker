@@ -127,13 +127,19 @@ DeleteTripletCommand::DeleteTripletCommand(TeletextDocument *teletextDocument, X
 
 void DeleteTripletCommand::redo()
 {
-	m_teletextDocument->emit aboutToChangeSubPage();
-	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	bool changingSubPage = (m_teletextDocument->currentSubPageIndex() != m_subPageIndex);
 
-	m_x26Model->beginRemoveRows(QModelIndex(), m_row, m_row+m_count-1);
+	if (changingSubPage) {
+		m_teletextDocument->emit aboutToChangeSubPage();
+		m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	} else
+		m_x26Model->beginRemoveRows(QModelIndex(), m_row, m_row+m_count-1);
+
 	for (int i=0; i<m_count; i++)
 		m_teletextDocument->currentSubPage()->enhancements()->removeAt(m_row);
-	m_x26Model->endRemoveRows();
+
+	if (!changingSubPage)
+		m_x26Model->endRemoveRows();
 
 	// Preserve pointers to local object definitions that have moved
 	for (int i=0; i<m_teletextDocument->currentSubPage()->enhancements()->size(); i++) {
@@ -146,7 +152,10 @@ void DeleteTripletCommand::redo()
 		}
 	}
 
-	m_teletextDocument->emit subPageSelected();
+	if (changingSubPage)
+		m_teletextDocument->emit subPageSelected();
+	else
+		m_teletextDocument->emit refreshNeeded();
 }
 
 void DeleteTripletCommand::undo()
