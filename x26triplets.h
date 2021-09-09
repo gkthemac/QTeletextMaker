@@ -48,6 +48,13 @@ public:
 	void setAddressRow(int);
 	void setAddressColumn(int);
 
+	int objectLocalDesignationCode() const { return (((m_address & 0x01) << 3) | (m_data >> 4)); }
+	int objectLocalTripletNumber() const { return m_data & 0x0f; }
+	int objectLocalIndex() const { return objectLocalDesignationCode() * 13 + objectLocalTripletNumber(); }
+	void setObjectLocalDesignationCode(int);
+	void setObjectLocalTripletNumber(int);
+	void setObjectLocalIndex(int);
+
 	int activePositionRow() const { return m_activePositionRow; }
 	int activePositionColumn() const { return m_activePositionColumn; }
 	X26TripletError error() const { return m_error; }

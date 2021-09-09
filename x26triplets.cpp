@@ -51,6 +51,23 @@ void X26Triplet::setAddressColumn(int addressColumn)
 	m_address = addressColumn;
 }
 
+void X26Triplet::setObjectLocalDesignationCode(int i)
+{
+	m_address = 0x28 | (i >> 3);
+	m_data = (m_data & 0x0f) | ((i & 0x07) << 4);
+}
+
+void X26Triplet::setObjectLocalTripletNumber(int i)
+{
+	m_data = (m_data & 0x70) | i;
+}
+
+void X26Triplet::setObjectLocalIndex(int i)
+{
+	m_address = 0x28 + (i >= 104); // Set bit 0 of address if triplet >= 8
+	m_data = (((i / 13) & 0x07) << 4) | (i % 13);
+}
+
 
 void X26TripletList::updateInternalData(int r)
 {
@@ -62,7 +79,7 @@ void X26TripletList::updateInternalData(int r)
 		activePosition.setColumn(m_list[r-1].m_activePositionColumn);
 	}
 
-	for (int i = r; i < m_list.size(); i++) {
+	for (int i=r; i < m_list.size(); i++) {
 		triplet = &m_list[i];
 		triplet->m_error = X26Triplet::NoError;
 		if (triplet->isRowTriplet()) {
@@ -94,10 +111,7 @@ void X26TripletList::updateInternalData(int r)
 					activePosition.reset();
 					// Make sure data field holds correct place of triplet
 					// otherwise the object won't appear
-					triplet->m_address &= 0x3c;
-					if (i >= 104) // Triplet 8
-						triplet->m_address |= 0x01;
-					triplet->m_data = (((i / 13) & 0x07) << 4) | (i % 13);
+					triplet->setObjectLocalIndex(i);
 					break;
 			};
 		// Column triplet: make sure that PDC and reserved triplets don't affect the Active Position
