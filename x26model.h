@@ -114,7 +114,7 @@ private:
 
 		"Display attributes",
 		"DRCS character",
-		"Font style",
+		"Font style, level 3.5",
 		"G2 supplementary character",
 
 		"G0 character no diacritical",
