@@ -38,8 +38,6 @@ SOURCES       = document.cpp \
                 x26triplets.cpp
 RESOURCES     = qteletextmaker.qrc
 
-CONFIG += debug
-
 # install
 target.path = /usr/local/bin
 INSTALLS += target
