@@ -5,6 +5,7 @@ Features
 - Load and save teletext pages in .tti format.
 - Rendering of teletext pages in Levels 1, 1.5, 2.5 and 3.5
 - Rendering of Local Objects and side panels.
+- Import and export of single pages in .t42 format.
 - Export PNG images of teletext pages.
 - Undo and redo of editing actions.
 - Interactive X/26 Local Enhancement Data triplet editor.
@@ -30,7 +31,7 @@ The following X/26 enhancement triplets are not rendered by the editor, although
 - Level 3.5 font style: bold, italic and proportional spacing.
 
 ## Using the X/26 triplet editor
-The X/26 triplet editor sorts all the triplet modes available into categories selected by the triplet *type* dropdown on the left. The categories are:
+The X/26 triplet editor sorts all the triplet modes available into categories, which are:
 - Set Active Position
 - Row triplet - full screen and full row colours, address row 0 and DRCS mode
 - Column triplet - non-spacing attributes and overwriting characters
@@ -38,9 +39,9 @@ The X/26 triplet editor sorts all the triplet modes available into categories se
 - Terminator
 - PDC/reserved
 
-Selecting "Set Active Position" or "Terminator" will change the triplet mode immediately, other selections will activate the triplet *mode* dropdown on the right which can be used to then change the triplet mode. Most triplet modes will present varying widgets below which can be used to alter the parameters of the currently selected triplet (e.g. colour or character).
+After selecting the triplet mode the Row and Column spinboxes can then be used to place the Active Position of the selected triplet, whether or not each spinbox can be altered depends on the mode of the selected triplet. As well as the explicit "Set Active Position" triplet that can set both the row and the column, all column triplets can simultaneously set the column of the Active Position. Additionally the Full Row Colour triplet can set the row of the Active Position, with the column always set to 0.
 
-Between the two dropdowns are the Row and Column spinboxes that are used to place the Active Position of the selected triplet, whether or not each spinbox can be altered depends on the mode of the selected triplet. As well as the explicit "Set Active Position" triplet that can set both the row and the column, all column triplets can simultaneously set the column of the Active Position. Additionally the Full Row Colour triplet can set the row of the Active Position, with the column always set to 0.
+Most triplet modes will present varying widgets below which can be used to alter the parameters of the currently selected triplet e.g. colour or character.
 
 By checking "raw values" it is also possible to view and edit the raw Address, Mode and Data numbers of the triplets. When editing triplets this way, remember that address values 0-39 select a column triplet which has one set of modes and address values 40-63 select a row triplet which has a different set of modes.
 
@@ -54,6 +55,4 @@ The Active Position, whether set explicitly by a "Set Active Position" triplet o
 If this rule is not followed then triplets in earlier screen addresses will be ignored. Triplets that break this rule will be highlighted red in the X/26 triplet editor.
 
 ### Objects
-Insert and deleting triplets from the list will upset the Object pointers on "Invoke" triplets and will need to be corrected afterwards. A future version of the editor may adjust these pointers automatically.
-
 "Invoke ... Object" triplets must point to a "Define ... Object" of the same type e.g. "Invoke *Active* Object" must point to a "Define *Active* Object", otherwise the Object won't appear.

@@ -193,9 +193,9 @@ void MainWindow::exportPNG()
 		const QImage scaledImage = doubleHeightImage.scaled((int)((float)doubleHeightImage.width() * aspectRatioHorizontalScaling[m_viewAspectRatio] * 2), doubleHeightImage.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
 		if (!scaledImage.save(exportFileName, "PNG"))
-			QMessageBox::warning(this, tr("QTeletextMaker"), tr("Cannot export file %1.").arg(QDir::toNativeSeparators(exportFileName)));
+			QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot export file %1.").arg(QDir::toNativeSeparators(exportFileName)));
 	} else if (!doubleHeightImage.save(exportFileName, "PNG"))
-		QMessageBox::warning(this, tr("QTeletextMaker"), tr("Cannot export file %1.").arg(QDir::toNativeSeparators(exportFileName)));
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot export file %1.").arg(QDir::toNativeSeparators(exportFileName)));
 }
 
 void MainWindow::exportZXNet()
@@ -865,7 +865,7 @@ bool MainWindow::maybeSave()
 {
 	if (m_textWidget->document()->undoStack()->isClean())
 		return true;
-	const QMessageBox::StandardButton ret = QMessageBox::warning(this, tr("QTeletextMaker"), tr("The document has been modified.\nDo you want to save your changes?"), QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+	const QMessageBox::StandardButton ret = QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("The document has been modified.\nDo you want to save your changes?"), QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
 	switch (ret) {
 		case QMessageBox::Save:
 			return save();
@@ -891,7 +891,7 @@ void MainWindow::loadFile(const QString &fileName)
 		fileOpenMode = QFile::ReadOnly | QFile::Text;
 
 	if (!file.open(fileOpenMode)) {
-		QMessageBox::warning(this, tr("QTeletextMaker"), tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
 		setCurrentFile(QString());
 		return;
 	}
@@ -1006,7 +1006,7 @@ bool MainWindow::saveFile(const QString &fileName)
 	QApplication::restoreOverrideCursor();
 
 	if (!errorMessage.isEmpty()) {
-		QMessageBox::warning(this, tr("QTeletextMaker"), errorMessage);
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), errorMessage);
 		return false;
 	}
 
@@ -1037,7 +1037,7 @@ void MainWindow::exportT42()
 	QApplication::restoreOverrideCursor();
 
 	if (!errorMessage.isEmpty())
-		QMessageBox::warning(this, tr("QTeletextMaker"), errorMessage);
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), errorMessage);
 }
 
 void MainWindow::exportM29()
@@ -1088,7 +1088,7 @@ void MainWindow::exportM29()
 	QApplication::restoreOverrideCursor();
 
 	if (!errorMessage.isEmpty())
-		QMessageBox::warning(this, tr("QTeletextMaker"), errorMessage);
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), errorMessage);
 }
 
 void MainWindow::setCurrentFile(const QString &fileName)
