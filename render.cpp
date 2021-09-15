@@ -251,7 +251,6 @@ void TeletextPageRender::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNum
 
 void TeletextPageRender::decodePage()
 {
-	QPainter pixmapPainter;
 	int currentFullRowColour, downwardsFullRowColour;
 	int renderedFullScreenColour;
 
