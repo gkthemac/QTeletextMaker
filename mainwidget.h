@@ -29,6 +29,7 @@
 #include <QTextStream>
 #include <vector>
 
+#include "decode.h"
 #include "document.h"
 #include "levelonepage.h"
 #include "render.h"
@@ -47,12 +48,12 @@ public:
 	bool insertMode() const { return m_insertMode; };
 	void setInsertMode(bool);
 
-	QSize sizeHint() { return QSize(480+(pageRender()->leftSidePanelColumns()+pageRender()->rightSidePanelColumns())*12, 250); }
+	QSize sizeHint() { return QSize(480+(pageDecode()->leftSidePanelColumns()+pageDecode()->rightSidePanelColumns())*12, 250); }
 
 	void inputMethodEvent(QInputMethodEvent *);
 
 	TeletextDocument* document() const { return m_teletextDocument; }
-	TeletextPageRender *pageRender() { return &m_pageRender; }
+	TeletextPageDecode *pageDecode() { return &m_pageDecode; }
 
 signals:
 	void sizeChanged();
@@ -92,6 +93,7 @@ protected:
 	void focusInEvent(QFocusEvent *event) override;
 	void focusOutEvent(QFocusEvent *event) override;
 
+	TeletextPageDecode m_pageDecode;
 	TeletextPageRender m_pageRender;
 
 private:

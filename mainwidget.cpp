@@ -38,11 +38,11 @@
 
 #include "mainwidget.h"
 
+#include "decode.h"
 #include "document.h"
 #include "keymap.h"
 #include "levelonecommands.h"
 #include "levelonepage.h"
-#include "render.h"
 #include "x26triplets.h"
 
 TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
@@ -52,13 +52,14 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 	this->setAttribute(Qt::WA_InputMethodEnabled, true);
 	m_teletextDocument = new TeletextDocument();
 	m_levelOnePage = m_teletextDocument->currentSubPage();
-	m_pageRender.setTeletextPage(m_levelOnePage);
+	m_pageDecode.setTeletextPage(m_levelOnePage);
+	m_pageRender.setDecoder(&m_pageDecode);
 	m_insertMode = false;
 	m_selectionInProgress = false;
 	setFocusPolicy(Qt::StrongFocus);
 	m_flashTiming = m_flashPhase = 0;
-	connect(&m_pageRender, &TeletextPageRender::flashChanged, this, &TeletextWidget::updateFlashTimer);
-	connect(&m_pageRender, &TeletextPageRender::sidePanelsChanged, this, &TeletextWidget::changeSize);
+	connect(&m_pageDecode, &TeletextPageDecode::flashChanged, this, &TeletextWidget::updateFlashTimer);
+	connect(&m_pageDecode, &TeletextPageDecode::sidePanelsChanged, this, &TeletextWidget::changeSize);
 	connect(m_teletextDocument, &TeletextDocument::subPageSelected, this, &TeletextWidget::subPageSelected);
 	connect(m_teletextDocument, &TeletextDocument::contentsChange, this, &TeletextWidget::refreshRow);
 	connect(m_teletextDocument, &TeletextDocument::refreshNeeded, this, &TeletextWidget::refreshPage);
@@ -85,20 +86,20 @@ void TeletextWidget::inputMethodEvent(QInputMethodEvent* event)
 void TeletextWidget::subPageSelected()
 {
 	m_levelOnePage = m_teletextDocument->currentSubPage();
-	m_pageRender.setTeletextPage(m_levelOnePage);
+	m_pageDecode.setTeletextPage(m_levelOnePage);
 	refreshPage();
 }
 
 void TeletextWidget::refreshRow(int rowChanged)
 {
-	m_pageRender.renderPage(rowChanged);
+	m_pageDecode.renderPage(rowChanged);
 	update();
 }
 
 void TeletextWidget::refreshPage()
 {
-	m_pageRender.decodePage();
-	m_pageRender.renderPage();
+	m_pageDecode.decodePage();
+	m_pageDecode.renderPage();
 	update();
 }
 
@@ -107,11 +108,12 @@ void TeletextWidget::paintEvent(QPaintEvent *event)
 	Q_UNUSED(event);
 	QPainter widgetPainter(this);
 
-	widgetPainter.drawPixmap(m_pageRender.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(m_flashPhase), 0, 0, 480, 250);
-	if (m_pageRender.leftSidePanelColumns())
-		widgetPainter.drawPixmap(0, 0, *m_pageRender.pagePixmap(m_flashPhase), 864-m_pageRender.leftSidePanelColumns()*12, 0, m_pageRender.leftSidePanelColumns()*12, 250);
-	if (m_pageRender.rightSidePanelColumns())
-		widgetPainter.drawPixmap(480+m_pageRender.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(m_flashPhase), 480, 0, m_pageRender.rightSidePanelColumns()*12, 250);
+	m_pageRender.renderPage();
+	widgetPainter.drawPixmap(m_pageDecode.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(0), 0, 0, 480, 250);
+	if (m_pageDecode.leftSidePanelColumns())
+		widgetPainter.drawPixmap(0, 0, *m_pageRender.pagePixmap(m_flashPhase), 864-m_pageDecode.leftSidePanelColumns()*12, 0, m_pageDecode.leftSidePanelColumns()*12, 250);
+	if (m_pageDecode.rightSidePanelColumns())
+		widgetPainter.drawPixmap(480+m_pageDecode.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(m_flashPhase), 480, 0, m_pageDecode.rightSidePanelColumns()*12, 250);
 }
 
 void TeletextWidget::updateFlashTimer(int newFlashTimer)
@@ -157,13 +159,13 @@ void TeletextWidget::setInsertMode(bool insertMode)
 
 void TeletextWidget::toggleReveal(bool revealOn)
 {
-	m_pageRender.setReveal(revealOn);
+	m_pageDecode.setReveal(revealOn);
 	update();
 }
 
 void TeletextWidget::toggleMix(bool mixOn)
 {
-	m_pageRender.setMix(mixOn);
+	m_pageDecode.setMix(mixOn);
 	update();
 }
 
@@ -171,8 +173,8 @@ void TeletextWidget::setControlBit(int bitNumber, bool active)
 {
 	m_levelOnePage->setControlBit(bitNumber, active);
 	if (bitNumber == 1 || bitNumber == 2) {
-		m_pageRender.decodePage();
-		m_pageRender.renderPage();
+		m_pageDecode.decodePage();
+		m_pageDecode.renderPage();
 	}
 }
 
@@ -189,31 +191,31 @@ void TeletextWidget::setDefaultNOS(int newDefaultNOS)
 void TeletextWidget::setDefaultScreenColour(int newColour)
 {
 	m_levelOnePage->setDefaultScreenColour(newColour);
-	m_pageRender.decodePage();
-	m_pageRender.renderPage();
+	m_pageDecode.decodePage();
+	m_pageDecode.renderPage();
 }
 
 void TeletextWidget::setDefaultRowColour(int newColour)
 {
 	m_levelOnePage->setDefaultRowColour(newColour);
-	m_pageRender.decodePage();
-	m_pageRender.renderPage();
+	m_pageDecode.decodePage();
+	m_pageDecode.renderPage();
 	update();
 }
 
 void TeletextWidget::setColourTableRemap(int newMap)
 {
 	m_levelOnePage->setColourTableRemap(newMap);
-	m_pageRender.decodePage();
-	m_pageRender.renderPage();
+	m_pageDecode.decodePage();
+	m_pageDecode.renderPage();
 	update();
 }
 
 void TeletextWidget::setBlackBackgroundSubst(bool substOn)
 {
 	m_levelOnePage->setBlackBackgroundSubst(substOn);
-	m_pageRender.decodePage();
-	m_pageRender.renderPage();
+	m_pageDecode.decodePage();
+	m_pageDecode.renderPage();
 	update();
 }
 
@@ -225,18 +227,18 @@ void TeletextWidget::setSidePanelWidths(int newLeftSidePanelColumns, int newRigh
 		m_levelOnePage->setSidePanelColumns((newLeftSidePanelColumns == 16) ? 0 : newLeftSidePanelColumns);
 	else
 		m_levelOnePage->setSidePanelColumns((newRightSidePanelColumns == 0) ? 0 : 16-newRightSidePanelColumns);
-	m_pageRender.updateSidePanels();
+	m_pageDecode.updateSidePanels();
 }
 
 void TeletextWidget::setSidePanelAtL35Only(bool newSidePanelAtL35Only)
 {
 	m_levelOnePage->setSidePanelStatusL25(!newSidePanelAtL35Only);
-	m_pageRender.updateSidePanels();
+	m_pageDecode.updateSidePanels();
 }
 
 void TeletextWidget::changeSize()
 {
-	setFixedSize(QSize(480+(pageRender()->leftSidePanelColumns()+pageRender()->rightSidePanelColumns())*12, 250));
+	setFixedSize(QSize(480+(pageDecode()->leftSidePanelColumns()+pageDecode()->rightSidePanelColumns())*12, 250));
 	emit sizeChanged();
 }
 
@@ -245,14 +247,14 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 	if (event->key() < 0x01000000) {
 		// A character-typing key was pressed
 		// Try to keymap it, if not keymapped then plain ASCII code (may be) returned
-		char mappedKeyPress = keymapping[m_pageRender.level1CharSet(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn())].value(event->text().at(0), *qPrintable(event->text()));
+		char mappedKeyPress = keymapping[m_pageDecode.level1CharSet(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn())].value(event->text().at(0), *qPrintable(event->text()));
 		if (mappedKeyPress < 0x20)
 			return;
 		// If outside ASCII map then the character can't be represented by current Level 1 character set
 		// Map it to block character so it doesn't need to be inserted-between later on
 		if (mappedKeyPress & 0x80)
 			mappedKeyPress = 0x7f;
-		if (m_pageRender.level1MosaicAttribute(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) && (mappedKeyPress < 0x40 || mappedKeyPress > 0x5f)) {
+		if (m_pageDecode.level1MosaicAttribute(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) && (mappedKeyPress < 0x40 || mappedKeyPress > 0x5f)) {
 			// We're on a mosaic and a blast-through character was NOT pressed
 			if (event->key() >= Qt::Key_1 && event->key() <= Qt::Key_9 && event->modifiers() & Qt::KeypadModifier) {
 				switch (event->key()) {
@@ -382,8 +384,8 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 			m_teletextDocument->selectSubPagePrevious();
 			break;
 		case Qt::Key_F5:
-			m_pageRender.decodePage();
-			m_pageRender.renderPage();
+			m_pageDecode.decodePage();
+			m_pageDecode.renderPage();
 			update();
 			break;
 		default:
@@ -420,7 +422,7 @@ void TeletextWidget::selectionToClipboard()
 			nativeData[i++] = m_teletextDocument->currentSubPage()->character(r, c);
 
 			if (m_teletextDocument->currentSubPage()->character(r, c) >= 0x20)
-				plainTextData.append(keymapping[m_pageRender.level1CharSet(r, c)].key(m_teletextDocument->currentSubPage()->character(r, c), m_teletextDocument->currentSubPage()->character(r, c)));
+				plainTextData.append(keymapping[m_pageDecode.level1CharSet(r, c)].key(m_teletextDocument->currentSubPage()->character(r, c), m_teletextDocument->currentSubPage()->character(r, c)));
 			else
 				plainTextData.append(' ');
 		}
@@ -453,13 +455,13 @@ void TeletextWidget::copy()
 
 void TeletextWidget::paste()
 {
-	m_teletextDocument->undoStack()->push(new PasteCommand(m_teletextDocument, m_pageRender.level1CharSet(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn())));
+	m_teletextDocument->undoStack()->push(new PasteCommand(m_teletextDocument, m_pageDecode.level1CharSet(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn())));
 }
 
 QPair<int, int> TeletextWidget::mouseToRowAndColumn(const QPoint &mousePosition)
 {
 	int row = mousePosition.y() / 10;
-	int column = mousePosition.x() / 12 - m_pageRender.leftSidePanelColumns();
+	int column = mousePosition.x() / 12 - m_pageDecode.leftSidePanelColumns();
 	if (row < 1)
 		row = 1;
 	if (row > 24)
