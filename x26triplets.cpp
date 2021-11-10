@@ -53,7 +53,7 @@ void X26Triplet::setAddressColumn(int addressColumn)
 
 void X26Triplet::setObjectLocalDesignationCode(int i)
 {
-	m_address = 0x28 | (i >> 3);
+	m_address = (m_address & 0x38) | (i >> 3);
 	m_data = (m_data & 0x0f) | ((i & 0x07) << 4);
 }
 
@@ -64,7 +64,7 @@ void X26Triplet::setObjectLocalTripletNumber(int i)
 
 void X26Triplet::setObjectLocalIndex(int i)
 {
-	m_address = 0x28 + (i >= 104); // Set bit 0 of address if triplet >= 8
+	m_address = (m_address & 0x38) + (i >= 104); // Set bit 0 of address if triplet >= 8
 	m_data = (((i / 13) & 0x07) << 4) | (i % 13);
 }
 
