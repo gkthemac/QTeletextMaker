@@ -48,7 +48,7 @@ public:
 
 	QPixmap* pagePixmap(int i) const { return m_pagePixmap[i]; };
 	void setDecoder(TeletextPageDecode *);
-	void renderPage(int rowUnused=0);
+	void renderPage();
 
 protected:
 	TeletextFontBitmap m_fontBitmap;

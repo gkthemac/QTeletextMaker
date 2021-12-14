@@ -62,7 +62,7 @@ void TeletextPageRender::setDecoder(TeletextPageDecode *decoder)
 	m_decoder = decoder;
 }
 
-void TeletextPageRender::renderPage(int rowUnused)
+void TeletextPageRender::renderPage()
 {
 	QPainter pixmapPainter;
 

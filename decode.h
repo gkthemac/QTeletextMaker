@@ -224,8 +224,7 @@ public:
 	~TeletextPageDecode();
 	void clearRefresh(int, int);
 	void decodePage();
-	void renderPage();
-	void renderPage(int r);
+	void decodeRow(int r);
 	bool mix() const { return m_mix; };
 	bool showCodes() const { return m_showCodes; };
 	void setTeletextPage(LevelOnePage *);

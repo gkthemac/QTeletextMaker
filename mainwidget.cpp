@@ -92,14 +92,13 @@ void TeletextWidget::subPageSelected()
 
 void TeletextWidget::refreshRow(int rowChanged)
 {
-	m_pageDecode.renderPage(rowChanged);
+	m_pageDecode.decodeRow(rowChanged);
 	update();
 }
 
 void TeletextWidget::refreshPage()
 {
 	m_pageDecode.decodePage();
-	m_pageDecode.renderPage();
 	update();
 }
 
@@ -172,10 +171,8 @@ void TeletextWidget::toggleMix(bool mixOn)
 void TeletextWidget::setControlBit(int bitNumber, bool active)
 {
 	m_levelOnePage->setControlBit(bitNumber, active);
-	if (bitNumber == 1 || bitNumber == 2) {
+	if (bitNumber == 1 || bitNumber == 2)
 		m_pageDecode.decodePage();
-		m_pageDecode.renderPage();
-	}
 }
 
 void TeletextWidget::setDefaultCharSet(int newDefaultCharSet)
@@ -192,14 +189,12 @@ void TeletextWidget::setDefaultScreenColour(int newColour)
 {
 	m_levelOnePage->setDefaultScreenColour(newColour);
 	m_pageDecode.decodePage();
-	m_pageDecode.renderPage();
 }
 
 void TeletextWidget::setDefaultRowColour(int newColour)
 {
 	m_levelOnePage->setDefaultRowColour(newColour);
 	m_pageDecode.decodePage();
-	m_pageDecode.renderPage();
 	update();
 }
 
@@ -207,7 +202,6 @@ void TeletextWidget::setColourTableRemap(int newMap)
 {
 	m_levelOnePage->setColourTableRemap(newMap);
 	m_pageDecode.decodePage();
-	m_pageDecode.renderPage();
 	update();
 }
 
@@ -215,7 +209,6 @@ void TeletextWidget::setBlackBackgroundSubst(bool substOn)
 {
 	m_levelOnePage->setBlackBackgroundSubst(substOn);
 	m_pageDecode.decodePage();
-	m_pageDecode.renderPage();
 	update();
 }
 
@@ -385,7 +378,6 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 			break;
 		case Qt::Key_F5:
 			m_pageDecode.decodePage();
-			m_pageDecode.renderPage();
 			update();
 			break;
 		default:

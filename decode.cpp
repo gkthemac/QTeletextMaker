@@ -74,14 +74,13 @@ void TeletextPageDecode::setReveal(bool newReveal)
 	m_reveal = newReveal;
 	for (int r=0; r<25; r++)
 		if (m_concealRow[r])
-			renderPage(r);
+			decodeRow(r);
 }
 
 void TeletextPageDecode::setMix(bool newMix)
 {
 	m_mix = newMix;
 	decodePage();
-	renderPage();
 }
 
 void TeletextPageDecode::setRenderLevel(int newRenderLevel)
@@ -90,13 +89,12 @@ void TeletextPageDecode::setRenderLevel(int newRenderLevel)
 		return;
 	m_renderLevel = newRenderLevel;
 	decodePage();
-	renderPage();
 }
 
 void TeletextPageDecode::setShowCodes(bool newShowCodes)
 {
 	m_showCodes = newShowCodes;
-	renderPage();
+	decodePage();
 }
 
 void TeletextPageDecode::updateSidePanels()
@@ -116,7 +114,7 @@ void TeletextPageDecode::updateSidePanels()
 
 	if (m_leftSidePanelColumns != oldLeftSidePanelColumns || m_rightSidePanelColumns != oldRightSidePanelColumns) {
 		emit sidePanelsChanged();
-		renderPage();
+		decodePage();
 	}
 }
 
@@ -240,10 +238,13 @@ void TeletextPageDecode::decodePage()
 {
 	int currentFullRowColour, downwardsFullRowColour;
 	int renderedFullScreenColour;
-
 	struct {
 		bool operator() (TextLayer *i, TextLayer *j) { return (i->objectType() < j->objectType()); }
 	} compareLayer;
+
+//	QTime renderPageTime;
+
+//	renderPageTime.start();
 
 	updateSidePanels();
 
@@ -256,58 +257,51 @@ void TeletextPageDecode::decodePage()
 	downwardsFullRowColour = (m_renderLevel >= 2) ? m_levelOnePage->defaultRowColour() : 0;
 	setFullScreenColour(renderedFullScreenColour);
 	for (int r=0; r<25; r++)
-		setFullRowColour(r ,downwardsFullRowColour);
+		setFullRowColour(r, downwardsFullRowColour);
 
 	m_textLayer[1]->enhanceMap.clear();
-	if (m_renderLevel == 0 || m_levelOnePage->enhancements()->isEmpty())
-		return;
 
-	m_textLayer[1]->setFullScreenColour(-1);
-	for (int r=0; r<25; r++)
-		m_textLayer[1]->setFullRowColour(r, -1, false);
-	buildEnhanceMap(m_textLayer[1]);
+	if (m_renderLevel > 0 && !m_levelOnePage->enhancements()->isEmpty()) {
+		m_textLayer[1]->setFullScreenColour(-1);
+		for (int r=0; r<25; r++)
+			m_textLayer[1]->setFullRowColour(r, -1, false);
+		buildEnhanceMap(m_textLayer[1]);
 
-	if (m_textLayer.size() > 2)
-		std::stable_sort(m_textLayer.begin()+2, m_textLayer.end(), compareLayer);
+		if (m_textLayer.size() > 2)
+			std::stable_sort(m_textLayer.begin()+2, m_textLayer.end(), compareLayer);
 
-	if (m_renderLevel <= 1)
-		return;
-
-	 if (m_textLayer[1]->fullScreenColour() != -1)
-		downwardsFullRowColour = m_textLayer[1]->fullScreenColour();
-	for (int r=0; r<25; r++) {
-		for (int l=0; l<2; l++) {
-			if (r == 0 && m_textLayer[l]->fullScreenColour() != - 1)
-				renderedFullScreenColour = m_textLayer[l]->fullScreenColour();
-			if (m_textLayer[l]->fullRowColour(r) == - 1)
-				currentFullRowColour = downwardsFullRowColour;
-			else {
-				currentFullRowColour = m_textLayer[l]->fullRowColour(r);
-				if (m_textLayer[l]->fullRowDownwards(r))
-					downwardsFullRowColour = currentFullRowColour;
+		if (m_renderLevel >= 2) {
+			if (m_textLayer[1]->fullScreenColour() != -1)
+				downwardsFullRowColour = m_textLayer[1]->fullScreenColour();
+			for (int r=0; r<25; r++) {
+				for (int l=0; l<2; l++) {
+					if (r == 0 && m_textLayer[l]->fullScreenColour() != - 1)
+						renderedFullScreenColour = m_textLayer[l]->fullScreenColour();
+					if (m_textLayer[l]->fullRowColour(r) == - 1)
+						currentFullRowColour = downwardsFullRowColour;
+					else {
+						currentFullRowColour = m_textLayer[l]->fullRowColour(r);
+						if (m_textLayer[l]->fullRowDownwards(r))
+							downwardsFullRowColour = currentFullRowColour;
+					}
+				}
+				setFullRowColour(r ,currentFullRowColour);
 			}
+			setFullScreenColour(renderedFullScreenColour);
 		}
-		setFullRowColour(r ,currentFullRowColour);
 	}
-	setFullScreenColour(renderedFullScreenColour);
-}
 
-void TeletextPageDecode::renderPage()
-{
-//	QTime renderPageTime;
-
-//	renderPageTime.start();
 	for (int r=0; r<25; r++)
-		renderPage(r);
+		decodeRow(r);
 //	qDebug("Full page render: %d ms", renderPageTime.elapsed());
 }
 
-void TeletextPageDecode::renderPage(int r)
+void TeletextPageDecode::decodeRow(int r)
 {
 	int c;
 	int phaseNumberRender = 0;
 	int flashRowRequired = 0;
-	bool renderNextRow = false;
+	bool decodeNextRow = false;
 	bool applyRightHalf = false;
 	bool previouslyDoubleHeight, previouslyBottomHalf, underlined;
 	bool doubleHeightFound = false;
@@ -421,7 +415,7 @@ void TeletextPageDecode::renderPage(int r)
 		if (r > 0)
 			m_cell[r][c].bottomHalf = m_cell[r-1][c].attribute.display.doubleHeight && !m_cell[r-1][c].bottomHalf;
 		if ((resultAttributes.display.doubleHeight != previouslyDoubleHeight) || (m_cell[r][c].bottomHalf != previouslyBottomHalf))
-			renderNextRow = true;
+			decodeNextRow = true;
 		m_cell[r][c].rightHalf = applyRightHalf;
 
 		if (resultAttributes.display.doubleHeight)
@@ -441,8 +435,8 @@ void TeletextPageDecode::renderPage(int r)
 		updateFlashRequired(flashRowRequired);
 	}
 
-	if (renderNextRow && r<24)
-		renderPage(r+1);
+	if (decodeNextRow && r<24)
+		decodeRow(r+1);
 }
 
 void TeletextPageDecode::updateFlashRequired(int newFlashRequired)
