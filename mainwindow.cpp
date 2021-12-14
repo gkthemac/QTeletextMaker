@@ -865,7 +865,7 @@ bool MainWindow::maybeSave()
 {
 	if (m_textWidget->document()->undoStack()->isClean())
 		return true;
-	const QMessageBox::StandardButton ret = QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("The document has been modified.\nDo you want to save your changes?"), QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+	const QMessageBox::StandardButton ret = QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("The document \"%1\" has been modified.\nDo you want to save your changes or discard them?").arg(QFileInfo(m_curFile).fileName()), QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
 	switch (ret) {
 		case QMessageBox::Save:
 			return save();
