@@ -231,6 +231,8 @@ public:
 	void updateSidePanels();
 	void buildEnhanceMap(TextLayer *, int=0);
 	textCell cell(int r, int c) const { return m_cell[r][c]; };
+	QColor cellForegroundQColor(int, int);
+	QColor cellBackgroundQColor(int, int);
 	bool cellRefreshNeeded(int r, int c) const { return m_refresh[r][c]; }
 	bool level1MosaicAttribute(int r, int c) const { return m_cell[r][c].level1Mosaic; };
 	int level1CharSet(int r, int c) const { return m_cell[r][c].level1CharSet; };

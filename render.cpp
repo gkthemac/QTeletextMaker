@@ -69,18 +69,16 @@ void TeletextPageRender::renderPage()
 	pixmapPainter.begin(m_pagePixmap[0]);
 	pixmapPainter.setBackgroundMode(Qt::OpaqueMode);
 
-	pixmapPainter.setPen(QColor(255, 255, 255));
-	pixmapPainter.setBackground(QColor(0, 0, 0));
-
 	for (int r=0; r<25; r++)
 		for (int c=0; c<72; c++)
 			if (m_decoder->cellRefreshNeeded(r, c)) {
 				const textCell cell = m_decoder->cell(r, c);
 
-				if (cell.character.code >= 32)
+				if (cell.character.code >= 32) {
+					pixmapPainter.setPen(m_decoder->cellForegroundQColor(r, c));
+					pixmapPainter.setBackground(m_decoder->cellBackgroundQColor(r, c));
 					pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (cell.character.code-32)*12, cell.character.set*10, 12, 10);
-				else
-					qDebug("R %d C %d code %d", r, c, cell.character.code);
+				};
 				m_decoder->clearRefresh(r, c);
 			}
 

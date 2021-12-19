@@ -439,6 +439,22 @@ void TeletextPageDecode::decodeRow(int r)
 		decodeRow(r+1);
 }
 
+QColor TeletextPageDecode::cellForegroundQColor(int r, int c)
+{
+	if (!m_cell[r][c].attribute.display.invert)
+		return m_levelOnePage->CLUTtoQColor(m_cell[r][c].attribute.foreColour, m_renderLevel);
+	else
+		return m_levelOnePage->CLUTtoQColor(m_cell[r][c].attribute.backColour, m_renderLevel);
+}
+
+QColor TeletextPageDecode::cellBackgroundQColor(int r, int c)
+{
+	if (!m_cell[r][c].attribute.display.invert)
+		return m_levelOnePage->CLUTtoQColor(m_cell[r][c].attribute.backColour, m_renderLevel);
+	else
+		return m_levelOnePage->CLUTtoQColor(m_cell[r][c].attribute.foreColour, m_renderLevel);
+}
+
 void TeletextPageDecode::updateFlashRequired(int newFlashRequired)
 {
 	if (newFlashRequired == m_flashRequired)
