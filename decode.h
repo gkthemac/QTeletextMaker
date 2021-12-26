@@ -220,6 +220,8 @@ class TeletextPageDecode : public QObject
 	Q_OBJECT
 
 public:
+	enum CharacterFragment { NormalSize, DoubleHeightTopHalf, DoubleHeightBottomHalf, DoubleWidthLeftHalf, DoubleWidthRightHalf, DoubleSizeTopLeftQuarter, DoubleSizeTopRightQuarter, DoubleSizeBottomLeftQuarter, DoubleSizeBottomRightQuarter };
+
 	TeletextPageDecode();
 	~TeletextPageDecode();
 	void clearRefresh(int, int);
@@ -231,8 +233,12 @@ public:
 	void updateSidePanels();
 	void buildEnhanceMap(TextLayer *, int=0);
 	textCell cell(int r, int c) const { return m_cell[r][c]; };
+	unsigned char cellCharacterCode(int r, int c) { return cellAtCharacterOrigin(r, c).character.code; };
+	int cellCharacterSet(int r, int c) { return cellAtCharacterOrigin(r, c).character.set; };
+	int cellCharacterDiacritical(int r, int c) { return cellAtCharacterOrigin(r, c).character.diacritical; };
 	QColor cellForegroundQColor(int, int);
 	QColor cellBackgroundQColor(int, int);
+	CharacterFragment cellCharacterFragment(int, int) const;
 	bool cellRefreshNeeded(int r, int c) const { return m_refresh[r][c]; }
 	bool level1MosaicAttribute(int r, int c) const { return m_cell[r][c].level1Mosaic; };
 	int level1CharSet(int r, int c) const { return m_cell[r][c].level1CharSet; };
@@ -255,6 +261,7 @@ protected:
 	void updateFlashRequired(int);
 	inline void setFullScreenColour(int);
 	inline void setFullRowColour(int, int);
+	textCell& cellAtCharacterOrigin(int, int);
 
 	int m_finalFullScreenColour, m_renderLevel;
 	QColor m_finalFullScreenQColor;

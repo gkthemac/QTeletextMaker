@@ -402,8 +402,16 @@ void TeletextPageDecode::decodeRow(int r)
 		m_cell[r][c].character = resultCharacter;
 		m_cell[r][c].attribute = resultAttributes;
 
-		if (m_cell[r][c] != oldTextCell)
+		if (m_cell[r][c] != oldTextCell) {
 			m_refresh[r][c] = true;
+
+			if (m_cell[r][c].attribute.display.doubleHeight && r < 24)
+				m_refresh[r+1][c] = true;
+			if (m_cell[r][c].attribute.display.doubleWidth && c < 72)
+				m_refresh[r][c+1] = true;
+			if (m_cell[r][c].attribute.display.doubleHeight && m_cell[r][c].attribute.display.doubleWidth && r < 24 && c < 72)
+				m_refresh[r+1][c+1] = true;
+		}
 
 		if (resultAttributes.flash.ratePhase == 4 && ++phaseNumberRender == 4)
 			phaseNumberRender = 1;
@@ -439,20 +447,82 @@ void TeletextPageDecode::decodeRow(int r)
 		decodeRow(r+1);
 }
 
+textCell& TeletextPageDecode::cellAtCharacterOrigin(int r, int c)
+{
+/*	if (m_cell[r][c].bottomHalf && r > 0) {
+		if (m_cell[r][c].rightHalf && c > 0)
+			// Double size
+			return m_cell[r-1][c-1];
+		else
+			// Double height
+			return m_cell[r-1][c];
+	} else {
+		if (m_cell[r][c].rightHalf && c > 0)
+			// Double width
+			return m_cell[r][c-1];
+		else
+			// Normal size
+			return m_cell[r][c];
+	}*/
+	switch (cellCharacterFragment(r, c)) {
+		case TeletextPageDecode::DoubleHeightBottomHalf:
+		case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
+			return m_cell[r-1][c];
+		case TeletextPageDecode::DoubleWidthRightHalf:
+		case TeletextPageDecode::DoubleSizeTopRightQuarter:
+			return m_cell[r][c-1];
+		case TeletextPageDecode::DoubleSizeBottomRightQuarter:
+			return m_cell[r-1][c-1];
+		default:
+			return m_cell[r][c];
+	}
+}
+
 QColor TeletextPageDecode::cellForegroundQColor(int r, int c)
 {
-	if (!m_cell[r][c].attribute.display.invert)
-		return m_levelOnePage->CLUTtoQColor(m_cell[r][c].attribute.foreColour, m_renderLevel);
+	const textCell& cell = cellAtCharacterOrigin(r, c);
+
+	if (!cell.attribute.display.invert)
+		return m_levelOnePage->CLUTtoQColor(cell.attribute.foreColour, m_renderLevel);
 	else
-		return m_levelOnePage->CLUTtoQColor(m_cell[r][c].attribute.backColour, m_renderLevel);
+		return m_levelOnePage->CLUTtoQColor(cell.attribute.backColour, m_renderLevel);
 }
 
 QColor TeletextPageDecode::cellBackgroundQColor(int r, int c)
 {
-	if (!m_cell[r][c].attribute.display.invert)
-		return m_levelOnePage->CLUTtoQColor(m_cell[r][c].attribute.backColour, m_renderLevel);
+	const textCell& cell = cellAtCharacterOrigin(r, c);
+
+	if (!cell.attribute.display.invert)
+		return m_levelOnePage->CLUTtoQColor(cell.attribute.backColour, m_renderLevel);
 	else
-		return m_levelOnePage->CLUTtoQColor(m_cell[r][c].attribute.foreColour, m_renderLevel);
+		return m_levelOnePage->CLUTtoQColor(cell.attribute.foreColour, m_renderLevel);
+}
+
+TeletextPageDecode::CharacterFragment TeletextPageDecode::cellCharacterFragment(int r, int c) const
+{
+	if (m_cell[r][c].bottomHalf && r > 0) {
+		if (m_cell[r][c].rightHalf && c > 0)
+			return CharacterFragment::DoubleSizeBottomRightQuarter;
+		else if (m_cell[r-1][c].attribute.display.doubleWidth)
+			return CharacterFragment::DoubleSizeBottomLeftQuarter;
+		else
+			return CharacterFragment::DoubleHeightBottomHalf;
+	} else if (m_cell[r][c].rightHalf && c > 0) {
+		if (m_cell[r][c-1].attribute.display.doubleHeight)
+			return CharacterFragment::DoubleSizeTopRightQuarter;
+		else
+			return CharacterFragment::DoubleWidthRightHalf;
+	}
+
+	if (m_cell[r][c].attribute.display.doubleHeight) {
+		if (m_cell[r][c].attribute.display.doubleWidth)
+			return CharacterFragment::DoubleSizeTopLeftQuarter;
+		else
+			return CharacterFragment::DoubleHeightTopHalf;
+	} else if (m_cell[r][c].attribute.display.doubleWidth)
+		return CharacterFragment::DoubleWidthLeftHalf;
+
+	return CharacterFragment::NormalSize;
 }
 
 void TeletextPageDecode::updateFlashRequired(int newFlashRequired)

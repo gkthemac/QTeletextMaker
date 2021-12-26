@@ -72,13 +72,42 @@ void TeletextPageRender::renderPage()
 	for (int r=0; r<25; r++)
 		for (int c=0; c<72; c++)
 			if (m_decoder->cellRefreshNeeded(r, c)) {
-				const textCell cell = m_decoder->cell(r, c);
+				const unsigned char characterCode = m_decoder->cellCharacterCode(r, c);
+				int characterSet = m_decoder->cellCharacterSet(r, c);
 
-				if (cell.character.code >= 32) {
+				if (characterCode >= 32) {
 					pixmapPainter.setPen(m_decoder->cellForegroundQColor(r, c));
 					pixmapPainter.setBackground(m_decoder->cellBackgroundQColor(r, c));
-					pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (cell.character.code-32)*12, cell.character.set*10, 12, 10);
-				};
+					switch (m_decoder->cellCharacterFragment(r, c)) {
+						case TeletextPageDecode::NormalSize:
+							pixmapPainter.drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 12, 10);
+							break;
+						case TeletextPageDecode::DoubleHeightTopHalf:
+							pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 12, 5);
+							break;
+						case TeletextPageDecode::DoubleHeightBottomHalf:
+							pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+5, 12, 5);
+							break;
+						case TeletextPageDecode::DoubleWidthLeftHalf:
+							pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 6, 10);
+							break;
+						case TeletextPageDecode::DoubleWidthRightHalf:
+							pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10, 6, 10);
+							break;
+						case TeletextPageDecode::DoubleSizeTopLeftQuarter:
+							pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 6, 5);
+							break;
+						case TeletextPageDecode::DoubleSizeTopRightQuarter:
+							pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10, 6, 5);
+							break;
+						case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
+							pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+5, 6, 5);
+							break;
+						case TeletextPageDecode::DoubleSizeBottomRightQuarter:
+							pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10+5, 6, 5);
+							break;
+					}
+				}
 				m_decoder->clearRefresh(r, c);
 			}
 
