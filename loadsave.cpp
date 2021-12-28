@@ -437,7 +437,7 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 	for (p=0; p<document.numberOfSubPages(); p++) {
 
 		// Page number
-		outStream << QString("PN,%1%2").arg(document.pageNumber(), 3, 16, QChar('0')).arg(subPageNumber & 0xff, 2, 16, QChar('0'));
+		outStream << QString("PN,%1%2").arg(document.pageNumber(), 3, 16, QChar('0')).arg(subPageNumber & 0xff, 2, 10, QChar('0'));
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 			outStream << Qt::endl;
 #else
@@ -447,7 +447,7 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 		// Subpage
 		// Magazine Organisation Table and Magazine Inventory Page don't have subpages
 		if (document.pageFunction() != TeletextDocument::PFMOT && document.pageFunction() != TeletextDocument::PFMIP) {
-			outStream << QString("SC,%1").arg(subPageNumber, 4, 16, QChar('0'));
+			outStream << QString("SC,%1").arg(subPageNumber, 4, 10, QChar('0'));
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 			outStream << Qt::endl;
 #else
