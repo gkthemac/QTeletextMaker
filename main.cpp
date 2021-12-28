@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 	QApplication::setApplicationDisplayName(QApplication::applicationName());
 	QApplication::setOrganizationName("gkmac.co.uk");
 	QApplication::setOrganizationDomain("gkmac.co.uk");
-	QApplication::setApplicationVersion("0.5.1-alpha");
+	QApplication::setApplicationVersion("0.5.2-alpha");
 	QCommandLineParser parser;
 	parser.setApplicationDescription(QApplication::applicationName());
 	parser.addHelpOption();
