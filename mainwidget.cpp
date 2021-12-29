@@ -158,7 +158,7 @@ void TeletextWidget::setInsertMode(bool insertMode)
 
 void TeletextWidget::toggleReveal(bool revealOn)
 {
-	m_pageDecode.setReveal(revealOn);
+	m_pageRender.setReveal(revealOn);
 	update();
 }
 

@@ -224,7 +224,8 @@ public:
 
 	TeletextPageDecode();
 	~TeletextPageDecode();
-	void clearRefresh(int, int);
+	bool refresh(int r, int c) const { return m_refresh[r][c]; }
+	void setRefresh(int, int, bool);
 	void decodePage();
 	void decodeRow(int r);
 	bool mix() const { return m_mix; };
@@ -232,6 +233,7 @@ public:
 	void setTeletextPage(LevelOnePage *);
 	void updateSidePanels();
 	void buildEnhanceMap(TextLayer *, int=0);
+
 	textCell cell(int r, int c) const { return m_cell[r][c]; };
 	unsigned char cellCharacterCode(int r, int c) { return cellAtCharacterOrigin(r, c).character.code; };
 	int cellCharacterSet(int r, int c) { return cellAtCharacterOrigin(r, c).character.set; };
@@ -239,14 +241,14 @@ public:
 	QColor cellForegroundQColor(int, int);
 	QColor cellBackgroundQColor(int, int);
 	CharacterFragment cellCharacterFragment(int, int) const;
-	bool cellRefreshNeeded(int r, int c) const { return m_refresh[r][c]; }
+	bool cellConceal(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.display.conceal; };
+
 	bool level1MosaicAttribute(int r, int c) const { return m_cell[r][c].level1Mosaic; };
 	int level1CharSet(int r, int c) const { return m_cell[r][c].level1CharSet; };
 	int leftSidePanelColumns() const { return m_leftSidePanelColumns; };
 	int rightSidePanelColumns() const { return m_rightSidePanelColumns; };
 
 public slots:
-	void setReveal(bool);
 	void setMix(bool);
 	void setShowCodes(bool);
 	void setRenderLevel(int);
@@ -266,7 +268,7 @@ protected:
 	int m_finalFullScreenColour, m_renderLevel;
 	QColor m_finalFullScreenQColor;
 	int m_leftSidePanelColumns, m_rightSidePanelColumns;
-	bool m_reveal, m_mix, m_showCodes;
+	bool m_mix, m_showCodes;
 	Level1Layer m_level1Layer;
 	std::vector<TextLayer *> m_textLayer;
 	const int m_foregroundRemap[8] = { 0,  0,  0,  8,  8, 16, 16, 16 };
@@ -280,7 +282,6 @@ private:
 	int m_fullRowColour[25];
 	QColor m_fullRowQColor[25];
 	int m_flashRow[25];
-	bool m_concealRow[25];
 };
 
 static const QMap<int, int> g0CharacterMap {

@@ -50,10 +50,14 @@ public:
 	void setDecoder(TeletextPageDecode *);
 	void renderPage();
 
+public slots:
+	void setReveal(bool);
+
 protected:
 	TeletextFontBitmap m_fontBitmap;
 	QPixmap* m_pagePixmap[6];
 	textCell m_cell[25][72];
+	bool m_reveal;
 
 private:
 	TeletextPageDecode *m_decoder;

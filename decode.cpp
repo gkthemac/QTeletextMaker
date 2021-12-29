@@ -27,7 +27,7 @@
 
 TeletextPageDecode::TeletextPageDecode()
 {
-	m_mix = m_reveal = m_showCodes = false;
+	m_mix = m_showCodes = false;
 
 	m_renderLevel = 0;
 	m_flashRequired = 0;
@@ -42,7 +42,6 @@ TeletextPageDecode::TeletextPageDecode()
 		m_flashRow[r] = 0;
 		m_fullRowColour[r] = 0;
 		m_fullRowQColor[r].setRgb(0, 0, 0);
-		m_concealRow[r] = false;
 	}
 	m_leftSidePanelColumns = m_rightSidePanelColumns = 0;
 	m_textLayer.push_back(&m_level1Layer);
@@ -57,9 +56,9 @@ TeletextPageDecode::~TeletextPageDecode()
 	}
 }
 
-void TeletextPageDecode::clearRefresh(int r, int c)
+void TeletextPageDecode::setRefresh(int r, int c, bool refresh)
 {
-	m_refresh[r][c] = false;
+	m_refresh[r][c] = refresh;
 }
 
 void TeletextPageDecode::setTeletextPage(LevelOnePage *newCurrentPage)
@@ -67,14 +66,6 @@ void TeletextPageDecode::setTeletextPage(LevelOnePage *newCurrentPage)
 	m_levelOnePage = newCurrentPage;
 	m_level1Layer.setTeletextPage(newCurrentPage);
 	updateSidePanels();
-}
-
-void TeletextPageDecode::setReveal(bool newReveal)
-{
-	m_reveal = newReveal;
-	for (int r=0; r<25; r++)
-		if (m_concealRow[r])
-			decodeRow(r);
 }
 
 void TeletextPageDecode::setMix(bool newMix)
@@ -310,7 +301,6 @@ void TeletextPageDecode::decodeRow(int r)
 	textAttributes underlyingAttributes, resultAttributes;
 	int level1CharSet;
 
-	m_concealRow[r] = false;
 	for (c=0; c<72; c++) {
 		textCell oldTextCell = m_cell[r][c];
 
@@ -432,8 +422,6 @@ void TeletextPageDecode::decodeRow(int r)
 			applyRightHalf ^= true;
 		else
 			applyRightHalf = false;
-		if (resultAttributes.display.conceal)
-			m_concealRow[r] = true;
 	}
 
 	if (flashRowRequired == 3)
