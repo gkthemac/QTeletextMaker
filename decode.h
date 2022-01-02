@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020, 2021 Gavin MacGregor
+ * Copyright (C) 2020-2022 Gavin MacGregor
  *
  * This file is part of QTeletextMaker.
  *
@@ -229,7 +229,6 @@ public:
 	void decodePage();
 	void decodeRow(int r);
 	bool mix() const { return m_mix; };
-	bool showCodes() const { return m_showCodes; };
 	void setTeletextPage(LevelOnePage *);
 	void updateSidePanels();
 	void buildEnhanceMap(TextLayer *, int=0);
@@ -243,6 +242,7 @@ public:
 	CharacterFragment cellCharacterFragment(int, int) const;
 	bool cellConceal(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.display.conceal; };
 
+	unsigned char level1Character(int r, int c) const { return m_levelOnePage->character(r, c); };
 	bool level1MosaicAttribute(int r, int c) const { return m_cell[r][c].level1Mosaic; };
 	int level1CharSet(int r, int c) const { return m_cell[r][c].level1CharSet; };
 	int leftSidePanelColumns() const { return m_leftSidePanelColumns; };
@@ -250,7 +250,6 @@ public:
 
 public slots:
 	void setMix(bool);
-	void setShowCodes(bool);
 	void setRenderLevel(int);
 
 signals:
@@ -268,7 +267,7 @@ protected:
 	int m_finalFullScreenColour, m_renderLevel;
 	QColor m_finalFullScreenQColor;
 	int m_leftSidePanelColumns, m_rightSidePanelColumns;
-	bool m_mix, m_showCodes;
+	bool m_mix;
 	Level1Layer m_level1Layer;
 	std::vector<TextLayer *> m_textLayer;
 	const int m_foregroundRemap[8] = { 0,  0,  0,  8,  8, 16, 16, 16 };

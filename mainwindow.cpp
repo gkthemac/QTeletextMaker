@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020, 2021 Gavin MacGregor
+ * Copyright (C) 2020-2022 Gavin MacGregor
  *
  * This file is part of QTeletextMaker.
  *
@@ -157,9 +157,9 @@ void MainWindow::exportPNG()
 	// Prepare widget image for extraction
 	m_textWidget->pauseFlash(true);
 	m_textScene->hideGUIElements(true);
-	bool reshowCodes = m_textWidget->pageDecode()->showCodes();
-	if (reshowCodes)
-		m_textWidget->pageDecode()->setShowCodes(false);
+	bool reshowControlCodes = m_textWidget->showControlCodes();
+	if (reshowControlCodes)
+		m_textWidget->setShowControlCodes(false);
 	// Disable exporting in Mix mode as it corrupts the background
 	bool reMix = m_textWidget->pageDecode()->mix();
 	if (reMix)
@@ -175,8 +175,8 @@ void MainWindow::exportPNG()
 
 	// Now we've extracted the image we can put the GUI things back
 	m_textScene->hideGUIElements(false);
-	if (reshowCodes)
-		m_textWidget->pageDecode()->setShowCodes(true);
+	if (reshowControlCodes)
+		m_textWidget->setShowControlCodes(true);
 	if (reMix)
 		m_textWidget->pageDecode()->setMix(true);
 	m_textWidget->pauseFlash(false);
@@ -470,11 +470,11 @@ void MainWindow::createActions()
 	gridAct->setStatusTip(tr("Toggle the text grid"));
 	connect(gridAct, &QAction::toggled, m_textScene, &LevelOneScene::toggleGrid);
 
-	QAction *showCodesAct = viewMenu->addAction(tr("Show codes"));
-	showCodesAct->setCheckable(true);
-	showCodesAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
-	showCodesAct->setStatusTip(tr("Toggle showing of control codes"));
-	connect(showCodesAct, &QAction::toggled, m_textWidget->pageDecode(), &TeletextPageDecode::setShowCodes);
+	QAction *showControlCodesAct = viewMenu->addAction(tr("Show control codes"));
+	showControlCodesAct->setCheckable(true);
+	showControlCodesAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
+	showControlCodesAct->setStatusTip(tr("Toggle showing of control codes"));
+	connect(showControlCodesAct, &QAction::toggled, m_textWidget, &TeletextWidget::setShowControlCodes);
 
 	viewMenu->addSeparator();
 

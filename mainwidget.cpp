@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020, 2021 Gavin MacGregor
+ * Copyright (C) 2020-2022 Gavin MacGregor
  *
  * This file is part of QTeletextMaker.
  *
@@ -165,6 +165,12 @@ void TeletextWidget::toggleReveal(bool revealOn)
 void TeletextWidget::toggleMix(bool mixOn)
 {
 	m_pageDecode.setMix(mixOn);
+	update();
+}
+
+void TeletextWidget::setShowControlCodes(bool showControlCodes)
+{
+	m_pageRender.setShowControlCodes(showControlCodes);
 	update();
 }
 

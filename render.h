@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020, 2021 Gavin MacGregor
+ * Copyright (C) 2020-2022 Gavin MacGregor
  *
  * This file is part of QTeletextMaker.
  *
@@ -49,15 +49,17 @@ public:
 	QPixmap* pagePixmap(int i) const { return m_pagePixmap[i]; };
 	void setDecoder(TeletextPageDecode *);
 	void renderPage();
+	bool showControlCodes() const { return m_showControlCodes; };
 
 public slots:
 	void setReveal(bool);
+	void setShowControlCodes(bool);
 
 protected:
 	TeletextFontBitmap m_fontBitmap;
 	QPixmap* m_pagePixmap[6];
 	textCell m_cell[25][72];
-	bool m_reveal;
+	bool m_reveal, m_showControlCodes;
 
 private:
 	TeletextPageDecode *m_decoder;

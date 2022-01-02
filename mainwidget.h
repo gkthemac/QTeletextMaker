@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020, 2021 Gavin MacGregor
+ * Copyright (C) 2020-2022 Gavin MacGregor
  *
  * This file is part of QTeletextMaker.
  *
@@ -47,6 +47,7 @@ public:
 	void toggleCharacterBit(unsigned char);
 	bool insertMode() const { return m_insertMode; };
 	void setInsertMode(bool);
+	bool showControlCodes() const { return m_pageRender.showControlCodes(); };
 
 	QSize sizeHint() { return QSize(480+(pageDecode()->leftSidePanelColumns()+pageDecode()->rightSidePanelColumns())*12, 250); }
 
@@ -64,6 +65,7 @@ public slots:
 	void refreshPage();
 	void toggleReveal(bool);
 	void toggleMix(bool);
+	void setShowControlCodes(bool);
 	void updateFlashTimer(int);
 	void pauseFlash(bool);
 	void refreshRow(int);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020, 2021 Gavin MacGregor
+ * Copyright (C) 2020-2022 Gavin MacGregor
  *
  * This file is part of QTeletextMaker.
  *
@@ -27,7 +27,7 @@
 
 TeletextPageDecode::TeletextPageDecode()
 {
-	m_mix = m_showCodes = false;
+	m_mix = false;
 
 	m_renderLevel = 0;
 	m_flashRequired = 0;
@@ -79,12 +79,6 @@ void TeletextPageDecode::setRenderLevel(int newRenderLevel)
 	if (newRenderLevel == m_renderLevel)
 		return;
 	m_renderLevel = newRenderLevel;
-	decodePage();
-}
-
-void TeletextPageDecode::setShowCodes(bool newShowCodes)
-{
-	m_showCodes = newShowCodes;
 	decodePage();
 }
 
