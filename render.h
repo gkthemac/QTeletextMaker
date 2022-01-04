@@ -62,6 +62,8 @@ protected:
 	bool m_reveal, m_showControlCodes;
 
 private:
+	inline void drawFromFontBitmap(QPainter &, int, int, unsigned char, int, TeletextPageDecode::CharacterFragment);
+
 	TeletextPageDecode *m_decoder;
 };
 

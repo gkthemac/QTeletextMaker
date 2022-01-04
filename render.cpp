@@ -65,6 +65,39 @@ void TeletextPageRender::setDecoder(TeletextPageDecode *decoder)
 	m_decoder = decoder;
 }
 
+inline void TeletextPageRender::drawFromFontBitmap(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment)
+{
+	switch (characterFragment) {
+		case TeletextPageDecode::NormalSize:
+			pixmapPainter.drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 12, 10);
+			break;
+		case TeletextPageDecode::DoubleHeightTopHalf:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 12, 5);
+			break;
+		case TeletextPageDecode::DoubleHeightBottomHalf:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+5, 12, 5);
+			break;
+		case TeletextPageDecode::DoubleWidthLeftHalf:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 6, 10);
+			break;
+		case TeletextPageDecode::DoubleWidthRightHalf:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10, 6, 10);
+			break;
+		case TeletextPageDecode::DoubleSizeTopLeftQuarter:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 6, 5);
+			break;
+		case TeletextPageDecode::DoubleSizeTopRightQuarter:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10, 6, 5);
+			break;
+		case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+5, 6, 5);
+			break;
+		case TeletextPageDecode::DoubleSizeBottomRightQuarter:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10+5, 6, 5);
+			break;
+	}
+}
+
 void TeletextPageRender::renderPage()
 {
 	QPainter pixmapPainter;
@@ -88,35 +121,8 @@ void TeletextPageRender::renderPage()
 
 				pixmapPainter.setPen(m_decoder->cellForegroundQColor(r, c));
 				pixmapPainter.setBackground(m_decoder->cellBackgroundQColor(r, c));
-				switch (m_decoder->cellCharacterFragment(r, c)) {
-					case TeletextPageDecode::NormalSize:
-						pixmapPainter.drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 12, 10);
-						break;
-					case TeletextPageDecode::DoubleHeightTopHalf:
-						pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 12, 5);
-						break;
-					case TeletextPageDecode::DoubleHeightBottomHalf:
-						pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+5, 12, 5);
-						break;
-					case TeletextPageDecode::DoubleWidthLeftHalf:
-						pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 6, 10);
-						break;
-					case TeletextPageDecode::DoubleWidthRightHalf:
-						pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10, 6, 10);
-						break;
-					case TeletextPageDecode::DoubleSizeTopLeftQuarter:
-						pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 6, 5);
-						break;
-					case TeletextPageDecode::DoubleSizeTopRightQuarter:
-						pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10, 6, 5);
-						break;
-					case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
-						pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+5, 6, 5);
-						break;
-					case TeletextPageDecode::DoubleSizeBottomRightQuarter:
-						pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10+5, 6, 5);
-						break;
-				}
+
+				drawFromFontBitmap(pixmapPainter, r, c, characterCode, characterSet, m_decoder->cellCharacterFragment(r, c));
 
 				if (m_showControlCodes && c < 40 && m_decoder->level1Character(r, c) < 0x20) {
 					pixmapPainter.setBackground(QColor(0, 0, 0, 128));
