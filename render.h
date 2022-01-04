@@ -63,6 +63,7 @@ protected:
 
 private:
 	inline void drawFromFontBitmap(QPainter &, int, int, unsigned char, int, TeletextPageDecode::CharacterFragment);
+	inline void drawCharacter(QPainter &, int, int, unsigned char, int, int, TeletextPageDecode::CharacterFragment);
 
 	TeletextPageDecode *m_decoder;
 };

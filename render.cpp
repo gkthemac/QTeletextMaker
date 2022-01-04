@@ -98,6 +98,17 @@ inline void TeletextPageRender::drawFromFontBitmap(QPainter &pixmapPainter, int 
 	}
 }
 
+inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, int characterDiacritical, TeletextPageDecode::CharacterFragment characterFragment)
+{
+	drawFromFontBitmap(pixmapPainter, r, c, characterCode, characterSet, characterFragment);
+
+	if (characterDiacritical != 0) {
+		pixmapPainter.setBackgroundMode(Qt::TransparentMode);
+		drawFromFontBitmap(pixmapPainter, r, c, characterDiacritical+64, 7, characterFragment);
+		pixmapPainter.setBackgroundMode(Qt::OpaqueMode);
+	}
+}
+
 void TeletextPageRender::renderPage()
 {
 	QPainter pixmapPainter;
@@ -109,20 +120,22 @@ void TeletextPageRender::renderPage()
 		for (int c=0; c<72; c++)
 			if (m_decoder->refresh(r, c)) {
 				unsigned char characterCode;
-				int characterSet;
+				int characterSet, characterDiacritical;
 
 				if (!m_reveal && m_decoder->cellConceal(r, c)) {
 					characterCode = 0x20;
 					characterSet = 0;
+					characterDiacritical = 0;
 				} else {
 					characterCode = m_decoder->cellCharacterCode(r, c);
 					characterSet = m_decoder->cellCharacterSet(r, c);
+					characterDiacritical = m_decoder->cellCharacterDiacritical(r, c);
 				}
 
 				pixmapPainter.setPen(m_decoder->cellForegroundQColor(r, c));
 				pixmapPainter.setBackground(m_decoder->cellBackgroundQColor(r, c));
 
-				drawFromFontBitmap(pixmapPainter, r, c, characterCode, characterSet, m_decoder->cellCharacterFragment(r, c));
+				drawCharacter(pixmapPainter, r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
 
 				if (m_showControlCodes && c < 40 && m_decoder->level1Character(r, c) < 0x20) {
 					pixmapPainter.setBackground(QColor(0, 0, 0, 128));
