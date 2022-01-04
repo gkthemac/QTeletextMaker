@@ -137,10 +137,10 @@ void TeletextPageRender::renderPage()
 
 				drawCharacter(pixmapPainter, r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
 
-				if (m_showControlCodes && c < 40 && m_decoder->level1Character(r, c) < 0x20) {
+				if (m_showControlCodes && c < 40 && m_decoder->teletextPage()->character(r, c) < 0x20) {
 					pixmapPainter.setBackground(QColor(0, 0, 0, 128));
 					pixmapPainter.setPen(QColor(255, 255, 255, 224));
-					pixmapPainter.drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (m_decoder->level1Character(r, c)+32)*12, 250, 12, 10);
+					pixmapPainter.drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (m_decoder->teletextPage()->character(r, c)+32)*12, 250, 12, 10);
 				}
 
 				m_decoder->setRefresh(r, c, false);
@@ -171,6 +171,6 @@ void TeletextPageRender::setShowControlCodes(bool showControlCodes)
 
 	for (int r=0; r<25; r++)
 		for (int c=0; c<40; c++)
-			if (m_decoder->level1Character(r, c) < 0x20)
+			if (m_decoder->teletextPage()->character(r, c) < 0x20)
 				m_decoder->setRefresh(r, c, true);
 }

@@ -229,11 +229,11 @@ public:
 	void decodePage();
 	void decodeRow(int r);
 	bool mix() const { return m_mix; };
+	LevelOnePage *teletextPage() const { return m_levelOnePage; };
 	void setTeletextPage(LevelOnePage *);
 	void updateSidePanels();
 	void buildEnhanceMap(TextLayer *, int=0);
 
-	textCell cell(int r, int c) const { return m_cell[r][c]; };
 	unsigned char cellCharacterCode(int r, int c) { return cellAtCharacterOrigin(r, c).character.code; };
 	int cellCharacterSet(int r, int c) { return cellAtCharacterOrigin(r, c).character.set; };
 	int cellCharacterDiacritical(int r, int c) { return cellAtCharacterOrigin(r, c).character.diacritical; };
@@ -242,7 +242,6 @@ public:
 	CharacterFragment cellCharacterFragment(int, int) const;
 	bool cellConceal(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.display.conceal; };
 
-	unsigned char level1Character(int r, int c) const { return m_levelOnePage->character(r, c); };
 	bool level1MosaicAttribute(int r, int c) const { return m_cell[r][c].level1Mosaic; };
 	int level1CharSet(int r, int c) const { return m_cell[r][c].level1CharSet; };
 	int leftSidePanelColumns() const { return m_leftSidePanelColumns; };
