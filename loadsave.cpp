@@ -680,8 +680,8 @@ void exportT42File(QSaveFile &file, const TeletextDocument &document)
 	outLine[5] = subPage.controlBit(PageBase::C4ErasePage) << 3;
 	outLine[6] = 0; // Subcode S3 - always export as 0
 	outLine[7] = (subPage.controlBit(PageBase::C5Newsflash) << 2) | (subPage.controlBit(PageBase::C6Subtitle) << 3);
-	outLine[8] = subPage.controlBit(PageBase::C7SuppressHeader) | (subPage.controlBit(PageBase::C8Update) << 2) | (subPage.controlBit(PageBase::C9InterruptedSequence) << 2) | (subPage.controlBit(PageBase::C10InhibitDisplay) << 3);
-	outLine[9] = subPage.controlBit(PageBase::C11SerialMagazine) | (subPage.controlBit(PageBase::C14NOS) << 2) | (subPage.controlBit(PageBase::C13NOS) << 2) | (subPage.controlBit(PageBase::C12NOS) << 3);
+	outLine[8] = subPage.controlBit(PageBase::C7SuppressHeader) | (subPage.controlBit(PageBase::C8Update) << 1) | (subPage.controlBit(PageBase::C9InterruptedSequence) << 2) | (subPage.controlBit(PageBase::C10InhibitDisplay) << 3);
+	outLine[9] = subPage.controlBit(PageBase::C11SerialMagazine) | (subPage.controlBit(PageBase::C14NOS) << 1) | (subPage.controlBit(PageBase::C13NOS) << 2) | (subPage.controlBit(PageBase::C12NOS) << 3);
 
 	for (int i=0; i<10; i++)
 		outLine[i] = hamming_8_4_encode[(int)outLine.at(i)];
