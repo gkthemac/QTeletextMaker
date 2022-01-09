@@ -58,7 +58,7 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 	m_selectionInProgress = false;
 	setFocusPolicy(Qt::StrongFocus);
 	m_flashTiming = m_flashPhase = 0;
-	connect(&m_pageDecode, &TeletextPageDecode::flashChanged, this, &TeletextWidget::updateFlashTimer);
+	connect(&m_pageRender, &TeletextPageRender::flashChanged, this, &TeletextWidget::updateFlashTimer);
 	connect(&m_pageDecode, &TeletextPageDecode::sidePanelsChanged, this, &TeletextWidget::changeSize);
 	connect(m_teletextDocument, &TeletextDocument::subPageSelected, this, &TeletextWidget::subPageSelected);
 	connect(m_teletextDocument, &TeletextDocument::contentsChange, this, &TeletextWidget::refreshRow);
@@ -108,7 +108,7 @@ void TeletextWidget::paintEvent(QPaintEvent *event)
 	QPainter widgetPainter(this);
 
 	m_pageRender.renderPage();
-	widgetPainter.drawPixmap(m_pageDecode.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(0), 0, 0, 480, 250);
+	widgetPainter.drawPixmap(m_pageDecode.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(m_flashPhase), 0, 0, 480, 250);
 	if (m_pageDecode.leftSidePanelColumns())
 		widgetPainter.drawPixmap(0, 0, *m_pageRender.pagePixmap(m_flashPhase), 864-m_pageDecode.leftSidePanelColumns()*12, 0, m_pageDecode.leftSidePanelColumns()*12, 250);
 	if (m_pageDecode.rightSidePanelColumns())

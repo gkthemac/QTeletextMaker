@@ -52,6 +52,7 @@ TeletextPageRender::TeletextPageRender()
 
 	m_reveal = false;
 	m_showControlCodes = false;
+	m_flashBuffersHz = 0;
 }
 
 TeletextPageRender::~TeletextPageRender()
@@ -111,10 +112,25 @@ inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, in
 
 void TeletextPageRender::renderPage()
 {
-	QPainter pixmapPainter;
+	QPainter pixmapPainter[6];
+	int previousFlashBuffersHz = m_flashBuffersHz;
 
-	pixmapPainter.begin(m_pagePixmap[0]);
-	pixmapPainter.setBackgroundMode(Qt::OpaqueMode);
+	pixmapPainter[0].begin(m_pagePixmap[0]);
+	pixmapPainter[0].setBackgroundMode(Qt::OpaqueMode);
+	if (m_flashBuffersHz != 0) {
+		pixmapPainter[3].begin(m_pagePixmap[3]);
+		pixmapPainter[3].setBackgroundMode(Qt::OpaqueMode);
+		if (m_flashBuffersHz == 2) {
+			pixmapPainter[1].begin(m_pagePixmap[1]);
+			pixmapPainter[1].setBackgroundMode(Qt::OpaqueMode);
+			pixmapPainter[2].begin(m_pagePixmap[2]);
+			pixmapPainter[2].setBackgroundMode(Qt::OpaqueMode);
+			pixmapPainter[4].begin(m_pagePixmap[4]);
+			pixmapPainter[4].setBackgroundMode(Qt::OpaqueMode);
+			pixmapPainter[5].begin(m_pagePixmap[5]);
+			pixmapPainter[5].setBackgroundMode(Qt::OpaqueMode);
+		}
+	}
 
 	for (int r=0; r<25; r++)
 		for (int c=0; c<72; c++)
@@ -132,21 +148,146 @@ void TeletextPageRender::renderPage()
 					characterDiacritical = m_decoder->cellCharacterDiacritical(r, c);
 				}
 
-				pixmapPainter.setPen(m_decoder->cellForegroundQColor(r, c));
-				pixmapPainter.setBackground(m_decoder->cellBackgroundQColor(r, c));
+				// QSet::insert won't insert a duplicate value already in the set
+				// QSet::remove doesn't mind if we try to remove a value that's not there
+				if (m_flashBuffersHz == 0 && m_decoder->cellFlashMode(r, c) != 0) {
+					if (m_decoder->cellFlashRatePhase(r, c) == 0)
+						m_flash1HzCells.insert(qMakePair(r, c));
+					else
+						m_flash2HzCells.insert(qMakePair(r, c));
+					updateFlashBuffers();
+				} else if (m_decoder->cellFlashMode(r, c) == 0) {
+					m_flash1HzCells.remove(qMakePair(r, c));
+					m_flash2HzCells.remove(qMakePair(r, c));
+					updateFlashBuffers();
+				} else if (m_decoder->cellFlashRatePhase(r, c) == 0) {
+					m_flash1HzCells.insert(qMakePair(r, c));
+					m_flash2HzCells.remove(qMakePair(r, c));
+					updateFlashBuffers();
+				} else {
+					m_flash1HzCells.remove(qMakePair(r, c));
+					m_flash2HzCells.insert(qMakePair(r, c));
+					updateFlashBuffers();
+				}
 
-				drawCharacter(pixmapPainter, r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
+				// If flash rate has gone up, prepare painters for the other buffers
+				if (m_flashBuffersHz > previousFlashBuffersHz) {
+					if (previousFlashBuffersHz == 0) {
+						pixmapPainter[3].begin(m_pagePixmap[3]);
+						pixmapPainter[3].setBackgroundMode(Qt::OpaqueMode);
+					}
+					if (m_flashBuffersHz == 2) {
+						pixmapPainter[1].begin(m_pagePixmap[1]);
+						pixmapPainter[1].setBackgroundMode(Qt::OpaqueMode);
+						pixmapPainter[2].begin(m_pagePixmap[2]);
+						pixmapPainter[2].setBackgroundMode(Qt::OpaqueMode);
+						pixmapPainter[4].begin(m_pagePixmap[4]);
+						pixmapPainter[4].setBackgroundMode(Qt::OpaqueMode);
+						pixmapPainter[5].begin(m_pagePixmap[5]);
+						pixmapPainter[5].setBackgroundMode(Qt::OpaqueMode);
+					}
+					previousFlashBuffersHz = m_flashBuffersHz;
+				}
+
+				// If flash rate has gone down, end the painters so we don't crash
+				// if the pixmaps get copied due to the flash rate going up again
+				if (m_flashBuffersHz < previousFlashBuffersHz) {
+					if (previousFlashBuffersHz == 2) {
+						pixmapPainter[1].end();
+						pixmapPainter[2].end();
+						pixmapPainter[4].end();
+						pixmapPainter[5].end();
+					}
+					if (m_flashBuffersHz == 0)
+						pixmapPainter[3].end();
+
+					previousFlashBuffersHz = m_flashBuffersHz;
+				}
+
+				if (m_flashBuffersHz == 0) {
+					pixmapPainter[0].setPen(m_decoder->cellForegroundQColor(r, c));
+					pixmapPainter[0].setBackground(m_decoder->cellBackgroundQColor(r, c));
+					drawCharacter(pixmapPainter[0], r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
+				} else {
+					for (int i=0; i<6; i++) {
+						if (m_flashBuffersHz == 1 && (i == 1 || i == 2 || i == 4 || i == 5))
+							continue;
+
+						bool phaseOn;
+
+						if (m_decoder->cellFlashRatePhase(r, c) == 0)
+							phaseOn = (i < 3) ^ (m_decoder->cellFlashMode(r, c) == 2);
+						else
+							phaseOn = ((i == m_decoder->cellFlash2HzPhaseNumber(r, c)-1) || (i == m_decoder->cellFlash2HzPhaseNumber(r, c)+2)) ^ (m_decoder->cellFlashMode(r, c) == 2);
+
+						pixmapPainter[i].setBackground(m_decoder->cellBackgroundQColor(r, c));
+						if (m_decoder->cellFlashMode(r, c) == 3 && !phaseOn)
+							pixmapPainter[i].setPen(m_decoder->cellFlashForegroundQColor(r, c));
+						else
+							pixmapPainter[i].setPen(m_decoder->cellForegroundQColor(r, c));
+						if ((m_decoder->cellFlashMode(r, c) == 1 || m_decoder->cellFlashMode(r, c) == 2) && !phaseOn)
+							drawCharacter(pixmapPainter[i], r, c, 0x20, 0, 0, m_decoder->cellCharacterFragment(r, c));
+						else
+							drawCharacter(pixmapPainter[i], r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
+					}
+				}
 
 				if (m_showControlCodes && c < 40 && m_decoder->teletextPage()->character(r, c) < 0x20) {
-					pixmapPainter.setBackground(QColor(0, 0, 0, 128));
-					pixmapPainter.setPen(QColor(255, 255, 255, 224));
-					pixmapPainter.drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (m_decoder->teletextPage()->character(r, c)+32)*12, 250, 12, 10);
+					pixmapPainter[0].setBackground(QColor(0, 0, 0, 128));
+					pixmapPainter[0].setPen(QColor(255, 255, 255, 224));
+					pixmapPainter[0].drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (m_decoder->teletextPage()->character(r, c)+32)*12, 250, 12, 10);
+					if (m_flashBuffersHz == 1) {
+						pixmapPainter[3].setBackground(QColor(0, 0, 0, 128));
+						pixmapPainter[3].setPen(QColor(255, 255, 255, 224));
+						pixmapPainter[3].drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (m_decoder->teletextPage()->character(r, c)+32)*12, 250, 12, 10);
+					} else if (m_flashBuffersHz == 2)
+						for (int i=1; i<6; i++) {
+							pixmapPainter[i].setBackground(QColor(0, 0, 0, 128));
+							pixmapPainter[i].setPen(QColor(255, 255, 255, 224));
+							pixmapPainter[i].drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (m_decoder->teletextPage()->character(r, c)+32)*12, 250, 12, 10);
+						}
 				}
 
 				m_decoder->setRefresh(r, c, false);
 			}
 
-	pixmapPainter.end();
+	pixmapPainter[0].end();
+	if (m_flashBuffersHz != 0) {
+		pixmapPainter[3].end();
+		if (m_flashBuffersHz == 2) {
+			pixmapPainter[1].end();
+			pixmapPainter[2].end();
+			pixmapPainter[4].end();
+			pixmapPainter[5].end();
+		}
+	}
+}
+
+void TeletextPageRender::updateFlashBuffers()
+{
+	int highestFlashHz;
+
+	if (!m_flash2HzCells.isEmpty())
+		highestFlashHz = 2;
+	else
+		highestFlashHz = !m_flash1HzCells.isEmpty();
+
+	if (highestFlashHz == m_flashBuffersHz)
+		return;
+
+	if (highestFlashHz > m_flashBuffersHz) {
+		if (m_flashBuffersHz == 0)
+			*m_pagePixmap[3] = m_pagePixmap[0]->copy();
+		if (highestFlashHz == 2) {
+			*m_pagePixmap[1] = m_pagePixmap[0]->copy();
+			*m_pagePixmap[2] = m_pagePixmap[0]->copy();
+			*m_pagePixmap[4] = m_pagePixmap[3]->copy();
+			*m_pagePixmap[5] = m_pagePixmap[3]->copy();
+		}
+	}
+
+	m_flashBuffersHz = highestFlashHz;
+	emit flashChanged(m_flashBuffersHz);
 }
 
 void TeletextPageRender::setReveal(bool reveal)

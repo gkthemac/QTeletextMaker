@@ -30,7 +30,6 @@ TeletextPageDecode::TeletextPageDecode()
 	m_mix = false;
 
 	m_renderLevel = 0;
-	m_flashRequired = 0;
 
 	for (int r=0; r<25; r++)
 		for (int c=0; c<72; c++)
@@ -39,7 +38,6 @@ TeletextPageDecode::TeletextPageDecode()
 	m_finalFullScreenColour = 0;
 	m_finalFullScreenQColor.setRgb(0, 0, 0);
 	for (int r=0; r<25; r++) {
-		m_flashRow[r] = 0;
 		m_fullRowColour[r] = 0;
 		m_fullRowQColor[r].setRgb(0, 0, 0);
 	}
@@ -285,7 +283,6 @@ void TeletextPageDecode::decodeRow(int r)
 {
 	int c;
 	int phaseNumberRender = 0;
-	int flashRowRequired = 0;
 	bool decodeNextRow = false;
 	bool applyRightHalf = false;
 	bool previouslyDoubleHeight, previouslyBottomHalf, underlined;
@@ -401,8 +398,6 @@ void TeletextPageDecode::decodeRow(int r)
 			phaseNumberRender = 1;
 		if (resultAttributes.flash.ratePhase == 5 && --phaseNumberRender == 0)
 			phaseNumberRender = 3;
-		if (resultAttributes.flash.mode > 0)
-			flashRowRequired |= (resultAttributes.flash.ratePhase == 0) ? 1 : 2;
 
 		if (r > 0)
 			m_cell[r][c].bottomHalf = m_cell[r-1][c].attribute.display.doubleHeight && !m_cell[r-1][c].bottomHalf;
@@ -416,13 +411,6 @@ void TeletextPageDecode::decodeRow(int r)
 			applyRightHalf ^= true;
 		else
 			applyRightHalf = false;
-	}
-
-	if (flashRowRequired == 3)
-		flashRowRequired = 2;
-	if (flashRowRequired != m_flashRow[r]) {
-		m_flashRow[r] = flashRowRequired;
-		updateFlashRequired(flashRowRequired);
 	}
 
 	if (decodeNextRow && r<24)
@@ -480,6 +468,16 @@ QColor TeletextPageDecode::cellBackgroundQColor(int r, int c)
 		return m_levelOnePage->CLUTtoQColor(cell.attribute.foreColour, m_renderLevel);
 }
 
+QColor TeletextPageDecode::cellFlashForegroundQColor(int r, int c)
+{
+	const textCell& cell = cellAtCharacterOrigin(r, c);
+
+	if (!cell.attribute.display.invert)
+		return m_levelOnePage->CLUTtoQColor(cell.attribute.foreColour ^ 8, m_renderLevel);
+	else
+		return m_levelOnePage->CLUTtoQColor(cell.attribute.backColour ^ 8, m_renderLevel);
+}
+
 TeletextPageDecode::CharacterFragment TeletextPageDecode::cellCharacterFragment(int r, int c) const
 {
 	if (m_cell[r][c].bottomHalf && r > 0) {
@@ -505,30 +503,6 @@ TeletextPageDecode::CharacterFragment TeletextPageDecode::cellCharacterFragment(
 		return CharacterFragment::DoubleWidthLeftHalf;
 
 	return CharacterFragment::NormalSize;
-}
-
-void TeletextPageDecode::updateFlashRequired(int newFlashRequired)
-{
-	if (newFlashRequired == m_flashRequired)
-		return;
-
-	if (newFlashRequired < m_flashRequired) {
-		int minimumFlashRequired = newFlashRequired;
-		// If the flash rate for a row is reduced, check the other rows if they still need flashing
-		for (int r=0; r<25; r++)
-			if (m_flashRow[r] > minimumFlashRequired)
-				minimumFlashRequired = m_flashRow[r];
-		if (minimumFlashRequired > newFlashRequired)
-			newFlashRequired = minimumFlashRequired;
-		if (newFlashRequired == m_flashRequired)
-			return;
-		m_flashRequired = newFlashRequired;
-		emit flashChanged(m_flashRequired);
-		return;
-	}
-
-	m_flashRequired = newFlashRequired;
-	emit flashChanged(m_flashRequired);
 }
 
 inline void TeletextPageDecode::setFullScreenColour(int newColour)

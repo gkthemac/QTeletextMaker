@@ -239,6 +239,10 @@ public:
 	int cellCharacterDiacritical(int r, int c) { return cellAtCharacterOrigin(r, c).character.diacritical; };
 	QColor cellForegroundQColor(int, int);
 	QColor cellBackgroundQColor(int, int);
+	QColor cellFlashForegroundQColor(int, int);
+	int cellFlashMode(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.flash.mode; };
+	int cellFlashRatePhase(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.flash.ratePhase; };
+	int cellFlash2HzPhaseNumber(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.flash.phaseNumber; };
 	CharacterFragment cellCharacterFragment(int, int) const;
 	bool cellConceal(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.display.conceal; };
 
@@ -254,11 +258,9 @@ public slots:
 signals:
 	void fullScreenColourChanged(QColor);
 	void fullRowColourChanged(int, QColor);
-	void flashChanged(int);
 	void sidePanelsChanged();
 
 protected:
-	void updateFlashRequired(int);
 	inline void setFullScreenColour(int);
 	inline void setFullRowColour(int, int);
 	textCell& cellAtCharacterOrigin(int, int);
@@ -276,10 +278,8 @@ private:
 	textCell m_cell[25][72];
 	bool m_refresh[25][72];
 	LevelOnePage* m_levelOnePage;
-	int m_flashRequired;
 	int m_fullRowColour[25];
 	QColor m_fullRowQColor[25];
-	int m_flashRow[25];
 };
 
 static const QMap<int, int> g0CharacterMap {

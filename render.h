@@ -21,6 +21,7 @@
 #define RENDER_H
 
 #include <QBitmap>
+#include <QSet>
 #include <QPixmap>
 
 #include "decode.h"
@@ -55,15 +56,22 @@ public slots:
 	void setReveal(bool);
 	void setShowControlCodes(bool);
 
+signals:
+	void flashChanged(int);
+
 protected:
 	TeletextFontBitmap m_fontBitmap;
 	QPixmap* m_pagePixmap[6];
 	textCell m_cell[25][72];
 	bool m_reveal, m_showControlCodes;
+	QSet<QPair<int, int>> m_flash1HzCells;
+	QSet<QPair<int, int>> m_flash2HzCells;
+	int m_flashBuffersHz;
 
 private:
 	inline void drawFromFontBitmap(QPainter &, int, int, unsigned char, int, TeletextPageDecode::CharacterFragment);
 	inline void drawCharacter(QPainter &, int, int, unsigned char, int, int, TeletextPageDecode::CharacterFragment);
+	void updateFlashBuffers();
 
 	TeletextPageDecode *m_decoder;
 };
