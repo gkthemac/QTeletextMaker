@@ -101,7 +101,12 @@ inline void TeletextPageRender::drawFromFontBitmap(QPainter &pixmapPainter, int 
 
 inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, int characterDiacritical, TeletextPageDecode::CharacterFragment characterFragment)
 {
-	drawFromFontBitmap(pixmapPainter, r, c, characterCode, characterSet, characterFragment);
+	if (characterCode == 0x20 && characterSet < 25 && characterDiacritical == 0)
+		pixmapPainter.fillRect(c*12, r*10, 12, 10, m_decoder->cellBackgroundQColor(r, c));
+	else if (characterCode == 0x7f && characterSet == 24)
+		pixmapPainter.fillRect(c*12, r*10, 12, 10, pixmapPainter.pen().color());
+	else
+		drawFromFontBitmap(pixmapPainter, r, c, characterCode, characterSet, characterFragment);
 
 	if (characterDiacritical != 0) {
 		pixmapPainter.setBackgroundMode(Qt::TransparentMode);
