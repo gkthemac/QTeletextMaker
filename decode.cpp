@@ -507,7 +507,7 @@ TeletextPageDecode::CharacterFragment TeletextPageDecode::cellCharacterFragment(
 
 inline void TeletextPageDecode::setFullScreenColour(int newColour)
 {
-	if (m_mix || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
+	if (newColour == 8 || m_mix || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
 		m_finalFullScreenQColor = QColor(0, 0, 0, 0);
 		emit fullScreenColourChanged(QColor(0, 0, 0, 0));
 		return;
@@ -522,7 +522,7 @@ inline void TeletextPageDecode::setFullScreenColour(int newColour)
 
 inline void TeletextPageDecode::setFullRowColour(int row, int newColour)
 {
-	if (m_mix || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
+	if (newColour == 8 || m_mix || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
 		m_fullRowQColor[row] = QColor(0, 0, 0, 0);
 		emit fullRowColourChanged(row, QColor(0, 0, 0, 0));
 		return;
