@@ -115,7 +115,7 @@ inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, in
 	}
 }
 
-void TeletextPageRender::renderPage()
+void TeletextPageRender::renderPage(bool force)
 {
 	QPainter pixmapPainter[6];
 	int previousFlashBuffersHz = m_flashBuffersHz;
@@ -139,7 +139,7 @@ void TeletextPageRender::renderPage()
 
 	for (int r=0; r<25; r++)
 		for (int c=0; c<72; c++)
-			if (m_decoder->refresh(r, c)) {
+			if (m_decoder->refresh(r, c) || force) {
 				unsigned char characterCode;
 				int characterSet, characterDiacritical;
 

@@ -384,6 +384,7 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 			break;
 		case Qt::Key_F5:
 			m_pageDecode.decodePage();
+			m_pageRender.renderPage(true);
 			update();
 			break;
 		default:

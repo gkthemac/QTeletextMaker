@@ -49,7 +49,7 @@ public:
 
 	QPixmap* pagePixmap(int i) const { return m_pagePixmap[i]; };
 	void setDecoder(TeletextPageDecode *);
-	void renderPage();
+	void renderPage(bool force=false);
 	bool showControlCodes() const { return m_showControlCodes; };
 
 public slots:
