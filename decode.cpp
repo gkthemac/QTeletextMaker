@@ -333,10 +333,6 @@ void TeletextPageDecode::decodeRow(int r)
 							resultAttributes.backColour = 0x00;
 				}
 			}
-			if (resultAttributes.foreColour == 8)
-				resultAttributes.foreColour = m_fullRowColour[r];
-			if (resultAttributes.backColour == 8)
-				resultAttributes.backColour = m_fullRowColour[r];
 
 			if (layerApplyAttributes.applyFlash) {
 				//BUG Adaptive Objects disrupt inc/dec flash
@@ -448,34 +444,71 @@ textCell& TeletextPageDecode::cellAtCharacterOrigin(int r, int c)
 	}
 }
 
-QColor TeletextPageDecode::cellForegroundQColor(int r, int c)
+QColor TeletextPageDecode::cellQColor(int r, int c, ColourPart colourPart)
 {
 	const textCell& cell = cellAtCharacterOrigin(r, c);
+	const bool newsFlashOrSubtitle = m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle);
+	int resultCLUT;
 
-	if (!cell.attribute.display.invert)
-		return m_levelOnePage->CLUTtoQColor(cell.attribute.foreColour, m_renderLevel);
-	else
-		return m_levelOnePage->CLUTtoQColor(cell.attribute.backColour, m_renderLevel);
+	switch (colourPart) {
+		case Foreground:
+			if (!cell.attribute.display.invert)
+				resultCLUT = cell.attribute.foreColour;
+			else
+				resultCLUT = cell.attribute.backColour;
+			break;
+		case Background:
+			if (!cell.attribute.display.invert)
+				resultCLUT = cell.attribute.backColour;
+			else
+				resultCLUT = cell.attribute.foreColour;
+			break;
+		case FlashForeground:
+			if (!cell.attribute.display.invert)
+				resultCLUT = cell.attribute.foreColour ^ 8;
+			else
+				resultCLUT = cell.attribute.backColour ^ 8;
+			break;
+	}
+
+	if (resultCLUT == 8) {
+		// Transparent CLUT - either Full Row Colour or Video
+		// Logic of table C.1 in spec implemented to find out which it is
+		if (cell.attribute.display.boxingWindow != newsFlashOrSubtitle)
+			return QColor(Qt::transparent);
+
+		int rowColour;
+
+		if (cellCharacterFragment(r, c) == TeletextPageDecode::DoubleHeightBottomHalf ||
+		    cellCharacterFragment(r, c) == TeletextPageDecode::DoubleSizeBottomLeftQuarter ||
+		    cellCharacterFragment(r, c) == TeletextPageDecode::DoubleSizeBottomRightQuarter)
+			rowColour = m_fullRowColour[r-1];
+		else
+			rowColour = m_fullRowColour[r];
+
+		if (rowColour == 8)
+			return QColor(Qt::transparent);
+		else
+			return m_levelOnePage->CLUTtoQColor(rowColour, m_renderLevel);
+	} else if (!cell.attribute.display.boxingWindow && newsFlashOrSubtitle)
+		return QColor(Qt::transparent);
+
+	return m_levelOnePage->CLUTtoQColor(resultCLUT, m_renderLevel);
+}
+
+QColor TeletextPageDecode::cellForegroundQColor(int r, int c)
+{
+	return cellQColor(r, c, Foreground);
 }
 
 QColor TeletextPageDecode::cellBackgroundQColor(int r, int c)
 {
-	const textCell& cell = cellAtCharacterOrigin(r, c);
-
-	if (!cell.attribute.display.invert)
-		return m_levelOnePage->CLUTtoQColor(cell.attribute.backColour, m_renderLevel);
-	else
-		return m_levelOnePage->CLUTtoQColor(cell.attribute.foreColour, m_renderLevel);
+	return cellQColor(r, c, Background);
 }
 
 QColor TeletextPageDecode::cellFlashForegroundQColor(int r, int c)
 {
-	const textCell& cell = cellAtCharacterOrigin(r, c);
-
-	if (!cell.attribute.display.invert)
-		return m_levelOnePage->CLUTtoQColor(cell.attribute.foreColour ^ 8, m_renderLevel);
-	else
-		return m_levelOnePage->CLUTtoQColor(cell.attribute.backColour ^ 8, m_renderLevel);
+	return cellQColor(r, c, FlashForeground);
 }
 
 TeletextPageDecode::CharacterFragment TeletextPageDecode::cellCharacterFragment(int r, int c) const
@@ -522,13 +555,14 @@ inline void TeletextPageDecode::setFullScreenColour(int newColour)
 
 inline void TeletextPageDecode::setFullRowColour(int row, int newColour)
 {
+	m_fullRowColour[row] = newColour;
+
 	if (newColour == 8 || m_mix || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
 		m_fullRowQColor[row] = QColor(0, 0, 0, 0);
 		emit fullRowColourChanged(row, QColor(0, 0, 0, 0));
 		return;
 	}
 	QColor newFullRowQColor = m_levelOnePage->CLUTtoQColor(newColour, m_renderLevel);
-	m_fullRowColour[row] = newColour;
 	if (m_fullRowQColor[row] != newFullRowQColor) {
 		m_fullRowQColor[row] = newFullRowQColor;
 		emit fullRowColourChanged(row, m_fullRowQColor[row]);

@@ -275,6 +275,10 @@ protected:
 	const int m_backgroundRemap[8] = { 0,  8, 16,  8, 16,  8, 16, 24 };
 
 private:
+	enum ColourPart { Foreground, Background, FlashForeground };
+
+	QColor cellQColor(int, int, ColourPart);
+
 	textCell m_cell[25][72];
 	bool m_refresh[25][72];
 	LevelOnePage* m_levelOnePage;

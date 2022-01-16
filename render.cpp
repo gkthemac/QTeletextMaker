@@ -101,6 +101,42 @@ inline void TeletextPageRender::drawFromFontBitmap(QPainter &pixmapPainter, int 
 
 inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, int characterDiacritical, TeletextPageDecode::CharacterFragment characterFragment)
 {
+	// If either foreground or background is set to transparent
+	// tinker with the QPainter settings so we get the desired result
+	if (!pixmapPainter.background().isOpaque()) {
+		if (pixmapPainter.pen().color().alpha() == 0) {
+			// Transparent foreground and background
+			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
+			pixmapPainter.eraseRect(c*12, r*10, 12, 10);
+			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+			return;
+		} else
+			// Transparent background, opaque foreground
+			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
+	} else if (pixmapPainter.pen().color().alpha() == 0) {
+		// Transparent foreground, opaque background
+		// Deal with optimising G1 solid 7/F blocks and spaces now
+		// otherwise the same optimisations later on won't work with
+		// our tinkered QPainter settings
+		if (characterCode == 0x7f && characterSet == 24) {
+			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
+			pixmapPainter.eraseRect(c*12, r*10, 12, 10);
+			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+			return;
+		}
+
+		pixmapPainter.fillRect(c*12, r*10, 12, 10, m_decoder->cellBackgroundQColor(r, c));
+
+		if (characterCode == 0x20 && characterSet < 25 && characterDiacritical == 0)
+			return;
+
+		pixmapPainter.setBackground(QColor(0, 0, 0, 0));
+		pixmapPainter.setPen(QColor(255, 255, 255, 255));
+		pixmapPainter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+	}
+
 	if (characterCode == 0x20 && characterSet < 25 && characterDiacritical == 0)
 		pixmapPainter.fillRect(c*12, r*10, 12, 10, m_decoder->cellBackgroundQColor(r, c));
 	else if (characterCode == 0x7f && characterSet == 24)
@@ -113,6 +149,9 @@ inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, in
 		drawFromFontBitmap(pixmapPainter, r, c, characterDiacritical+64, 7, characterFragment);
 		pixmapPainter.setBackgroundMode(Qt::OpaqueMode);
 	}
+
+	if (pixmapPainter.compositionMode() != QPainter::CompositionMode_SourceOver)
+		pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 }
 
 void TeletextPageRender::renderPage(bool force)
