@@ -382,11 +382,11 @@ void TeletextPageDecode::decodeRow(int r)
 		if (m_cell[r][c] != oldTextCell) {
 			m_refresh[r][c] = true;
 
-			if (m_cell[r][c].attribute.display.doubleHeight && r < 24)
+			if ((m_cell[r][c].attribute.display.doubleHeight || oldTextCell.attribute.display.doubleHeight) && r < 25)
 				m_refresh[r+1][c] = true;
-			if (m_cell[r][c].attribute.display.doubleWidth && c < 72)
+			if ((m_cell[r][c].attribute.display.doubleWidth || oldTextCell.attribute.display.doubleWidth) && c < 72)
 				m_refresh[r][c+1] = true;
-			if (m_cell[r][c].attribute.display.doubleHeight && m_cell[r][c].attribute.display.doubleWidth && r < 24 && c < 72)
+			if (((m_cell[r][c].attribute.display.doubleHeight && m_cell[r][c].attribute.display.doubleWidth) || (oldTextCell.attribute.display.doubleHeight && oldTextCell.attribute.display.doubleWidth)) && r < 25 && c < 72)
 				m_refresh[r+1][c+1] = true;
 		}
 
