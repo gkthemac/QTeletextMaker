@@ -403,7 +403,7 @@ void TeletextPageDecode::decodeRow(int r)
 
 		if (resultAttributes.display.doubleHeight)
 			doubleHeightFound = true;
-		if (resultAttributes.display.doubleWidth)
+		if (resultAttributes.display.doubleWidth || (m_cell[r][c].bottomHalf && c > 0 && m_cell[r-1][c-1].rightHalf))
 			applyRightHalf ^= true;
 		else
 			applyRightHalf = false;
