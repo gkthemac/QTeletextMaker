@@ -228,7 +228,6 @@ public:
 	void setRefresh(int, int, bool);
 	void decodePage();
 	void decodeRow(int r);
-	bool mix() const { return m_mix; };
 	LevelOnePage *teletextPage() const { return m_levelOnePage; };
 	void setTeletextPage(LevelOnePage *);
 	void updateSidePanels();
@@ -244,6 +243,7 @@ public:
 	int cellFlashRatePhase(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.flash.ratePhase; };
 	int cellFlash2HzPhaseNumber(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.flash.phaseNumber; };
 	CharacterFragment cellCharacterFragment(int, int) const;
+	bool cellBoxed(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.display.boxingWindow; };
 	bool cellConceal(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.display.conceal; };
 
 	bool level1MosaicAttribute(int r, int c) const { return m_cell[r][c].level1Mosaic; };
@@ -252,7 +252,6 @@ public:
 	int rightSidePanelColumns() const { return m_rightSidePanelColumns; };
 
 public slots:
-	void setMix(bool);
 	void setRenderLevel(int);
 
 signals:
@@ -268,7 +267,6 @@ protected:
 	int m_finalFullScreenColour, m_renderLevel;
 	QColor m_finalFullScreenQColor;
 	int m_leftSidePanelColumns, m_rightSidePanelColumns;
-	bool m_mix;
 	Level1Layer m_level1Layer;
 	std::vector<TextLayer *> m_textLayer;
 	const int m_foregroundRemap[8] = { 0,  0,  0,  8,  8, 16, 16, 16 };

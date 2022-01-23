@@ -156,15 +156,19 @@ void TeletextWidget::setInsertMode(bool insertMode)
 	m_insertMode = insertMode;
 }
 
-void TeletextWidget::toggleReveal(bool revealOn)
+void TeletextWidget::setReveal(bool reveal)
 {
-	m_pageRender.setReveal(revealOn);
+	m_pageRender.setReveal(reveal);
 	update();
 }
 
-void TeletextWidget::toggleMix(bool mixOn)
+void TeletextWidget::setMix(bool mix)
 {
-	m_pageDecode.setMix(mixOn);
+	m_pageRender.setMix(mix);
+	// FIXME? decodePage is needed to put the Full Screen/Row Colours back
+	// as LevelOneScene::setMix(false) doesn't do that
+	if (!mix)
+		m_pageDecode.decodePage();
 	update();
 }
 
@@ -654,6 +658,17 @@ void LevelOneScene::updateSelection()
 	m_selectionRectItem->setRect(m_mainGridItemGroup->pos().x() + static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionLeftColumn()*12, m_mainGridItemGroup->pos().y() + static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionTopRow()*10, static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionWidth()*12-1, static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionHeight()*10-1);
 
 	m_selectionRectItem->setVisible(true);
+}
+
+void LevelOneScene::setMix(bool mix)
+{
+	// FIXME? this doesn't put the Full Screen/Row Colours back when mix is turned off
+	// The separate TeletextWidget::setMix does that instead
+	if (mix) {
+		setFullScreenColour(Qt::transparent);
+		for (int r=0; r<25; r++)
+			setFullRowColour(r, Qt::transparent);
+	}
 }
 
 void LevelOneScene::toggleGrid(bool gridOn)

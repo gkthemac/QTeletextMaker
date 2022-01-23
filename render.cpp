@@ -51,6 +51,7 @@ TeletextPageRender::TeletextPageRender()
 	m_pagePixmap[0]->fill(Qt::transparent);
 
 	m_reveal = false;
+	m_mix = false;
 	m_showControlCodes = false;
 	m_flashBuffersHz = 0;
 }
@@ -138,7 +139,7 @@ inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, in
 	}
 
 	if (characterCode == 0x20 && characterSet < 25 && characterDiacritical == 0)
-		pixmapPainter.fillRect(c*12, r*10, 12, 10, m_decoder->cellBackgroundQColor(r, c));
+		pixmapPainter.fillRect(c*12, r*10, 12, 10, pixmapPainter.background().color());
 	else if (characterCode == 0x7f && characterSet == 24)
 		pixmapPainter.fillRect(c*12, r*10, 12, 10, pixmapPainter.pen().color());
 	else
@@ -250,7 +251,10 @@ void TeletextPageRender::renderPage(bool force)
 
 				if (m_flashBuffersHz == 0) {
 					pixmapPainter[0].setPen(m_decoder->cellForegroundQColor(r, c));
-					pixmapPainter[0].setBackground(m_decoder->cellBackgroundQColor(r, c));
+					if (!m_mix || m_decoder->cellBoxed(r, c))
+						pixmapPainter[0].setBackground(m_decoder->cellBackgroundQColor(r, c));
+					else
+						pixmapPainter[0].setBackground(Qt::transparent);
 					drawCharacter(pixmapPainter[0], r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
 				} else {
 					for (int i=0; i<6; i++) {
@@ -264,7 +268,10 @@ void TeletextPageRender::renderPage(bool force)
 						else
 							phaseOn = ((i == m_decoder->cellFlash2HzPhaseNumber(r, c)-1) || (i == m_decoder->cellFlash2HzPhaseNumber(r, c)+2)) ^ (m_decoder->cellFlashMode(r, c) == 2);
 
-						pixmapPainter[i].setBackground(m_decoder->cellBackgroundQColor(r, c));
+						if (!m_mix || m_decoder->cellBoxed(r, c))
+							pixmapPainter[i].setBackground(m_decoder->cellBackgroundQColor(r, c));
+						else
+							pixmapPainter[i].setBackground(Qt::transparent);
 						if (m_decoder->cellFlashMode(r, c) == 3 && !phaseOn)
 							pixmapPainter[i].setPen(m_decoder->cellFlashForegroundQColor(r, c));
 						else
@@ -346,6 +353,20 @@ void TeletextPageRender::setReveal(bool reveal)
 			if (m_decoder->cellConceal(r, c))
 				m_decoder->setRefresh(r, c, true);
 }
+
+void TeletextPageRender::setMix(bool mix)
+{
+	if (mix  == m_mix)
+		return;
+
+	m_mix = mix;
+
+	for (int r=0; r<25; r++)
+		for (int c=0; c<72; c++)
+			if (!m_decoder->cellBoxed(r, c))
+				m_decoder->setRefresh(r, c, true);
+}
+
 
 void TeletextPageRender::setShowControlCodes(bool showControlCodes)
 {

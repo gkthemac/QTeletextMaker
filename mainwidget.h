@@ -55,6 +55,7 @@ public:
 
 	TeletextDocument* document() const { return m_teletextDocument; }
 	TeletextPageDecode *pageDecode() { return &m_pageDecode; }
+	TeletextPageRender *pageRender() { return &m_pageRender; }
 
 signals:
 	void sizeChanged();
@@ -63,8 +64,8 @@ signals:
 public slots:
 	void subPageSelected();
 	void refreshPage();
-	void toggleReveal(bool);
-	void toggleMix(bool);
+	void setReveal(bool);
+	void setMix(bool);
 	void setShowControlCodes(bool);
 	void updateFlashTimer(int);
 	void pauseFlash(bool);
@@ -123,6 +124,7 @@ public:
 public slots:
 	void updateCursor();
 	void updateSelection();
+	void setMix(bool);
 	void toggleGrid(bool);
 	void hideGUIElements(bool);
 	void setFullScreenColour(const QColor &);

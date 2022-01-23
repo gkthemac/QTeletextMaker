@@ -27,8 +27,6 @@
 
 TeletextPageDecode::TeletextPageDecode()
 {
-	m_mix = false;
-
 	m_renderLevel = 0;
 
 	for (int r=0; r<25; r++)
@@ -64,12 +62,6 @@ void TeletextPageDecode::setTeletextPage(LevelOnePage *newCurrentPage)
 	m_levelOnePage = newCurrentPage;
 	m_level1Layer.setTeletextPage(newCurrentPage);
 	updateSidePanels();
-}
-
-void TeletextPageDecode::setMix(bool newMix)
-{
-	m_mix = newMix;
-	decodePage();
 }
 
 void TeletextPageDecode::setRenderLevel(int newRenderLevel)
@@ -540,7 +532,7 @@ TeletextPageDecode::CharacterFragment TeletextPageDecode::cellCharacterFragment(
 
 inline void TeletextPageDecode::setFullScreenColour(int newColour)
 {
-	if (newColour == 8 || m_mix || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
+	if (newColour == 8 || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
 		m_finalFullScreenQColor = QColor(0, 0, 0, 0);
 		emit fullScreenColourChanged(QColor(0, 0, 0, 0));
 		return;
@@ -557,7 +549,7 @@ inline void TeletextPageDecode::setFullRowColour(int row, int newColour)
 {
 	m_fullRowColour[row] = newColour;
 
-	if (newColour == 8 || m_mix || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
+	if (newColour == 8 || m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle)) {
 		m_fullRowQColor[row] = QColor(0, 0, 0, 0);
 		emit fullRowColourChanged(row, QColor(0, 0, 0, 0));
 		return;

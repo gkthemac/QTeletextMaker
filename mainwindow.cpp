@@ -161,9 +161,11 @@ void MainWindow::exportPNG()
 	if (reshowControlCodes)
 		m_textWidget->setShowControlCodes(false);
 	// Disable exporting in Mix mode as it corrupts the background
-	bool reMix = m_textWidget->pageDecode()->mix();
-	if (reMix)
-		m_textWidget->pageDecode()->setMix(false);
+	bool reMix = m_textWidget->pageRender()->mix();
+	if (reMix) {
+		m_textWidget->setMix(false);
+		m_textScene->setMix(false);
+	}
 
 	// Extract the image from the scene
 	QImage interImage = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
@@ -177,8 +179,10 @@ void MainWindow::exportPNG()
 	m_textScene->hideGUIElements(false);
 	if (reshowControlCodes)
 		m_textWidget->setShowControlCodes(true);
-	if (reMix)
-		m_textWidget->pageDecode()->setMix(true);
+	if (reMix) {
+		m_textWidget->setMix(true);
+		m_textScene->setMix(true);
+	}
 	m_textWidget->pauseFlash(false);
 
 	// Now scale the extracted image to the selected aspect ratio
@@ -456,13 +460,14 @@ void MainWindow::createActions()
 	revealAct->setCheckable(true);
 	revealAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
 	revealAct->setStatusTip(tr("Toggle reveal"));
-	connect(revealAct, &QAction::toggled, m_textWidget, &TeletextWidget::toggleReveal);
+	connect(revealAct, &QAction::toggled, m_textWidget, &TeletextWidget::setReveal);
 
 	QAction *mixAct = viewMenu->addAction(tr("&Mix"));
 	mixAct->setCheckable(true);
 	mixAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_M));
 	mixAct->setStatusTip(tr("Toggle mix"));
-	connect(mixAct, &QAction::toggled, m_textWidget, &TeletextWidget::toggleMix);
+	connect(mixAct, &QAction::toggled, m_textWidget, &TeletextWidget::setMix);
+	connect(mixAct, &QAction::toggled, m_textScene, &LevelOneScene::setMix);
 
 	QAction *gridAct = viewMenu->addAction(tr("&Grid"));
 	gridAct->setCheckable(true);

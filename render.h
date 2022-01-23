@@ -48,12 +48,14 @@ public:
 	~TeletextPageRender();
 
 	QPixmap* pagePixmap(int i) const { return m_pagePixmap[i]; };
+	bool mix() const { return m_mix; };
 	void setDecoder(TeletextPageDecode *);
 	void renderPage(bool force=false);
 	bool showControlCodes() const { return m_showControlCodes; };
 
 public slots:
 	void setReveal(bool);
+	void setMix(bool);
 	void setShowControlCodes(bool);
 
 signals:
@@ -63,7 +65,7 @@ protected:
 	TeletextFontBitmap m_fontBitmap;
 	QPixmap* m_pagePixmap[6];
 	textCell m_cell[25][72];
-	bool m_reveal, m_showControlCodes;
+	bool m_reveal, m_mix, m_showControlCodes;
 	QSet<QPair<int, int>> m_flash1HzCells;
 	QSet<QPair<int, int>> m_flash2HzCells;
 	int m_flashBuffersHz;
