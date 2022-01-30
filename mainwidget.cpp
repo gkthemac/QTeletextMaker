@@ -659,9 +659,12 @@ void LevelOneScene::updateSelection()
 void LevelOneScene::setMix(bool mix)
 {
 	if (mix) {
-		setFullScreenColour(Qt::transparent);
-		for (int r=0; r<25; r++)
-			setFullRowColour(r, Qt::transparent);
+		m_fullScreenTopRectItem->setBrush(Qt::transparent);
+		m_fullScreenBottomRectItem->setBrush(Qt::transparent);
+		for (int r=0; r<25; r++) {
+			m_fullRowLeftRectItem[r]->setBrush(Qt::transparent);
+			m_fullRowRightRectItem[r]->setBrush(Qt::transparent);
+		}
 	} else {
 		setFullScreenColour(static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageDecode()->fullScreenQColor());
 		for (int r=0; r<25; r++)
@@ -714,12 +717,16 @@ bool LevelOneScene::eventFilter(QObject *object, QEvent *event)
 
 void LevelOneScene::setFullScreenColour(const QColor &newColor)
 {
-	m_fullScreenTopRectItem->setBrush(QBrush(newColor));
-	m_fullScreenBottomRectItem->setBrush(QBrush(newColor));
+	if (!static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageRender()->mix()) {
+		m_fullScreenTopRectItem->setBrush(newColor);
+		m_fullScreenBottomRectItem->setBrush(newColor);
+	}
 }
 
 void LevelOneScene::setFullRowColour(int row, const QColor &newColor)
 {
-	m_fullRowLeftRectItem[row]->setBrush(QBrush(newColor));
-	m_fullRowRightRectItem[row]->setBrush(QBrush(newColor));
+	if (!static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageRender()->mix()) {
+		m_fullRowLeftRectItem[row]->setBrush(newColor);
+		m_fullRowRightRectItem[row]->setBrush(newColor);
+	}
 }
