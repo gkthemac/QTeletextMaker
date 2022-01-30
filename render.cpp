@@ -146,6 +146,7 @@ inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, in
 		drawFromFontBitmap(pixmapPainter, r, c, characterCode, characterSet, characterFragment);
 
 	if (characterDiacritical != 0) {
+		pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 		pixmapPainter.setBackgroundMode(Qt::TransparentMode);
 		drawFromFontBitmap(pixmapPainter, r, c, characterDiacritical+64, 7, characterFragment);
 		pixmapPainter.setBackgroundMode(Qt::OpaqueMode);
