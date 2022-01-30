@@ -248,6 +248,9 @@ public:
 
 	bool level1MosaicAttribute(int r, int c) const { return m_cell[r][c].level1Mosaic; };
 	int level1CharSet(int r, int c) const { return m_cell[r][c].level1CharSet; };
+
+	QColor fullScreenQColor() const { return m_finalFullScreenQColor; };
+	QColor fullRowQColor(int r) const { return m_fullRowQColor[r]; };
 	int leftSidePanelColumns() const { return m_leftSidePanelColumns; };
 	int rightSidePanelColumns() const { return m_rightSidePanelColumns; };
 

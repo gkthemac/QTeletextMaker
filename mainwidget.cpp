@@ -165,10 +165,6 @@ void TeletextWidget::setReveal(bool reveal)
 void TeletextWidget::setMix(bool mix)
 {
 	m_pageRender.setMix(mix);
-	// FIXME? decodePage is needed to put the Full Screen/Row Colours back
-	// as LevelOneScene::setMix(false) doesn't do that
-	if (!mix)
-		m_pageDecode.decodePage();
 	update();
 }
 
@@ -662,12 +658,14 @@ void LevelOneScene::updateSelection()
 
 void LevelOneScene::setMix(bool mix)
 {
-	// FIXME? this doesn't put the Full Screen/Row Colours back when mix is turned off
-	// The separate TeletextWidget::setMix does that instead
 	if (mix) {
 		setFullScreenColour(Qt::transparent);
 		for (int r=0; r<25; r++)
 			setFullRowColour(r, Qt::transparent);
+	} else {
+		setFullScreenColour(static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageDecode()->fullScreenQColor());
+		for (int r=0; r<25; r++)
+			setFullRowColour(r, static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageDecode()->fullRowQColor(r));
 	}
 }
 
