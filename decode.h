@@ -185,6 +185,8 @@ protected:
 class Level1Layer: public TextLayer
 {
 public:
+	enum RowHeight { Normal=-1, TopHalf, BottomHalf };
+
 //	Level1Layer(TeletextPage *thePage) : TextLayer(thePage) { };
 	Level1Layer();
 	textCharacter character(int, int);
@@ -193,7 +195,7 @@ public:
 	int fullRowColour(int) const { return -1; };
 	bool fullRowDownwards(int) const { return false; };
 	int objectType() const { return 0; }
-	bool isRowBottomHalf(int r) const { return m_rowHeight[r]==RHbottomhalf; }
+	RowHeight rowHeight(int r) const { return m_rowHeight[r]; };
 
 private:
 	void updateRowCache(int);
@@ -212,7 +214,7 @@ private:
 	level1CacheAttributes m_attributeCache[40];
 	int m_rowCached=-1;
 	bool m_rowHasDoubleHeightAttr[25];
-	enum rowHeightEnum { RHnormal=-1, RHtophalf, RHbottomhalf } m_rowHeight[25];
+	RowHeight m_rowHeight[25];
 };
 
 class TeletextPageDecode : public QObject

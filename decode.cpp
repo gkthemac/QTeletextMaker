@@ -582,7 +582,7 @@ Level1Layer::Level1Layer()
 {
 	for (int r=0; r<25; r++) {
 		m_rowHasDoubleHeightAttr[r] = false;
-		m_rowHeight[r] = RHnormal;
+		m_rowHeight[r] = Normal;
 	}
 }
 
@@ -810,10 +810,10 @@ void Level1Layer::updateRowCache(int r)
 		m_rowHasDoubleHeightAttr[r] = doubleHeightAttrFound;
 		for (int dr=r; dr<24; dr++)
 			if (m_rowHasDoubleHeightAttr[dr]) {
-				m_rowHeight[dr] = RHtophalf;
-				m_rowHeight[++dr] = RHbottomhalf;
+				m_rowHeight[dr] = TopHalf;
+				m_rowHeight[++dr] = BottomHalf;
 			} else
-				m_rowHeight[dr] = RHnormal;
+				m_rowHeight[dr] = Normal;
 	}
 }
 
@@ -823,7 +823,7 @@ textCharacter Level1Layer::character(int r, int c)
 
 	if (r != m_rowCached)
 		updateRowCache(r);
-	if (c > 39 || m_rowHeight[r] == RHbottomhalf)
+	if (c > 39 || m_rowHeight[r] == BottomHalf)
 		return { 0x20, 0 };
 	result.code = m_levelOnePage->character(r, c);
 	if (m_levelOnePage->secondCharSet() != 0xf && m_attributeCache[c].escSwitch)
@@ -845,7 +845,7 @@ void Level1Layer::attributes(int r, int c, applyAttributes *layerApplyAttributes
 {
 	unsigned char characterCode;
 
-	if (m_rowHeight[r] == RHbottomhalf) {
+	if (m_rowHeight[r] == BottomHalf) {
 		layerApplyAttributes->copyAboveAttributes = true;
 		return;
 	}
