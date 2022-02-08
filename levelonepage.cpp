@@ -381,6 +381,9 @@ QColor LevelOnePage::CLUTtoQColor(int index, int renderLevel) const
 {
 	int colour12Bit = CLUT(index, renderLevel);
 
+	if (index == 8)
+		return QColor(Qt::transparent);
+
 	return QColor(((colour12Bit & 0xf00) >> 8) * 17, ((colour12Bit & 0x0f0) >> 4) * 17, (colour12Bit & 0x00f) * 17);
 }
 
