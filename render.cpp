@@ -102,6 +102,10 @@ inline void TeletextPageRender::drawFromFontBitmap(QPainter &pixmapPainter, int 
 
 inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, int characterDiacritical, TeletextPageDecode::CharacterFragment characterFragment)
 {
+	const bool dontUnderline = characterCode == 0x00;
+	if (dontUnderline)
+		characterCode = 0x20;
+
 	// If either foreground or background is set to transparent
 	// tinker with the QPainter settings so we get the desired result
 	if (!pixmapPainter.background().isOpaque()) {
@@ -144,6 +148,22 @@ inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, in
 		pixmapPainter.fillRect(c*12, r*10, 12, 10, pixmapPainter.pen().color());
 	else
 		drawFromFontBitmap(pixmapPainter, r, c, characterCode, characterSet, characterFragment);
+
+	if (m_decoder->cellUnderlined(r, c) && !dontUnderline)
+		switch (characterFragment) {
+			case TeletextPageDecode::NormalSize:
+			case TeletextPageDecode::DoubleWidthLeftHalf:
+			case TeletextPageDecode::DoubleWidthRightHalf:
+				pixmapPainter.drawLine(c*12, r*10+9, c*12+11, r*10+9);
+				break;
+			case TeletextPageDecode::DoubleHeightBottomHalf:
+			case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
+			case TeletextPageDecode::DoubleSizeBottomRightQuarter:
+				pixmapPainter.drawRect(c*12, r*10+8, 11, 1);
+				break;
+			default:
+				break;
+		}
 
 	if (characterDiacritical != 0) {
 		pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
@@ -278,7 +298,8 @@ void TeletextPageRender::renderPage(bool force)
 						else
 							pixmapPainter[i].setPen(m_decoder->cellForegroundQColor(r, c));
 						if ((m_decoder->cellFlashMode(r, c) == 1 || m_decoder->cellFlashMode(r, c) == 2) && !phaseOn)
-							drawCharacter(pixmapPainter[i], r, c, 0x20, 0, 0, m_decoder->cellCharacterFragment(r, c));
+							// Character 0x00 draws space without underline
+							drawCharacter(pixmapPainter[i], r, c, 0x00, 0, 0, m_decoder->cellCharacterFragment(r, c));
 						else
 							drawCharacter(pixmapPainter[i], r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
 					}

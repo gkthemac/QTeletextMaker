@@ -247,6 +247,7 @@ public:
 	CharacterFragment cellCharacterFragment(int, int) const;
 	bool cellBoxed(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.display.boxingWindow; };
 	bool cellConceal(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.display.conceal; };
+	bool cellUnderlined(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.display.underlineSeparated && cellAtCharacterOrigin(r, c).character.set < 24; };
 
 	bool level1MosaicAttribute(int r, int c) const { return m_cell[r][c].level1Mosaic; };
 	int level1CharSet(int r, int c) const { return m_cell[r][c].level1CharSet; };
