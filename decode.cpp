@@ -374,6 +374,11 @@ void TeletextPageDecode::decodeRow(int r)
 		if (m_cell[r][c] != oldTextCell) {
 			m_refresh[r][c] = true;
 
+			if (static_cast<Level1Layer *>(m_textLayer[0])->rowHeight(r) == Level1Layer::TopHalf) {
+				m_refresh[r+1][c] = true;
+				decodeNextRow = true;
+			}
+
 			if ((m_cell[r][c].attribute.display.doubleHeight || oldTextCell.attribute.display.doubleHeight) && r < 25)
 				m_refresh[r+1][c] = true;
 			if ((m_cell[r][c].attribute.display.doubleWidth || oldTextCell.attribute.display.doubleWidth) && c < 72)
