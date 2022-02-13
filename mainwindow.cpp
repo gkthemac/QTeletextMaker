@@ -753,30 +753,27 @@ void MainWindow::toggleInsertMode()
 
 void MainWindow::createStatusBar()
 {
-	QLabel *subPageLabel = new QLabel("Subpage");
-	statusBar()->insertWidget(0, subPageLabel);
-
 	m_previousSubPageButton = new QToolButton;
-	m_previousSubPageButton->setMinimumSize(subPageLabel->height(), subPageLabel->height());
-	m_previousSubPageButton->setMaximumSize(subPageLabel->height(), subPageLabel->height());
 	m_previousSubPageButton->setAutoRaise(true);
 	m_previousSubPageButton->setArrowType(Qt::LeftArrow);
-	statusBar()->insertWidget(1, m_previousSubPageButton);
+	statusBar()->insertWidget(0, m_previousSubPageButton);
 	connect(m_previousSubPageButton, &QToolButton::clicked, m_textWidget->document(), &TeletextDocument::selectSubPagePrevious);
 
 	m_subPageLabel = new QLabel("1/1");
-	statusBar()->insertWidget(2, m_subPageLabel);
+	statusBar()->insertWidget(1, m_subPageLabel);
 
 	m_nextSubPageButton = new QToolButton;
-	m_nextSubPageButton->setMinimumSize(subPageLabel->height(), subPageLabel->height());
-	m_nextSubPageButton->setMaximumSize(subPageLabel->height(), subPageLabel->height());
+	m_previousSubPageButton->setMinimumSize(m_subPageLabel->height(), m_subPageLabel->height());
+	m_previousSubPageButton->setMaximumSize(m_subPageLabel->height(), m_subPageLabel->height());
+	m_nextSubPageButton->setMinimumSize(m_subPageLabel->height(), m_subPageLabel->height());
+	m_nextSubPageButton->setMaximumSize(m_subPageLabel->height(), m_subPageLabel->height());
 	m_nextSubPageButton->setAutoRaise(true);
 	m_nextSubPageButton->setArrowType(Qt::RightArrow);
-	statusBar()->insertWidget(3, m_nextSubPageButton);
+	statusBar()->insertWidget(2, m_nextSubPageButton);
 	connect(m_nextSubPageButton, &QToolButton::clicked, m_textWidget->document(), &TeletextDocument::selectSubPageNext);
 
-	m_cursorPositionLabel = new QLabel("Row 1 Column 1");
-	statusBar()->insertWidget(4, m_cursorPositionLabel);
+	m_cursorPositionLabel = new QLabel("1, 1");
+	statusBar()->insertWidget(3, m_cursorPositionLabel);
 
 	m_insertModePushButton = new QPushButton("OVERWRITE");
 	m_insertModePushButton->setFlat(true);
@@ -1129,7 +1126,20 @@ MainWindow *MainWindow::findMainWindow(const QString &fileName) const
 
 void MainWindow::updateCursorPosition()
 {
-	m_cursorPositionLabel->setText(QString("Row %1 Column %2").arg(m_textWidget->document()->cursorRow()).arg(m_textWidget->document()->cursorColumn()));
+	QString result;
+	result.reserve(19);
+
+	if (m_textWidget->document()->cursorRow() == 0)
+		result = QString("Header, %1").arg(m_textWidget->document()->cursorColumn());
+	else if (m_textWidget->document()->cursorRow() == 24)
+		result = QString("FLOF, %1").arg(m_textWidget->document()->cursorColumn());
+	else
+		result = QString("%1, %2").arg(m_textWidget->document()->cursorRow()).arg(m_textWidget->document()->cursorColumn());
+
+	if (m_textWidget->document()->selectionActive())
+		result.append(QString(" (%1, %2)").arg(m_textWidget->document()->selectionHeight()).arg(m_textWidget->document()->selectionWidth()));
+
+	m_cursorPositionLabel->setText(result);
 	m_textScene->updateCursor();
 	m_textView->ensureVisible(m_textScene->cursorRectItem(), 16, 24);
 }
@@ -1139,6 +1149,7 @@ void MainWindow::updatePageWidgets()
 	m_subPageLabel->setText(QString("%1/%2").arg(m_textWidget->document()->currentSubPageIndex()+1).arg(m_textWidget->document()->numberOfSubPages()));
 	m_previousSubPageButton->setEnabled(!(m_textWidget->document()->currentSubPageIndex() == 0));
 	m_nextSubPageButton->setEnabled(!(m_textWidget->document()->currentSubPageIndex() == (m_textWidget->document()->numberOfSubPages()) - 1));
+	updateCursorPosition();
 	m_deleteSubPageAction->setEnabled(m_textWidget->document()->numberOfSubPages() > 1);
 	m_pageOptionsDockWidget->updateWidgets();
 	m_pageEnhancementsDockWidget->updateWidgets();
