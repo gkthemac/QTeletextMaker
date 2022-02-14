@@ -505,60 +505,70 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	m_tripletParameterStackedLayout->addWidget(blankWidget);
 
 	// Index 1
+	colourAndRowLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *colourAndRowWidget = new QWidget;
 	colourAndRowWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	colourAndRowWidget->setLayout(colourAndRowLayout);
 	m_tripletParameterStackedLayout->addWidget(colourAndRowWidget);
 
 	// Index 2
+	characterCodeLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *characterCodeWidget = new QWidget;
 	characterCodeWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	characterCodeWidget->setLayout(characterCodeLayout);
 	m_tripletParameterStackedLayout->addWidget(characterCodeWidget);
 
 	// Index 3
+	flashModeRateLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *flashModeRateWidget = new QWidget;
 	flashModeRateWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	flashModeRateWidget->setLayout(flashModeRateLayout);
 	m_tripletParameterStackedLayout->addWidget(flashModeRateWidget);
 
 	// Index 4
+	displayAttributesLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *displayAttributesWidget = new QWidget;
 	displayAttributesWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	displayAttributesWidget->setLayout(displayAttributesLayout);
 	m_tripletParameterStackedLayout->addWidget(displayAttributesWidget);
 
 	// Index 5
+	invokeObjectLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *invokeObjectWidget = new QWidget;
 	invokeObjectWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	invokeObjectWidget->setLayout(invokeObjectLayout);
 	m_tripletParameterStackedLayout->addWidget(invokeObjectWidget);
 
 	// Index 6
+	DRCSModeLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *DRCSModeWidget = new QWidget;
 	DRCSModeWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	DRCSModeWidget->setLayout(DRCSModeLayout);
 	m_tripletParameterStackedLayout->addWidget(DRCSModeWidget);
 
 	// Index 7
+	DRCSCharacterLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *DRCSCharacterWidget = new QWidget;
 	DRCSCharacterWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	DRCSCharacterWidget->setLayout(DRCSCharacterLayout);
 	m_tripletParameterStackedLayout->addWidget(DRCSCharacterWidget);
 
 	// Index 8
+	fontStyleLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *fontStyleWidget = new QWidget;
 	fontStyleWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	fontStyleWidget->setLayout(fontStyleLayout);
 	m_tripletParameterStackedLayout->addWidget(fontStyleWidget);
 
 	// Index 9
+	reservedPDCLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *reservedPDCWidget = new QWidget;
 	reservedPDCWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	reservedPDCWidget->setLayout(reservedPDCLayout);
 	m_tripletParameterStackedLayout->addWidget(reservedPDCWidget);
 
 	// Index 10
+	terminationMarkerLayout->setContentsMargins(0, 0, 0, 0);
 	QWidget *terminationMarkerWidget = new QWidget;
 	terminationMarkerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 	terminationMarkerWidget->setLayout(terminationMarkerLayout);
