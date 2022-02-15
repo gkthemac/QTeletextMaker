@@ -54,6 +54,10 @@ TeletextPageRender::TeletextPageRender()
 	m_mix = false;
 	m_showControlCodes = false;
 	m_flashBuffersHz = 0;
+
+	for (int r=0; r<25; r++)
+		for (int c=0; c<40; c++)
+			m_controlCodeCache[r][c] = 0x7f;
 }
 
 TeletextPageRender::~TeletextPageRender()
@@ -199,8 +203,22 @@ void TeletextPageRender::renderPage(bool force)
 	}
 
 	for (int r=0; r<25; r++)
-		for (int c=0; c<72; c++)
-			if (m_decoder->refresh(r, c) || force) {
+		for (int c=0; c<72; c++) {
+
+			bool controlCodeChanged = false;
+
+			// Ensure that shown control codes are refreshed
+			if (m_showControlCodes && c < 40 && (m_controlCodeCache[r][c] != 0x7f || m_decoder->teletextPage()->character(r, c) < 0x20)) {
+				controlCodeChanged = m_controlCodeCache[r][c] != m_decoder->teletextPage()->character(r, c);
+				if (controlCodeChanged) {
+					if (m_decoder->teletextPage()->character(r, c) < 0x20)
+						m_controlCodeCache[r][c] = m_decoder->teletextPage()->character(r, c);
+					else
+						m_controlCodeCache[r][c] = 0x7f;
+				}
+			}
+
+			if (m_decoder->refresh(r, c) || force || controlCodeChanged) {
 				unsigned char characterCode;
 				int characterSet, characterDiacritical;
 
@@ -323,6 +341,7 @@ void TeletextPageRender::renderPage(bool force)
 
 				m_decoder->setRefresh(r, c, false);
 			}
+		}
 
 	pixmapPainter[0].end();
 	if (m_flashBuffersHz != 0) {
