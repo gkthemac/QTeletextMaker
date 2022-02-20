@@ -43,6 +43,7 @@
 #include "keymap.h"
 #include "levelonecommands.h"
 #include "levelonepage.h"
+#include "render.h"
 #include "x26triplets.h"
 
 TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
@@ -63,6 +64,7 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 	connect(m_teletextDocument, &TeletextDocument::subPageSelected, this, &TeletextWidget::subPageSelected);
 	connect(m_teletextDocument, &TeletextDocument::contentsChange, this, &TeletextWidget::refreshRow);
 	connect(m_teletextDocument, &TeletextDocument::refreshNeeded, this, &TeletextWidget::refreshPage);
+	connect(m_teletextDocument, &TeletextDocument::colourChanged, &m_pageRender, &TeletextPageRender::colourChanged);
 }
 
 TeletextWidget::~TeletextWidget()

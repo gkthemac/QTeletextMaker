@@ -54,6 +54,7 @@ public:
 	bool showControlCodes() const { return m_showControlCodes; };
 
 public slots:
+	void colourChanged(int);
 	void setReveal(bool);
 	void setMix(bool);
 	void setShowControlCodes(bool);

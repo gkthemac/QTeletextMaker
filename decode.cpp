@@ -561,6 +561,10 @@ inline void TeletextPageDecode::setFullRowColour(int row, int newColour)
 	}
 	QColor newFullRowQColor = m_levelOnePage->CLUTtoQColor(newColour, m_renderLevel);
 	if (m_fullRowQColor[row] != newFullRowQColor) {
+		for (int c=0; c<72; c++) {
+			if (m_cell[row][c].attribute.foreColour == 8 || m_cell[row][c].attribute.backColour == 8)
+				setRefresh(row, c, true);
+		}
 		m_fullRowQColor[row] = newFullRowQColor;
 		emit fullRowColourChanged(row, m_fullRowQColor[row]);
 	}

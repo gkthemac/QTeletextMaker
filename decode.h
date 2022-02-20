@@ -238,6 +238,8 @@ public:
 	unsigned char cellCharacterCode(int r, int c) { return cellAtCharacterOrigin(r, c).character.code; };
 	int cellCharacterSet(int r, int c) { return cellAtCharacterOrigin(r, c).character.set; };
 	int cellCharacterDiacritical(int r, int c) { return cellAtCharacterOrigin(r, c).character.diacritical; };
+	int cellForegroundCLUT(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.foreColour; };
+	int cellBackgroundCLUT(int r, int c) { return cellAtCharacterOrigin(r, c).attribute.backColour; };
 	QColor cellForegroundQColor(int, int);
 	QColor cellBackgroundQColor(int, int);
 	QColor cellFlashForegroundQColor(int, int);

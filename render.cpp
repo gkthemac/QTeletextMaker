@@ -382,6 +382,17 @@ void TeletextPageRender::updateFlashBuffers()
 	emit flashChanged(m_flashBuffersHz);
 }
 
+void TeletextPageRender::colourChanged(int index)
+{
+	for (int r=0; r<25; r++)
+		for (int c=0; c<72; c++) {
+			if (m_decoder->cellForegroundCLUT(r, c) == index || m_decoder->cellBackgroundCLUT(r, c) == index || m_decoder->cellForegroundCLUT(r, c) == 8 || m_decoder->cellBackgroundCLUT(r, c) == 8)
+				m_decoder->setRefresh(r, c, true);
+			if (m_decoder->cellFlashMode(r, c) == 3 && ((m_decoder->cellForegroundCLUT(r, c) ^ 8) == index || (m_decoder->cellForegroundCLUT(r, c) ^ 8) == 8))
+				m_decoder->setRefresh(r, c, true);
+		}
+}
+
 void TeletextPageRender::setReveal(bool reveal)
 {
 	if (reveal == m_reveal)
