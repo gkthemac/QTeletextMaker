@@ -72,8 +72,8 @@ void InsertTripletCommand::redo()
 
 	if (m_firstDo)
 		m_firstDo = false;
-	else
-		m_teletextDocument->emit tripletCommandHighlight(m_row+1);
+
+	m_teletextDocument->emit tripletCommandHighlight(m_row);
 }
 
 void InsertTripletCommand::undo()

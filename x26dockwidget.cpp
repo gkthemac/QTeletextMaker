@@ -133,73 +133,93 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	m_cookedModePushButton = new QPushButton;
 	cookedTripletLayout->addWidget(m_cookedModePushButton);
 
-	auto newModeMenuAction=[&](QMenu *menu, int mode)
-	{
-		QAction *action = menu->addAction(m_x26Model->modeTripletName(mode));
-		connect(action, &QAction::triggered, [=]() { cookedModeMenuSelected(mode); });
-	};
-
 	// Cooked triplet menu
+	// We build the menus for both "Insert" buttons at the same time
 	m_cookedModeMenu = new QMenu(this);
-	newModeMenuAction(m_cookedModeMenu, 0x04);
-	QMenu *rowTripletSubMenu = m_cookedModeMenu->addMenu(tr("Row triplet"));
-	newModeMenuAction(rowTripletSubMenu, 0x00);
-	newModeMenuAction(rowTripletSubMenu, 0x01);
-	newModeMenuAction(rowTripletSubMenu, 0x07);
-	newModeMenuAction(rowTripletSubMenu, 0x18);
-	QMenu *columnTripletSubMenu = m_cookedModeMenu->addMenu(tr("Column triplet"));
-	newModeMenuAction(columnTripletSubMenu, 0x20);
-	newModeMenuAction(columnTripletSubMenu, 0x23);
-	newModeMenuAction(columnTripletSubMenu, 0x27);
-	newModeMenuAction(columnTripletSubMenu, 0x2c);
-	newModeMenuAction(columnTripletSubMenu, 0x2e);
-	newModeMenuAction(columnTripletSubMenu, 0x28);
-	columnTripletSubMenu->addSeparator();
-	newModeMenuAction(columnTripletSubMenu, 0x29);
-	newModeMenuAction(columnTripletSubMenu, 0x2f);
-	newModeMenuAction(columnTripletSubMenu, 0x21);
-	newModeMenuAction(columnTripletSubMenu, 0x22);
-	newModeMenuAction(columnTripletSubMenu, 0x2b);
-	newModeMenuAction(columnTripletSubMenu, 0x2d);
-	QMenu *diacriticalSubMenu = columnTripletSubMenu->addMenu(tr("G0 diacritical"));
-	for (int i=0; i<16; i++)
-		newModeMenuAction(diacriticalSubMenu, 0x30 + i);
-	QMenu *objectSubMenu = m_cookedModeMenu->addMenu(tr("Object"));
-	newModeMenuAction(objectSubMenu, 0x10);
-	newModeMenuAction(objectSubMenu, 0x11);
-	newModeMenuAction(objectSubMenu, 0x12);
-	newModeMenuAction(objectSubMenu, 0x13);
-	newModeMenuAction(objectSubMenu, 0x15);
-	newModeMenuAction(objectSubMenu, 0x16);
-	newModeMenuAction(objectSubMenu, 0x17);
-	newModeMenuAction(m_cookedModeMenu, 0x1f);
-	m_cookedModeMenu->addSeparator();
-	QMenu *pdcSubMenu = m_cookedModeMenu->addMenu(tr("PDC/reserved"));
-	newModeMenuAction(pdcSubMenu, 0x08);
-	newModeMenuAction(pdcSubMenu, 0x09);
-	newModeMenuAction(pdcSubMenu, 0x0a);
-	newModeMenuAction(pdcSubMenu, 0x0b);
-	newModeMenuAction(pdcSubMenu, 0x0c);
-	newModeMenuAction(pdcSubMenu, 0x0d);
-	newModeMenuAction(pdcSubMenu, 0x26);
-	QMenu *reservedRowSubMenu = pdcSubMenu->addMenu(tr("Reserved row"));
-	newModeMenuAction(reservedRowSubMenu, 0x02);
-	newModeMenuAction(reservedRowSubMenu, 0x03);
-	newModeMenuAction(reservedRowSubMenu, 0x05);
-	newModeMenuAction(reservedRowSubMenu, 0x06);
-	newModeMenuAction(reservedRowSubMenu, 0x0e);
-	newModeMenuAction(reservedRowSubMenu, 0x0f);
-	newModeMenuAction(reservedRowSubMenu, 0x14);
-	newModeMenuAction(reservedRowSubMenu, 0x19);
-	newModeMenuAction(reservedRowSubMenu, 0x1a);
-	newModeMenuAction(reservedRowSubMenu, 0x1b);
-	newModeMenuAction(reservedRowSubMenu, 0x1c);
-	newModeMenuAction(reservedRowSubMenu, 0x1d);
-	newModeMenuAction(reservedRowSubMenu, 0x1e);
-	QMenu *reservedColumnSubMenu = pdcSubMenu->addMenu(tr("Reserved column"));
-	newModeMenuAction(reservedColumnSubMenu, 0x24);
-	newModeMenuAction(reservedColumnSubMenu, 0x25);
-	newModeMenuAction(reservedColumnSubMenu, 0x26);
+	m_insertBeforeMenu = new QMenu(this);
+	m_insertAfterMenu = new QMenu(this);
+
+	for (int m=0; m<3; m++) {
+		QMenu *menuToBuild;
+
+		if (m == 0)
+			menuToBuild = m_cookedModeMenu;
+		else if (m == 1)
+			menuToBuild = m_insertBeforeMenu;
+		else // if (m == 2)
+			menuToBuild = m_insertAfterMenu;
+
+		auto newModeMenuAction=[&](QMenu *menu, int mode)
+		{
+			QAction *action = menu->addAction(m_x26Model->modeTripletName(mode));
+			if (m == 0)
+				connect(action, &QAction::triggered, [=]() { cookedModeMenuSelected(mode); });
+			else if (m == 1)
+				connect(action, &QAction::triggered, [=]() { insertTriplet(mode, false); });
+			else // if (m == 2)
+				connect(action, &QAction::triggered, [=]() { insertTriplet(mode, true); });
+		};
+
+		newModeMenuAction(menuToBuild, 0x04);
+		QMenu *rowTripletSubMenu = menuToBuild->addMenu(tr("Row triplet"));
+		newModeMenuAction(rowTripletSubMenu, 0x00);
+		newModeMenuAction(rowTripletSubMenu, 0x01);
+		newModeMenuAction(rowTripletSubMenu, 0x07);
+		newModeMenuAction(rowTripletSubMenu, 0x18);
+		QMenu *columnTripletSubMenu = menuToBuild->addMenu(tr("Column triplet"));
+		newModeMenuAction(columnTripletSubMenu, 0x20);
+		newModeMenuAction(columnTripletSubMenu, 0x23);
+		newModeMenuAction(columnTripletSubMenu, 0x27);
+		newModeMenuAction(columnTripletSubMenu, 0x2c);
+		newModeMenuAction(columnTripletSubMenu, 0x2e);
+		newModeMenuAction(columnTripletSubMenu, 0x28);
+		columnTripletSubMenu->addSeparator();
+		newModeMenuAction(columnTripletSubMenu, 0x29);
+		newModeMenuAction(columnTripletSubMenu, 0x2f);
+		newModeMenuAction(columnTripletSubMenu, 0x21);
+		newModeMenuAction(columnTripletSubMenu, 0x22);
+		newModeMenuAction(columnTripletSubMenu, 0x2b);
+		newModeMenuAction(columnTripletSubMenu, 0x2d);
+		QMenu *diacriticalSubMenu = columnTripletSubMenu->addMenu(tr("G0 diacritical"));
+		for (int i=0; i<16; i++)
+			newModeMenuAction(diacriticalSubMenu, 0x30 + i);
+		QMenu *objectSubMenu = menuToBuild->addMenu(tr("Object"));
+		newModeMenuAction(objectSubMenu, 0x10);
+		newModeMenuAction(objectSubMenu, 0x11);
+		newModeMenuAction(objectSubMenu, 0x12);
+		newModeMenuAction(objectSubMenu, 0x13);
+		newModeMenuAction(objectSubMenu, 0x15);
+		newModeMenuAction(objectSubMenu, 0x16);
+		newModeMenuAction(objectSubMenu, 0x17);
+		newModeMenuAction(menuToBuild, 0x1f);
+		menuToBuild->addSeparator();
+		QMenu *pdcSubMenu = menuToBuild->addMenu(tr("PDC/reserved"));
+		newModeMenuAction(pdcSubMenu, 0x08);
+		newModeMenuAction(pdcSubMenu, 0x09);
+		newModeMenuAction(pdcSubMenu, 0x0a);
+		newModeMenuAction(pdcSubMenu, 0x0b);
+		newModeMenuAction(pdcSubMenu, 0x0c);
+		newModeMenuAction(pdcSubMenu, 0x0d);
+		newModeMenuAction(pdcSubMenu, 0x26);
+		QMenu *reservedRowSubMenu = pdcSubMenu->addMenu(tr("Reserved row"));
+		newModeMenuAction(reservedRowSubMenu, 0x02);
+		newModeMenuAction(reservedRowSubMenu, 0x03);
+		newModeMenuAction(reservedRowSubMenu, 0x05);
+		newModeMenuAction(reservedRowSubMenu, 0x06);
+		newModeMenuAction(reservedRowSubMenu, 0x0e);
+		newModeMenuAction(reservedRowSubMenu, 0x0f);
+		newModeMenuAction(reservedRowSubMenu, 0x14);
+		newModeMenuAction(reservedRowSubMenu, 0x19);
+		newModeMenuAction(reservedRowSubMenu, 0x1a);
+		newModeMenuAction(reservedRowSubMenu, 0x1b);
+		newModeMenuAction(reservedRowSubMenu, 0x1c);
+		newModeMenuAction(reservedRowSubMenu, 0x1d);
+		newModeMenuAction(reservedRowSubMenu, 0x1e);
+		QMenu *reservedColumnSubMenu = pdcSubMenu->addMenu(tr("Reserved column"));
+		newModeMenuAction(reservedColumnSubMenu, 0x24);
+		newModeMenuAction(reservedColumnSubMenu, 0x25);
+		newModeMenuAction(reservedColumnSubMenu, 0x26);
+	}
 
 	m_cookedModePushButton->setMenu(m_cookedModeMenu);
 
@@ -584,12 +604,21 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	// Insert and delete widgets
 	QHBoxLayout *insertDeleteLayout = new QHBoxLayout;
 
-	m_insertPushButton = new QPushButton(tr("Insert triplet"));
-	insertDeleteLayout->addWidget(m_insertPushButton);
-	m_deletePushButton = new QPushButton(tr("Delete triplet"));
+	m_insertBeforePushButton = new QPushButton(tr("Insert above"));
+	insertDeleteLayout->addWidget(m_insertBeforePushButton);
+	m_insertBeforePushButton->setMenu(m_insertBeforeMenu);
+
+	m_insertAfterPushButton = new QPushButton(tr("Insert below"));
+	insertDeleteLayout->addWidget(m_insertAfterPushButton);
+	m_insertAfterPushButton->setMenu(m_insertAfterMenu);
+
+	m_insertCopyPushButton = new QPushButton(tr("Insert copy"));
+	insertDeleteLayout->addWidget(m_insertCopyPushButton);
+
+	m_deletePushButton = new QPushButton(tr("Delete"));
 	insertDeleteLayout->addWidget(m_deletePushButton);
 
-	connect(m_insertPushButton, &QPushButton::clicked, this, &X26DockWidget::insertTriplet);
+	connect(m_insertCopyPushButton, &QPushButton::clicked, this, &X26DockWidget::insertTripletCopy);
 	connect(m_deletePushButton, &QPushButton::clicked, this, &X26DockWidget::deleteTriplet);
 
 	x26Layout->addLayout(insertDeleteLayout);
@@ -607,7 +636,7 @@ void X26DockWidget::keyPressEvent(QKeyEvent *event)
 {
 	switch (event->key()) {
 		case Qt::Key_Insert:
-			insertTriplet();
+			insertTripletCopy();
 			break;
 		case Qt::Key_Delete:
 			deleteTriplet();
@@ -965,14 +994,47 @@ void X26DockWidget::updateModelFromCookedWidget(const int value, const int role)
 	updateAllRawTripletSpinBoxes(m_x26View->currentIndex());
 }
 
-void X26DockWidget::insertTriplet()
+void X26DockWidget::insertTriplet(int modeExt, bool after)
+{
+	QModelIndex index = m_x26View->currentIndex();
+	X26Triplet newTriplet(modeExt < 0x20 ? 41 : 0, modeExt & 0x1f, 0);
+	int row;
+
+	if (index.isValid()) {
+		// If we're inserting a column triplet next to another column triplet,
+		// duplicate the column number
+		// Avoid the PDC and reserved mode triplets
+		if (modeExt >= 0x20 && modeExt != 0x24 && modeExt != 0x25 && modeExt != 0x26 && modeExt != 0x2a) {
+			const int existingTripletModeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
+
+			if (existingTripletModeExt >= 0x20 && existingTripletModeExt != 0x24 && existingTripletModeExt != 0x25 && existingTripletModeExt != 0x26 && existingTripletModeExt != 0x2a)
+				newTriplet.setAddress(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole).toInt());
+		}
+		row = index.row()+after;
+	} else
+		row = 0;
+
+	// For character triplets, ensure Data is not reserved
+	if (modeExt == 0x21 || modeExt == 0x22 || modeExt == 0x29 || modeExt == 0x2b || modeExt >= 0x2f)
+		newTriplet.setData(0x20);
+	// For Termination Marker, set Address and Mode
+	if (modeExt == 0x1f) {
+		newTriplet.setAddress(63);
+		newTriplet.setData(7);
+	}
+
+	m_x26Model->insertRows(row, 1, QModelIndex(), newTriplet);
+}
+
+void X26DockWidget::insertTripletCopy()
 {
 	QModelIndex index = m_x26View->currentIndex();
 
 	if (index.isValid())
 		m_x26Model->insertRow(index.row(), QModelIndex());
 	else
-		m_x26Model->insertFirstRow();
+		// No existing triplet to copy, so insert a Termination Marker
+		m_x26Model->insertRows(0, 1, QModelIndex(), X26Triplet(63, 31, 7));
 }
 
 void X26DockWidget::deleteTriplet()
@@ -988,9 +1050,9 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 
 	QMenu *menu = new QMenu(this);
 
-	QAction *insertAct = new QAction("Insert triplet", this);
+	QAction *insertAct = new QAction("Insert triplet copy", this);
 	menu->addAction(insertAct);
-	connect(insertAct, &QAction::triggered, this, &X26DockWidget::insertTriplet);
+	connect(insertAct, &QAction::triggered, this, &X26DockWidget::insertTripletCopy);
 	if (index.isValid()) {
 		QAction *deleteAct = new QAction("Delete triplet", this);
 		menu->addAction(deleteAct);

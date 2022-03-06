@@ -797,13 +797,6 @@ QVariant X26Model::headerData(int section, Qt::Orientation orientation, int role
 	return QVariant();
 }
 
-bool X26Model::insertFirstRow()
-{
-	m_parentMainWidget->document()->undoStack()->push(new InsertTripletCommand(m_parentMainWidget->document(), this, 0, 1, X26Triplet(63, 31, 7)));
-
-	return true;
-}
-
 bool X26Model::insertRows(int row, int count, const QModelIndex &parent)
 {
 	Q_UNUSED(parent);
@@ -812,6 +805,17 @@ bool X26Model::insertRows(int row, int count, const QModelIndex &parent)
 		return false;
 
 	m_parentMainWidget->document()->undoStack()->push(new InsertTripletCommand(m_parentMainWidget->document(), this, row, count, m_parentMainWidget->document()->currentSubPage()->enhancements()->at(row)));
+	return true;
+}
+
+bool X26Model::insertRows(int row, int count, const QModelIndex &parent, X26Triplet triplet)
+{
+	Q_UNUSED(parent);
+
+	if (m_parentMainWidget->document()->currentSubPage()->enhancements()->size() + count > m_parentMainWidget->document()->currentSubPage()->maxEnhancements())
+		return false;
+
+	m_parentMainWidget->document()->undoStack()->push(new InsertTripletCommand(m_parentMainWidget->document(), this, row, count, triplet));
 	return true;
 }
 

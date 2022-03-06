@@ -61,7 +61,8 @@ public:
 	X26DockWidget(TeletextWidget *parent);
 
 public slots:
-	void insertTriplet();
+	void insertTriplet(int, bool);
+	void insertTripletCopy();
 	void deleteTriplet();
 	void customMenuRequested(QPoint pos);
 	void loadX26List();
@@ -87,7 +88,7 @@ private:
 	QTableView *m_x26View;
 	X26Model *m_x26Model;
 	QSpinBox *m_cookedRowSpinBox, *m_cookedColumnSpinBox;
-	QMenu *m_cookedModeMenu;
+	QMenu *m_cookedModeMenu, *m_insertBeforeMenu, *m_insertAfterMenu;
 	QPushButton *m_cookedModePushButton;
 	QSpinBox *m_rawTripletAddressSpinBox, *m_rawTripletModeSpinBox, *m_rawTripletDataSpinBox;
 	QStackedLayout *m_rawOrCookedStackedLayout;
@@ -113,7 +114,7 @@ private:
 	QSpinBox *m_reservedPDCSpinBox;
 	QComboBox *m_terminationMarkerPageTypeComboBox;
 	QCheckBox *m_terminationMarkerMoreFollowsCheckBox;
-	QPushButton *m_insertPushButton, *m_deletePushButton;
+	QPushButton *m_insertBeforePushButton, *m_insertAfterPushButton, *m_insertCopyPushButton, *m_deletePushButton;
 
 	TeletextWidget *m_parentMainWidget;
 };

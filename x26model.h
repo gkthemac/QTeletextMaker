@@ -36,8 +36,8 @@ public:
 	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 	bool setData(const QModelIndex &index, const QVariant &value, int role);
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-	bool insertFirstRow();
 	bool insertRows(int position, int rows, const QModelIndex &parent);
+	bool insertRows(int position, int rows, const QModelIndex &parent, X26Triplet triplet);
 	bool removeRows(int position, int rows, const QModelIndex &index);
 //	Qt::ItemFlags flags(const QModelIndex &index) const;
 
