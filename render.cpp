@@ -185,6 +185,17 @@ void TeletextPageRender::renderPage(bool force)
 	QPainter pixmapPainter[6];
 	int previousFlashBuffersHz = m_flashBuffersHz;
 
+	// If force-rendering (such as showing a new or different subpage) then
+	// we don't render flashing cells initially as it greatly speeds things up
+	// when rendering on top of an already flashing page.
+	// At the end of this method, if flashing cells are present then this method
+	// recursively calls itself with force=false to render the flashing cells.
+	if (force) {
+		m_flashBuffersHz = 0;
+		previousFlashBuffersHz = 0;
+		emit flashChanged(0);
+	}
+
 	pixmapPainter[0].begin(m_pagePixmap[0]);
 	pixmapPainter[0].setBackgroundMode(Qt::OpaqueMode);
 	if (m_flashBuffersHz != 0) {
@@ -239,19 +250,23 @@ void TeletextPageRender::renderPage(bool force)
 						m_flash1HzCells.insert(qMakePair(r, c));
 					else
 						m_flash2HzCells.insert(qMakePair(r, c));
-					updateFlashBuffers();
+					if (!force)
+						updateFlashBuffers();
 				} else if (m_decoder->cellFlashMode(r, c) == 0) {
 					m_flash1HzCells.remove(qMakePair(r, c));
 					m_flash2HzCells.remove(qMakePair(r, c));
-					updateFlashBuffers();
+					if (!force)
+						updateFlashBuffers();
 				} else if (m_decoder->cellFlashRatePhase(r, c) == 0) {
 					m_flash1HzCells.insert(qMakePair(r, c));
 					m_flash2HzCells.remove(qMakePair(r, c));
-					updateFlashBuffers();
+					if (!force)
+						updateFlashBuffers();
 				} else {
 					m_flash1HzCells.remove(qMakePair(r, c));
 					m_flash2HzCells.insert(qMakePair(r, c));
-					updateFlashBuffers();
+					if (!force)
+						updateFlashBuffers();
 				}
 
 				// If flash rate has gone up, prepare painters for the other buffers
@@ -339,7 +354,8 @@ void TeletextPageRender::renderPage(bool force)
 						}
 				}
 
-				m_decoder->setRefresh(r, c, false);
+				if (!force || m_decoder->cellFlashMode(r, c) == 0)
+					m_decoder->setRefresh(r, c, false);
 			}
 		}
 
@@ -353,6 +369,9 @@ void TeletextPageRender::renderPage(bool force)
 			pixmapPainter[5].end();
 		}
 	}
+
+	if (force && (!m_flash1HzCells.isEmpty() || !m_flash2HzCells.isEmpty()))
+		renderPage();
 }
 
 void TeletextPageRender::updateFlashBuffers()

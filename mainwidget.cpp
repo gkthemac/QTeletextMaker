@@ -89,7 +89,9 @@ void TeletextWidget::subPageSelected()
 {
 	m_levelOnePage = m_teletextDocument->currentSubPage();
 	m_pageDecode.setTeletextPage(m_levelOnePage);
-	refreshPage();
+	m_pageDecode.decodePage();
+	m_pageRender.renderPage(true);
+	update();
 }
 
 void TeletextWidget::refreshRow(int rowChanged)
