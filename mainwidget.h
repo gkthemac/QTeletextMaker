@@ -29,6 +29,7 @@
 #include <QTextStream>
 #include <vector>
 
+#include "decode.h"
 #include "document.h"
 #include "levelonepage.h"
 #include "render.h"
@@ -46,12 +47,14 @@ public:
 	void toggleCharacterBit(unsigned char);
 	bool insertMode() const { return m_insertMode; };
 	void setInsertMode(bool);
+	bool showControlCodes() const { return m_pageRender.showControlCodes(); };
 
-	QSize sizeHint() { return QSize(480+(pageRender()->leftSidePanelColumns()+pageRender()->rightSidePanelColumns())*12, 250); }
+	QSize sizeHint() { return QSize(480+(pageDecode()->leftSidePanelColumns()+pageDecode()->rightSidePanelColumns())*12, 250); }
 
 	void inputMethodEvent(QInputMethodEvent *);
 
 	TeletextDocument* document() const { return m_teletextDocument; }
+	TeletextPageDecode *pageDecode() { return &m_pageDecode; }
 	TeletextPageRender *pageRender() { return &m_pageRender; }
 
 signals:
@@ -61,8 +64,9 @@ signals:
 public slots:
 	void subPageSelected();
 	void refreshPage();
-	void toggleReveal(bool);
-	void toggleMix(bool);
+	void setReveal(bool);
+	void setMix(bool);
+	void setShowControlCodes(bool);
 	void updateFlashTimer(int);
 	void pauseFlash(bool);
 	void refreshRow(int);
@@ -92,6 +96,7 @@ protected:
 	void focusInEvent(QFocusEvent *event) override;
 	void focusOutEvent(QFocusEvent *event) override;
 
+	TeletextPageDecode m_pageDecode;
 	TeletextPageRender m_pageRender;
 
 private:
@@ -119,6 +124,7 @@ public:
 public slots:
 	void updateCursor();
 	void updateSelection();
+	void setMix(bool);
 	void toggleGrid(bool);
 	void hideGUIElements(bool);
 	void setFullScreenColour(const QColor &);

@@ -1,7 +1,8 @@
 QT += widgets
 requires(qtConfig(filedialog))
 
-HEADERS       = document.h \
+HEADERS       = decode.h \
+                document.h \
                 hamming.h \
                 keymap.h \
                 levelonecommands.h \
@@ -19,7 +20,8 @@ HEADERS       = document.h \
                 x26dockwidget.h \
                 x26model.h \
                 x26triplets.h
-SOURCES       = document.cpp \
+SOURCES       = decode.cpp \
+                document.cpp \
                 levelonecommands.cpp \
                 levelonepage.cpp \
                 loadsave.cpp \

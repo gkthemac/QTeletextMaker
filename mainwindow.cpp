@@ -157,28 +157,32 @@ void MainWindow::exportPNG()
 	// Prepare widget image for extraction
 	m_textWidget->pauseFlash(true);
 	m_textScene->hideGUIElements(true);
-	bool reshowCodes = m_textWidget->pageRender()->showCodes();
-	if (reshowCodes)
-		m_textWidget->pageRender()->setShowCodes(false);
+	bool reshowControlCodes = m_textWidget->showControlCodes();
+	if (reshowControlCodes)
+		m_textWidget->setShowControlCodes(false);
 	// Disable exporting in Mix mode as it corrupts the background
 	bool reMix = m_textWidget->pageRender()->mix();
-	if (reMix)
-		m_textWidget->pageRender()->setMix(false);
+	if (reMix) {
+		m_textWidget->setMix(false);
+		m_textScene->setMix(false);
+	}
 
 	// Extract the image from the scene
 	QImage interImage = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
 //	This ought to make the background transparent in Mix mode, but it doesn't
-//	if (m_textWidget->pageRender()->mix())
+//	if (m_textWidget->pageDecode()->mix())
 //		interImage.fill(QColor(0, 0, 0, 0));
 	QPainter interPainter(&interImage);
 	m_textScene->render(&interPainter);
 
 	// Now we've extracted the image we can put the GUI things back
 	m_textScene->hideGUIElements(false);
-	if (reshowCodes)
-		m_textWidget->pageRender()->setShowCodes(true);
-	if (reMix)
-		m_textWidget->pageRender()->setMix(true);
+	if (reshowControlCodes)
+		m_textWidget->setShowControlCodes(true);
+	if (reMix) {
+		m_textWidget->setMix(true);
+		m_textScene->setMix(true);
+	}
 	m_textWidget->pauseFlash(false);
 
 	// Now scale the extracted image to the selected aspect ratio
@@ -256,8 +260,8 @@ void MainWindow::init()
 	connect(m_textWidget->document(), &TeletextDocument::aboutToChangeSubPage, m_x26DockWidget, &X26DockWidget::unloadX26List);
 	connect(m_textWidget->document(), &TeletextDocument::subPageSelected, this, &MainWindow::updatePageWidgets);
 	connect(m_textWidget, &TeletextWidget::sizeChanged, this, &MainWindow::setSceneDimensions);
-	connect(m_textWidget->pageRender(), &TeletextPageRender::fullScreenColourChanged, m_textScene, &LevelOneScene::setFullScreenColour);
-	connect(m_textWidget->pageRender(), &TeletextPageRender::fullRowColourChanged, m_textScene, &LevelOneScene::setFullRowColour);
+	connect(m_textWidget->pageDecode(), &TeletextPageDecode::fullScreenColourChanged, m_textScene, &LevelOneScene::setFullScreenColour);
+	connect(m_textWidget->pageDecode(), &TeletextPageDecode::fullRowColourChanged, m_textScene, &LevelOneScene::setFullRowColour);
 	connect(m_textWidget, &TeletextWidget::insertKeyPressed, this, &MainWindow::toggleInsertMode);
 
 	connect(m_textScene, &LevelOneScene::mouseZoomIn, this, &MainWindow::zoomIn);
@@ -456,13 +460,14 @@ void MainWindow::createActions()
 	revealAct->setCheckable(true);
 	revealAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
 	revealAct->setStatusTip(tr("Toggle reveal"));
-	connect(revealAct, &QAction::toggled, m_textWidget, &TeletextWidget::toggleReveal);
+	connect(revealAct, &QAction::toggled, m_textWidget, &TeletextWidget::setReveal);
 
 	QAction *mixAct = viewMenu->addAction(tr("&Mix"));
 	mixAct->setCheckable(true);
 	mixAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_M));
 	mixAct->setStatusTip(tr("Toggle mix"));
-	connect(mixAct, &QAction::toggled, m_textWidget, &TeletextWidget::toggleMix);
+	connect(mixAct, &QAction::toggled, m_textWidget, &TeletextWidget::setMix);
+	connect(mixAct, &QAction::toggled, m_textScene, &LevelOneScene::setMix);
 
 	QAction *gridAct = viewMenu->addAction(tr("&Grid"));
 	gridAct->setCheckable(true);
@@ -470,11 +475,11 @@ void MainWindow::createActions()
 	gridAct->setStatusTip(tr("Toggle the text grid"));
 	connect(gridAct, &QAction::toggled, m_textScene, &LevelOneScene::toggleGrid);
 
-	QAction *showCodesAct = viewMenu->addAction(tr("Show codes"));
-	showCodesAct->setCheckable(true);
-	showCodesAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
-	showCodesAct->setStatusTip(tr("Toggle showing of control codes"));
-	connect(showCodesAct, &QAction::toggled, m_textWidget->pageRender(), &TeletextPageRender::setShowCodes);
+	QAction *showControlCodesAct = viewMenu->addAction(tr("Show control codes"));
+	showControlCodesAct->setCheckable(true);
+	showControlCodesAct->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
+	showControlCodesAct->setStatusTip(tr("Toggle showing of control codes"));
+	connect(showControlCodesAct, &QAction::toggled, m_textWidget, &TeletextWidget::setShowControlCodes);
 
 	viewMenu->addSeparator();
 
@@ -668,7 +673,7 @@ void MainWindow::setSceneDimensions()
 	else
 		newSceneWidth = m_textWidget->width() + leftRightBorders[m_viewBorder]*2;
 
-	m_textScene->setBorderDimensions(newSceneWidth, 250+topBottomBorders[m_viewBorder]*2, m_textWidget->width(), m_textWidget->pageRender()->leftSidePanelColumns(), m_textWidget->pageRender()->rightSidePanelColumns());
+	m_textScene->setBorderDimensions(newSceneWidth, 250+topBottomBorders[m_viewBorder]*2, m_textWidget->width(), m_textWidget->pageDecode()->leftSidePanelColumns(), m_textWidget->pageDecode()->rightSidePanelColumns());
 	m_textView->setTransform(QTransform((1+(float)m_viewZoom/2)*aspectRatioHorizontalScaling[m_viewAspectRatio], 0, 0, 1+(float)m_viewZoom/2, 0, 0));
 }
 
@@ -792,10 +797,10 @@ void MainWindow::createStatusBar()
 		statusBar()->addPermanentWidget(m_levelRadioButton[i]);
 	}
 	m_levelRadioButton[0]->toggle();
-	connect(m_levelRadioButton[0], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(0); m_textWidget->update(); });
-	connect(m_levelRadioButton[1], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(1); m_textWidget->update(); });
-	connect(m_levelRadioButton[2], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(2); m_textWidget->update(); });
-	connect(m_levelRadioButton[3], &QAbstractButton::clicked, [=]() { m_textWidget->pageRender()->setRenderLevel(3); m_textWidget->update(); });
+	connect(m_levelRadioButton[0], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setRenderLevel(0); m_textWidget->update(); });
+	connect(m_levelRadioButton[1], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setRenderLevel(1); m_textWidget->update(); });
+	connect(m_levelRadioButton[2], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setRenderLevel(2); m_textWidget->update(); });
+	connect(m_levelRadioButton[3], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setRenderLevel(3); m_textWidget->update(); });
 	statusBar()->showMessage(tr("Ready"));
 }
 
@@ -902,7 +907,7 @@ void MainWindow::loadFile(const QString &fileName)
 
 	levelSeen = m_textWidget->document()->levelRequired();
 	m_levelRadioButton[levelSeen]->toggle();
-	m_textWidget->pageRender()->setRenderLevel(levelSeen);
+	m_textWidget->pageDecode()->setRenderLevel(levelSeen);
 	updatePageWidgets();
 
 	QApplication::restoreOverrideCursor();
