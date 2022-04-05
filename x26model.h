@@ -140,10 +140,14 @@ private:
 		int columnHighlight;
 	};
 
-	const tripletErrorShow m_tripletErrors[3] {
+	// Needs to be in the same order as enum X26TripletError in x26triplets.h
+	const tripletErrorShow m_tripletErrors[6] {
 		{ "", 0 }, // No error
 		{ "Active Position can't move up", 0 },
-		{ "Active Position can't move left within row", 1 }
+		{ "Active Position can't move left within row", 1 },
+		{ "Invocation not pointing to Object Definition", 3 },
+		{ "Invoked and Defined Object types don't match", 2 },
+		{ "Origin Modifier not followed by Object Invocation", 2 }
 	};
 };
 

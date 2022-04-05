@@ -25,7 +25,8 @@
 class X26Triplet
 {
 public:
-	enum X26TripletError { NoError, ActivePositionMovedUp, ActivePositionMovedLeft };
+	// x26model.h has the Plain English descriptions of these errors
+	enum X26TripletError { NoError, ActivePositionMovedUp, ActivePositionMovedLeft, InvokePointerInvalid, InvokeTypeMismatch, OriginModifierAlone };
 
 	X26Triplet() {}
 //	X26Triplet(const X26Triplet &other);
@@ -84,7 +85,7 @@ public:
 	int size() const { return m_list.size(); }
 
 private:
-	void updateInternalData(int);
+	void updateInternalData();
 
 	QList<X26Triplet> m_list;
 

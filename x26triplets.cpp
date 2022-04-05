@@ -69,21 +69,16 @@ void X26Triplet::setObjectLocalIndex(int i)
 }
 
 
-void X26TripletList::updateInternalData(int r)
+void X26TripletList::updateInternalData()
 {
 	ActivePosition activePosition;
 	X26Triplet *triplet;
 
-	if (r != 0) {
-		activePosition.setRow(m_list[r-1].m_activePositionRow);
-		activePosition.setColumn(m_list[r-1].m_activePositionColumn);
-	}
-
-	for (int i=r; i < m_list.size(); i++) {
+	for (int i=0; i < m_list.size(); i++) {
 		triplet = &m_list[i];
 		triplet->m_error = X26Triplet::NoError;
 		if (triplet->isRowTriplet()) {
-			switch (m_list.at(i).modeExt()) {
+			switch (triplet->modeExt()) {
 				case 0x00: // Full screen colour
 					if (activePosition.isDeployed())
 						// TODO more specific error needed
@@ -107,6 +102,21 @@ void X26TripletList::updateInternalData(int r)
 						activePosition.setColumn(8);
 					}
 					break;
+				case 0x10: // Origin Modifier
+					if (i == m_list.size()-1 ||
+					    m_list.at(i+1).modeExt() < 0x11 ||
+					    m_list.at(i+1).modeExt() > 0x13)
+						triplet->m_error = X26Triplet::OriginModifierAlone;
+					break;
+				case 0x11 ... 0x13: // Invoke Object
+					if (triplet->objectLocalTripletNumber() > 12 ||
+					    triplet->objectLocalIndex() > (m_list.size()-1) ||
+					    m_list.at(triplet->objectLocalIndex()).modeExt() < 0x15 ||
+					    m_list.at(triplet->objectLocalIndex()).modeExt() > 0x17)
+						triplet->m_error = X26Triplet::InvokePointerInvalid;
+					else if ((triplet->modeExt() | 0x04) != m_list.at(triplet->objectLocalIndex()).modeExt())
+						triplet->m_error = X26Triplet::InvokeTypeMismatch;
+					break;
 				case 0x15 ... 0x17: // Define Object
 					activePosition.reset();
 					// Make sure data field holds correct place of triplet
@@ -126,26 +136,26 @@ void X26TripletList::updateInternalData(int r)
 void X26TripletList::append(const X26Triplet &value)
 {
 	m_list.append(value);
-	updateInternalData(m_list.size()-1);
+	updateInternalData();
 }
 
 void X26TripletList::insert(int i, const X26Triplet &value)
 {
 	m_list.insert(i, value);
-	updateInternalData(i);
+	updateInternalData();
 }
 
 void X26TripletList::removeAt(int i)
 {
 	m_list.removeAt(i);
 	if (m_list.size() != 0 && i < m_list.size())
-		updateInternalData(i);
+		updateInternalData();
 }
 
 void X26TripletList::replace(int i, const X26Triplet &value)
 {
 	m_list.replace(i, value);
-	updateInternalData(i);
+	updateInternalData();
 }
 
 
