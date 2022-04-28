@@ -604,11 +604,11 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	// Insert and delete widgets
 	QHBoxLayout *insertDeleteLayout = new QHBoxLayout;
 
-	m_insertBeforePushButton = new QPushButton(tr("Insert above"));
+	m_insertBeforePushButton = new QPushButton(tr("Insert before"));
 	insertDeleteLayout->addWidget(m_insertBeforePushButton);
 	m_insertBeforePushButton->setMenu(m_insertBeforeMenu);
 
-	m_insertAfterPushButton = new QPushButton(tr("Insert below"));
+	m_insertAfterPushButton = new QPushButton(tr("Insert after"));
 	insertDeleteLayout->addWidget(m_insertAfterPushButton);
 	m_insertAfterPushButton->setMenu(m_insertAfterMenu);
 
