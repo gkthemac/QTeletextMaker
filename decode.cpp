@@ -31,7 +31,7 @@ TeletextPageDecode::TeletextPageDecode()
 
 	for (int r=0; r<25; r++)
 		for (int c=0; c<72; c++)
-			m_refresh[r][c] = false;
+			m_refresh[r][c] = true;
 
 	m_finalFullScreenColour = 0;
 	m_finalFullScreenQColor.setRgb(0, 0, 0);
