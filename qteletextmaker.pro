@@ -12,6 +12,7 @@ HEADERS       = decode.h \
                 mainwindow.h \
                 pagebase.h \
                 pagex26base.h \
+                pagecomposelinksdockwidget.h \
                 pageenhancementsdockwidget.h \
                 pageoptionsdockwidget.h \
                 palettedockwidget.h \
@@ -30,6 +31,7 @@ SOURCES       = decode.cpp \
                 mainwindow.cpp \
                 pagebase.cpp \
                 pagex26base.cpp \
+                pagecomposelinksdockwidget.cpp \
                 pageenhancementsdockwidget.cpp \
                 pageoptionsdockwidget.cpp \
                 palettedockwidget.cpp \

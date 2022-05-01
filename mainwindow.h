@@ -31,6 +31,7 @@
 #include <QToolButton>
 
 #include "mainwidget.h"
+#include "pagecomposelinksdockwidget.h"
 #include "pageenhancementsdockwidget.h"
 #include "pageoptionsdockwidget.h"
 #include "palettedockwidget.h"
@@ -114,6 +115,7 @@ private:
 	PageEnhancementsDockWidget *m_pageEnhancementsDockWidget;
 	X26DockWidget *m_x26DockWidget;
 	PaletteDockWidget *m_paletteDockWidget;
+	PageComposeLinksDockWidget *m_pageComposeLinksDockWidget;
 
 	QAction *m_recentFileActs[m_MaxRecentFiles];
 	QAction *m_recentFileSeparator;

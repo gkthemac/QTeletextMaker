@@ -17,32 +17,36 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PAGEENHANCEMENTSDOCKWIDGET_H
-#define PAGEENHANCEMENTSDOCKWIDGET_H
+#ifndef PAGECOMPOSELINKSDOCKWIDGET_H
+#define PAGECOMPOSELINKSDOCKWIDGET_H
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDockWidget>
-#include <QSpinBox>
+#include <QLineEdit>
+#include <QRegExpValidator>
+#include <QString>
 
 #include "mainwidget.h"
 
-class PageEnhancementsDockWidget : public QDockWidget
+class PageComposeLinksDockWidget : public QDockWidget
 {
 	Q_OBJECT
 
 public:
-	PageEnhancementsDockWidget(TeletextWidget *parent);
+	PageComposeLinksDockWidget(TeletextWidget *parent);
 	void updateWidgets();
 
 private:
-	void setLeftSidePanelWidth(int);
-	void setRightSidePanelWidth(int);
+	void setComposeLinkPageNumber(int, const QString &);
+	void setComposeLinkSubPageNumbers(int, const QString &);
 
 	TeletextWidget *m_parentMainWidget;
-	QComboBox *m_defaultScreenColourCombo, *m_defaultRowColourCombo, *m_colourTableCombo;
-	QCheckBox *m_blackBackgroundSubstAct, *m_sidePanelStatusAct;
-	QSpinBox *m_leftSidePanelSpinBox, *m_rightSidePanelSpinBox;
+	QCheckBox *m_composeLinkLevelCheckbox[4][2]; // For links 0-3
+	QComboBox *m_composeLinkFunctionComboBox[4]; // For links 4-7; remember to subtract 4!
+	QLineEdit *m_composeLinkPageNumberLineEdit[8], *m_composeLinkSubPageNumbersLineEdit[8];
+
+	QRegExpValidator *m_pageNumberValidator;
 };
 
 #endif
