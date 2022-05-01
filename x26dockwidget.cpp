@@ -629,7 +629,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	m_x26View->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(m_x26View, &QWidget::customContextMenuRequested, this, &X26DockWidget::customMenuRequested);
 
-	connect(m_x26View, &QAbstractItemView::clicked, this, &X26DockWidget::rowClicked);
+	connect(m_x26View->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &X26DockWidget::rowSelected);
 }
 
 void X26DockWidget::keyPressEvent(QKeyEvent *event)
@@ -654,7 +654,7 @@ void X26DockWidget::selectX26ListRow(int row)
 		row = m_x26Model->rowCount() - 1;
 
 	m_x26View->selectRow(row);
-	rowClicked(m_x26View->currentIndex());
+	rowSelected(m_x26View->currentIndex(), QModelIndex());
 }
 
 void X26DockWidget::loadX26List()
@@ -670,10 +670,12 @@ void X26DockWidget::unloadX26List()
 	m_rawTripletModeSpinBox->setEnabled(false);
 }
 
-void X26DockWidget::rowClicked(const QModelIndex &index)
+void X26DockWidget::rowSelected(const QModelIndex &current, const QModelIndex &previous)
 {
-	updateAllRawTripletSpinBoxes(index);
-	updateAllCookedTripletWidgets(index);
+	Q_UNUSED(previous);
+
+	updateAllRawTripletSpinBoxes(current);
+	updateAllCookedTripletWidgets(current);
 }
 
 void X26DockWidget::updateAllCookedTripletWidgets(const QModelIndex &index)

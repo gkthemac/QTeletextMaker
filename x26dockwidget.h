@@ -67,7 +67,7 @@ public slots:
 	void customMenuRequested(QPoint pos);
 	void loadX26List();
 	void unloadX26List();
-	void rowClicked(const QModelIndex &);
+	void rowSelected(const QModelIndex &, const QModelIndex &);
 	void updateAllRawTripletSpinBoxes(const QModelIndex &);
 	void updateRawTripletDataSpinBox(const QModelIndex &);
 	void updateAllCookedTripletWidgets(const QModelIndex &);
