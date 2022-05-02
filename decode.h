@@ -260,7 +260,7 @@ public:
 	int rightSidePanelColumns() const { return m_rightSidePanelColumns; };
 
 public slots:
-	void setRenderLevel(int);
+	void setLevel(int);
 
 signals:
 	void fullScreenColourChanged(QColor);
@@ -272,7 +272,7 @@ protected:
 	inline void setFullRowColour(int, int);
 	textCell& cellAtCharacterOrigin(int, int);
 
-	int m_finalFullScreenColour, m_renderLevel;
+	int m_finalFullScreenColour, m_level;
 	QColor m_finalFullScreenQColor;
 	int m_leftSidePanelColumns, m_rightSidePanelColumns;
 	Level1Layer m_level1Layer;
