@@ -436,7 +436,7 @@ int LevelOnePage::levelRequired() const
 				case 0x01: // Full row colour
 				case 0x10 ... 0x13: // Origin Modifer and Object Invocation
 				case 0x15 ... 0x17: // Object Definition
-					// Check if Object Defition is required only at Level 3.5
+					// Check if Object Definition is required only at Level 3.5
 					if ((m_enhancements.at(i).address() & 0x18) == 0x10)
 						return 3;
 					else
