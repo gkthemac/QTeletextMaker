@@ -134,9 +134,12 @@ signals:
 	void mouseZoomIn();
 	void mouseZoomOut();
 
-private:
+protected:
 	bool eventFilter(QObject *, QEvent *);
+	void keyPressEvent(QKeyEvent *);
+	void keyReleaseEvent(QKeyEvent *);
 
+private:
 	QGraphicsRectItem *m_fullScreenTopRectItem, *m_fullScreenBottomRectItem;
 	QGraphicsRectItem *m_fullRowLeftRectItem[25], *m_fullRowRightRectItem[25];
 	QGraphicsProxyWidget *m_levelOneProxyWidget;

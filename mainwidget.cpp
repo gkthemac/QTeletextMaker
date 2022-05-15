@@ -703,6 +703,7 @@ void LevelOneScene::hideGUIElements(bool hidden)
 	}
 }
 
+// Implements Ctrl+mousewheel zoom
 bool LevelOneScene::eventFilter(QObject *object, QEvent *event)
 {
 	Q_UNUSED(object);
@@ -717,6 +718,26 @@ bool LevelOneScene::eventFilter(QObject *object, QEvent *event)
 		return true;
 	}
 	return false;
+}
+
+// Clicking outside the main text widget but still within the scene would
+// cause keyboard focus loss.
+// So on every keypress within the scene, wrench the focus back to the widget
+// if necessary.
+void LevelOneScene::keyPressEvent(QKeyEvent *keyEvent)
+{
+	if (focusItem() != m_levelOneProxyWidget)
+		setFocusItem(m_levelOneProxyWidget);
+
+	QGraphicsScene::keyPressEvent(keyEvent);
+}
+
+void LevelOneScene::keyReleaseEvent(QKeyEvent *keyEvent)
+{
+	if (focusItem() != m_levelOneProxyWidget)
+		setFocusItem(m_levelOneProxyWidget);
+
+	QGraphicsScene::keyReleaseEvent(keyEvent);
 }
 
 void LevelOneScene::setFullScreenColour(const QColor &newColor)
