@@ -27,6 +27,7 @@ class X26Triplet
 public:
 	// x26model.h has the Plain English descriptions of these errors
 	enum X26TripletError { NoError, ActivePositionMovedUp, ActivePositionMovedLeft, InvokePointerInvalid, InvokeTypeMismatch, OriginModifierAlone };
+	enum ObjectSource { InvalidObjectSource, LocalObject, POPObject, GPOPObject };
 
 	X26Triplet() {}
 //	X26Triplet(const X26Triplet &other);
@@ -48,6 +49,8 @@ public:
 	void setData(int);
 	void setAddressRow(int);
 	void setAddressColumn(int);
+
+	int objectSource() const { return (m_address & 0x18) >> 3; }
 
 	int objectLocalDesignationCode() const { return (((m_address & 0x01) << 3) | (m_data >> 4)); }
 	int objectLocalTripletNumber() const { return m_data & 0x0f; }

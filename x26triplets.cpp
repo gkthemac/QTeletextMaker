@@ -109,13 +109,15 @@ void X26TripletList::updateInternalData()
 						triplet->m_error = X26Triplet::OriginModifierAlone;
 					break;
 				case 0x11 ... 0x13: // Invoke Object
-					if (triplet->objectLocalTripletNumber() > 12 ||
-					    triplet->objectLocalIndex() > (m_list.size()-1) ||
-					    m_list.at(triplet->objectLocalIndex()).modeExt() < 0x15 ||
-					    m_list.at(triplet->objectLocalIndex()).modeExt() > 0x17)
-						triplet->m_error = X26Triplet::InvokePointerInvalid;
-					else if ((triplet->modeExt() | 0x04) != m_list.at(triplet->objectLocalIndex()).modeExt())
-						triplet->m_error = X26Triplet::InvokeTypeMismatch;
+					if (triplet->objectSource() == X26Triplet::LocalObject) {
+						if (triplet->objectLocalTripletNumber() > 12 ||
+							triplet->objectLocalIndex() > (m_list.size()-1) ||
+							m_list.at(triplet->objectLocalIndex()).modeExt() < 0x15 ||
+							m_list.at(triplet->objectLocalIndex()).modeExt() > 0x17)
+							triplet->m_error = X26Triplet::InvokePointerInvalid;
+						else if ((triplet->modeExt() | 0x04) != m_list.at(triplet->objectLocalIndex()).modeExt())
+							triplet->m_error = X26Triplet::InvokeTypeMismatch;
+					}
 					break;
 				case 0x15 ... 0x17: // Define Object
 					activePosition.reset();
