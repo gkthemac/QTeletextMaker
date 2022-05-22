@@ -65,7 +65,6 @@ signals:
 protected:
 	TeletextFontBitmap m_fontBitmap;
 	QPixmap* m_pagePixmap[6];
-	textCell m_cell[25][72];
 	unsigned char m_controlCodeCache[25][40];
 	bool m_reveal, m_mix, m_showControlCodes;
 	QSet<QPair<int, int>> m_flash1HzCells;
