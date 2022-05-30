@@ -14,11 +14,11 @@ Features
 - Configurable zoom.
 - View teletext pages in 4:3, 16:9 pillar-box and 16:9 stretch aspect ratios.
 
-Although designed on and developed for Linux, the Qt 5 libraries are cross platform so a Windows executable can be built. A Windows executable can be found within the "Releases" link, compiled on a Linux host using [MXE](https://github.com/mxe/mxe) based on [these instructions](https://blog.8bitbuddhism.com/2018/08/22/cross-compiling-windows-applications-with-mxe/). After MXE is installed `make qtbase` will be enough to build QTeletextMaker.
+Although designed on and developed for Linux, the Qt 5 libraries are cross platform so a Windows executable can be built. A Windows executable can be found within the "Releases" link, compiled on a Linux host using [MXE](https://github.com/mxe/mxe) based on [these instructions](https://blog.8bitbuddhism.com/2018/08/22/cross-compiling-windows-applications-with-mxe/). After MXE is installed `make qtbase` should be enough to build QTeletextMaker.
 
 ## Building
 ### Linux
-Install the QtCore, QtGui and QtWidgets libraries and build headers, along with the qmake tool. Then type `qmake && make -j3` in a terminal, you can replace -j3 with the number of processor cores used for the compile process.
+Install the QtCore, QtGui and QtWidgets libraries and build headers, along with the qmake tool. Then type `qmake5 && make -j3` in a terminal, you can replace -j3 with the number of processor cores used for the compile process.
 
 The above will place the qteletextmaker executable in the same directory as the source, type `./qteletextmaker` in the terminal to launch. Optionally, type `make install` afterwards to place the executable into /usr/local/bin.
 
