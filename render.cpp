@@ -354,7 +354,9 @@ void TeletextPageRender::renderPage(bool force)
 						}
 				}
 
-				if (!force || m_decoder->cellFlashMode(r, c) == 0)
+				if (force && m_decoder->cellFlashMode(r, c) != 0)
+					m_decoder->setRefresh(r, c, true);
+				else
 					m_decoder->setRefresh(r, c, false);
 			}
 		}
