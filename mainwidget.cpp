@@ -250,8 +250,8 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 	if (event->key() < 0x01000000) {
 		// A character-typing key was pressed
 		// Try to keymap it, if not keymapped then plain ASCII code (may be) returned
-		char mappedKeyPress = keymapping[m_pageDecode.level1CharSet(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn())].value(event->text().at(0), *qPrintable(event->text()));
-		if (mappedKeyPress < 0x20)
+		char mappedKeyPress = keymapping[m_pageDecode.level1CharSet(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn())].value(event->text().at(0), *qPrintable(event->text().at(0)));
+		if (mappedKeyPress >= 0x00 && mappedKeyPress <= 0x1f)
 			return;
 		// If outside ASCII map then the character can't be represented by current Level 1 character set
 		// Map it to block character so it doesn't need to be inserted-between later on
