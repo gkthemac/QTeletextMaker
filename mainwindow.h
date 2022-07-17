@@ -59,6 +59,7 @@ private slots:
 	void open();
 	bool save();
 	bool saveAs();
+	void reload();
 	void exportT42();
 	void exportZXNet();
 	void exportEditTF();

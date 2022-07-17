@@ -56,6 +56,7 @@ public:
 	~TeletextDocument();
 
 	bool isEmpty() const;
+	void clear();
 
 	PageFunctionEnum pageFunction() const { return m_pageFunction; }
 //	void setPageFunction(PageFunctionEnum);

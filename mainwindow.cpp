@@ -149,6 +149,34 @@ bool MainWindow::saveAs()
 	return saveFile(fileName);
 }
 
+void MainWindow::reload()
+{
+	if (m_isUntitled)
+		return;
+
+	if (!m_textWidget->document()->undoStack()->isClean()) {
+		const QMessageBox::StandardButton ret = QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("The document \"%1\" has been modified.\nDo you want to discard your changes?").arg(QFileInfo(m_curFile).fileName()), QMessageBox::Discard | QMessageBox::Cancel);
+
+		if (ret != QMessageBox::Discard)
+			return;
+	} else {
+		const QMessageBox::StandardButton ret = QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Do you want to reload the document \"%1\" from disk?").arg(QFileInfo(m_curFile).fileName()), QMessageBox::Yes | QMessageBox::No);
+
+		if (ret != QMessageBox::Yes)
+			return;
+	}
+
+	int subPageIndex = m_textWidget->document()->currentSubPageIndex();
+
+	m_textWidget->document()->clear();
+	loadFile(m_curFile);
+
+	if (subPageIndex >= m_textWidget->document()->numberOfSubPages())
+		subPageIndex = m_textWidget->document()->numberOfSubPages()-1;
+
+	m_textWidget->document()->selectSubPageIndex(subPageIndex, true);
+}
+
 void MainWindow::exportPNG()
 {
 	QString exportFileName = QFileDialog::getSaveFileName(this, tr("Export PNG"), QString(), "PNG image (*.png)");
@@ -327,6 +355,11 @@ void MainWindow::createActions()
 	QAction *saveAsAct = fileMenu->addAction(saveAsIcon, tr("Save &As..."), this, &MainWindow::saveAs);
 	saveAsAct->setShortcuts(QKeySequence::SaveAs);
 	saveAsAct->setStatusTip(tr("Save the document under a new name"));
+
+	const QIcon reloadIcon = QIcon::fromTheme("document-revert");
+	QAction *reloadAct = fileMenu->addAction(reloadIcon, tr("Reload"), this, &MainWindow::reload);
+	reloadAct->setShortcuts(QKeySequence::Refresh);
+	reloadAct->setStatusTip(tr("Reload the document from disk"));
 
 	fileMenu->addSeparator();
 

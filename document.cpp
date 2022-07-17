@@ -94,6 +94,25 @@ bool TeletextDocument::isEmpty() const
 	return true;
 }
 
+void TeletextDocument::clear()
+{
+	LevelOnePage *blankSubPage = new LevelOnePage;
+
+	m_subPages.insert(m_subPages.begin(), blankSubPage);
+
+	emit aboutToChangeSubPage();
+	m_currentSubPageIndex = 0;
+	m_clutModel->setSubPage(m_subPages[0]);
+	emit subPageSelected();
+	cancelSelection();
+	m_undoStack->clear();
+
+	for (int i=m_subPages.size()-1; i>0; i--) {
+		delete(m_subPages[i]);
+		m_subPages.erase(m_subPages.begin()+i);
+	}
+}
+
 /*
 void TeletextDocument::setPageFunction(PageFunctionEnum newPageFunction)
 {

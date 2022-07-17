@@ -386,7 +386,7 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 		case Qt::Key_PageDown:
 			m_teletextDocument->selectSubPagePrevious();
 			break;
-		case Qt::Key_F5:
+		case Qt::Key_F6:
 			m_pageDecode.decodePage();
 			m_pageRender.renderPage(true);
 			update();
