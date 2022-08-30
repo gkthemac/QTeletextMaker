@@ -65,11 +65,19 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 		}
 
 	// Error colours from KDE Plasma Breeze (light) theme
-	if (role == Qt::ForegroundRole && triplet.error() != X26Triplet::NoError && index.column() == m_tripletErrors[triplet.error()].columnHighlight)
-		return QColor(252, 252, 252);
+	if (role == Qt::ForegroundRole) {
+		if (triplet.error() != X26Triplet::NoError && index.column() == m_tripletErrors[triplet.error()].columnHighlight)
+			return QColor(252, 252, 252);
+		else if ((index.column() == 2 && triplet.reservedMode()) || (index.column() == 3 && triplet.reservedData()))
+			return QColor(35, 38, 39);
+	}
 
-	if (role == Qt::BackgroundRole && triplet.error() != X26Triplet::NoError && index.column() == m_tripletErrors[triplet.error()].columnHighlight)
-		return QColor(218, 68, 63);
+	if (role == Qt::BackgroundRole) {
+		if (triplet.error() != X26Triplet::NoError && index.column() == m_tripletErrors[triplet.error()].columnHighlight)
+			return QColor(218, 68, 63);
+		else if ((index.column() == 2 && triplet.reservedMode()) || (index.column() == 3 && triplet.reservedData()))
+			return QColor(246, 116, 0);
+	}
 
 	if (role == Qt::ToolTipRole && triplet.error() != X26Triplet::NoError)
 		return m_tripletErrors[triplet.error()].message;

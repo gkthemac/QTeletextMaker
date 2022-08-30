@@ -77,30 +77,45 @@ void X26TripletList::updateInternalData()
 	for (int i=0; i < m_list.size(); i++) {
 		triplet = &m_list[i];
 		triplet->m_error = X26Triplet::NoError;
+		triplet->m_reservedMode = false;
+		triplet->m_reservedData = false;
+
 		if (triplet->isRowTriplet()) {
 			switch (triplet->modeExt()) {
 				case 0x00: // Full screen colour
 					if (activePosition.isDeployed())
 						// TODO more specific error needed
 						triplet->m_error = X26Triplet::ActivePositionMovedUp;
+					if (triplet->m_data & 0x60)
+						triplet->m_reservedData = true;
 					break;
 				case 0x01: // Full row colour
 					if (!activePosition.setRow(triplet->addressRow()))
 						triplet->m_error = X26Triplet::ActivePositionMovedUp;
+					if ((triplet->m_data & 0x60) != 0x00 && (triplet->m_data & 0x60) != 0x60)
+						triplet->m_reservedData = true;
 					break;
 				case 0x04: // Set Active Position;
 					if (!activePosition.setRow(triplet->addressRow()))
 						triplet->m_error = X26Triplet::ActivePositionMovedUp;
-					else if (triplet->data() >= 40 || !activePosition.setColumn(triplet->data()))
+					else if (triplet->data() >= 40)
+						// FIXME data column highlighted?
+						triplet->m_reservedData = true;
+					else if (!activePosition.setColumn(triplet->data()))
 						triplet->m_error = X26Triplet::ActivePositionMovedLeft;
 					break;
 				case 0x07: // Address row 0
-					if (activePosition.isDeployed())
+					if (triplet->m_address != 63)
+						// FIXME data column highlighted?
+						triplet->m_reservedData = true;
+					else if (activePosition.isDeployed())
 						triplet->m_error = X26Triplet::ActivePositionMovedUp;
 					else {
 						activePosition.setRow(0);
 						activePosition.setColumn(8);
 					}
+					if ((triplet->m_data & 0x60) != 0x00 && (triplet->m_data & 0x60) != 0x60)
+						triplet->m_reservedData = true;
 					break;
 				case 0x10: // Origin Modifier
 					if (i == m_list.size()-1 ||
@@ -125,11 +140,45 @@ void X26TripletList::updateInternalData()
 					// otherwise the object won't appear
 					triplet->setObjectLocalIndex(i);
 					break;
+				case 0x18: // DRCS mode
+					if ((triplet->m_data & 0x30) == 0x00)
+						triplet->m_reservedData = true;
+				case 0x1f: // Termination marker
+				case 0x08 ... 0x0d: // PDC
+					break;
+				default:
+					triplet->m_reservedMode = true;
 			};
-		// Column triplet: make sure that PDC and reserved triplets don't affect the Active Position
-		} else if (triplet->modeExt() != 0x24 && triplet->modeExt() != 0x25 && triplet->modeExt() != 0x26 && triplet->modeExt() != 0x2a)
-			if (!activePosition.setColumn(triplet->addressColumn()))
-				triplet->m_error = X26Triplet::ActivePositionMovedLeft;
+		// Column triplet: all triplets modes except PDC and reserved move the Active Position
+		} else if (triplet->modeExt() == 0x24 || triplet->modeExt() == 0x25 || triplet->modeExt() == 0x2a)
+			triplet->m_reservedMode = true;
+		else if (triplet->modeExt() != 0x26 && !activePosition.setColumn(triplet->addressColumn()))
+			triplet->m_error = X26Triplet::ActivePositionMovedLeft;
+		else
+			switch (triplet->modeExt()) {
+				case 0x20: // Foreground colour
+				case 0x23: // Foreground colour
+					if (triplet->m_data & 0x60)
+						triplet->m_reservedData = true;
+					break;
+				case 0x21: // G1 mosaic character
+				case 0x22: // G3 mosaic character at level 1.5
+				case 0x29: // G0 character
+				case 0x2b: // G3 mosaic character at level >=2.5
+				case 0x2f ... 0x3f: // G2 character or G0 diacritical mark
+					if (triplet->m_data < 0x20)
+						triplet->m_reservedData = true;
+					break;
+				case 0x27: // Additional flash functions
+					if (triplet->m_data >= 0x18)
+						triplet->m_reservedData = true;
+					break;
+				case 0x2d: // DRCS character
+					if (triplet->m_data >= 48)
+						// Should really be an error
+						triplet->m_reservedData = true;
+			}
+
 		triplet->m_activePositionRow = activePosition.row();
 		triplet->m_activePositionColumn = activePosition.column();
 	}

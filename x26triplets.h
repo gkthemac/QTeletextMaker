@@ -62,6 +62,8 @@ public:
 	int activePositionRow() const { return m_activePositionRow; }
 	int activePositionColumn() const { return m_activePositionColumn; }
 	X26TripletError error() const { return m_error; }
+	bool reservedMode() const { return m_reservedMode; }
+	bool reservedData() const { return m_reservedData; }
 
 	friend class X26TripletList;
 
@@ -70,6 +72,8 @@ private:
 	int m_activePositionRow = -1;
 	int m_activePositionColumn = -1;
 	X26TripletError m_error = NoError;
+	bool m_reservedMode = false;
+	bool m_reservedData = false;
 };
 
 class X26TripletList
