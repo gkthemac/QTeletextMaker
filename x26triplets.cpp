@@ -174,8 +174,8 @@ void X26TripletList::updateInternalData()
 						triplet->m_reservedData = true;
 					break;
 				case 0x2d: // DRCS character
-					if (triplet->m_data >= 48)
-						// Should really be an error
+					if ((triplet->m_data & 0x3f) >= 48)
+						// Should really be an error?
 						triplet->m_reservedData = true;
 			}
 
