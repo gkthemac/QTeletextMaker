@@ -623,6 +623,8 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 
 	x26Layout->addLayout(insertDeleteLayout);
 
+	disableTripletWidgets();
+
 	x26Widget->setLayout(x26Layout);
 	this->setWidget(x26Widget);
 
@@ -674,14 +676,48 @@ void X26DockWidget::rowSelected(const QModelIndex &current, const QModelIndex &p
 {
 	Q_UNUSED(previous);
 
-	updateAllRawTripletSpinBoxes(current);
-	updateAllCookedTripletWidgets(current);
+	if (current.isValid()) {
+		updateAllRawTripletSpinBoxes(current);
+		updateAllCookedTripletWidgets(current);
+	} else
+		disableTripletWidgets();
+}
+
+void X26DockWidget::disableTripletWidgets()
+{
+	m_rawTripletAddressSpinBox->setEnabled(false);
+	m_rawTripletDataSpinBox->setEnabled(false);
+	m_rawTripletModeSpinBox->setEnabled(false);
+	m_rawTripletAddressSpinBox->blockSignals(true);
+	m_rawTripletModeSpinBox->blockSignals(true);
+	m_rawTripletDataSpinBox->blockSignals(true);
+	m_rawTripletAddressSpinBox->setValue(0);
+	m_rawTripletModeSpinBox->setValue(0);
+	m_rawTripletDataSpinBox->setValue(0);
+	m_rawTripletAddressSpinBox->blockSignals(false);
+	m_rawTripletModeSpinBox->blockSignals(false);
+	m_rawTripletDataSpinBox->blockSignals(false);
+
+	m_cookedRowSpinBox->setEnabled(false);
+	m_cookedColumnSpinBox->setEnabled(false);
+	m_cookedRowSpinBox->blockSignals(true);
+	m_cookedColumnSpinBox->blockSignals(true);
+	m_cookedRowSpinBox->setValue(1);
+	m_cookedColumnSpinBox->setValue(0);
+	m_cookedRowSpinBox->blockSignals(false);
+	m_cookedColumnSpinBox->blockSignals(false);
+
+	m_cookedModePushButton->setEnabled(false);
+	m_cookedModePushButton->setText(QString());
+
+	m_tripletParameterStackedLayout->setCurrentIndex(0);
 }
 
 void X26DockWidget::updateAllCookedTripletWidgets(const QModelIndex &index)
 {
 	const int modeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
 
+	m_cookedModePushButton->setEnabled(true);
 	m_cookedModePushButton->setText(m_x26Model->modeTripletName(modeExt));
 
 	switch (modeExt) {

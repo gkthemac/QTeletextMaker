@@ -117,6 +117,9 @@ private:
 	QPushButton *m_insertBeforePushButton, *m_insertAfterPushButton, *m_insertCopyPushButton, *m_deletePushButton;
 
 	TeletextWidget *m_parentMainWidget;
+
+	void disableTripletWidgets();
+
 };
 
 #endif
