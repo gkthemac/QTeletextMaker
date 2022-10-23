@@ -14,13 +14,15 @@ Features
 - Configurable zoom.
 - View teletext pages in 4:3, 16:9 pillar-box and 16:9 stretch aspect ratios.
 
-Although designed on and developed for Linux, the Qt 5 libraries are cross platform so a Windows executable can be built. A Windows executable can be found within the "Releases" link, compiled on a Linux host using [MXE](https://github.com/mxe/mxe) based on [these instructions](https://blog.8bitbuddhism.com/2018/08/22/cross-compiling-windows-applications-with-mxe/). After MXE is installed `make qtbase` should be enough to build QTeletextMaker.
+Although designed on and developed for Linux, the Qt 5 libraries are cross platform so a Windows executable can be built. A Windows executable can be found within the "Releases" link, compiled on a Linux host using [MXE](https://github.com/mxe/mxe) based on [these instructions](https://blog.8bitbuddhism.com/2018/08/22/cross-compiling-windows-applications-with-mxe/). After MXE is installed `make qtbase` should build and install the required dependencies to build QTeletextMaker.
 
 ## Building
 ### Linux
-Install the QtCore, QtGui and QtWidgets libraries and build headers, along with the qmake tool. Then type `qmake5 && make -j3` in a terminal, you can replace -j3 with the number of processor cores used for the compile process.
+Install the QtCore, QtGui and QtWidgets libraries and build headers, along with the qmake tool. Depending on how qmake is installed, type `qmake && make -j3` or `qmake5 && make -j3` in a terminal to build, you can replace -j3 with the number of processor cores used for the compile process.
 
-The above will place the qteletextmaker executable in the same directory as the source, type `./qteletextmaker` in the terminal to launch. Optionally, type `make install` afterwards to place the executable into /usr/local/bin.
+The above should place the qteletextmaker executable in the same directory as the source, type `./qteletextmaker` in the terminal to launch. Some Qt installs may place the executable into a "release" directory.
+
+Optionally, type `make install` afterwards to place the executable into /usr/local/bin.
 
 ## Current limitations
 The following X/26 enhancement triplets are not rendered by the editor, although the list is fully aware of them.
