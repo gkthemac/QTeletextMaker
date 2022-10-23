@@ -68,7 +68,13 @@ void TeletextPageDecode::setLevel(int level)
 {
 	if (level == m_level)
 		return;
+
 	m_level = level;
+
+	for (int r=0; r<25; r++)
+		for (int c=0; c<72; c++)
+			m_refresh[r][c] = true;
+
 	decodePage();
 }
 
