@@ -528,15 +528,15 @@ static const QMap<QChar, char> keymapping[24] = {
 
 // Native scan codes to toggle mosaic bits - different platforms have different scan codes!
 // Order is top left, top right, middle left, middle right, bottom left, bottom right,
-// invert, set all, clear all
+// invert, set all, clear all, dither
 
 #ifdef Q_OS_UNIX
-static constexpr quint32 mosaicNativeScanCodes[9] = {
-	0x18, 0x19, 0x26, 0x27, 0x34, 0x35, 0x1b, 0x29, 0x36
+static constexpr quint32 mosaicNativeScanCodes[10] = {
+	0x18, 0x19, 0x26, 0x27, 0x34, 0x35, 0x1b, 0x29, 0x36, 0x28
 };
 #elif defined(Q_OS_WIN)
-static constexpr quint32 mosaicNativeScanCodes[9] = {
-	0x10, 0x11, 0x1e, 0x1f, 0x2c, 0x2d, 0x13, 0x21, 0x2e
+static constexpr quint32 mosaicNativeScanCodes[10] = {
+	0x10, 0x11, 0x1e, 0x1f, 0x2c, 0x2d, 0x13, 0x21, 0x2e, 0x20
 };
 #else
 #define QTTM_NONATIVESCANCODES

@@ -106,6 +106,8 @@ ToggleMosaicBitCommand::ToggleMosaicBitCommand(TeletextDocument *teletextDocumen
 	m_oldCharacter = teletextDocument->currentSubPage()->character(m_row, m_column);
 	if (bitToToggle == 0x20 || bitToToggle == 0x7f)
 		m_newCharacter = bitToToggle;
+	else if (bitToToggle == 0x66)
+		m_newCharacter = (m_row & 1) ? 0x66 : 0x39;
 	else
 		m_newCharacter = m_oldCharacter ^ bitToToggle;
 

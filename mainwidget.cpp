@@ -259,7 +259,7 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 			mappedKeyPress = 0x7f;
 		if (m_pageDecode.level1MosaicAttribute(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) && (mappedKeyPress < 0x40 || mappedKeyPress > 0x5f)) {
 			// We're on a mosaic and a blast-through character was NOT pressed
-			if (event->key() >= Qt::Key_1 && event->key() <= Qt::Key_9 && event->modifiers() & Qt::KeypadModifier) {
+			if (event->key() >= Qt::Key_0 && event->key() <= Qt::Key_9 && event->modifiers() & Qt::KeypadModifier) {
 				switch (event->key()) {
 					case Qt::Key_7:
 						toggleCharacterBit(0x01); // Top left
@@ -287,6 +287,9 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 						break;
 					case Qt::Key_3:
 						toggleCharacterBit(0x20); // Clear all
+						break;
+					case Qt::Key_0:
+						toggleCharacterBit(0x66); // Dither
 						break;
 				}
 				return;
@@ -327,6 +330,9 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 						break;
 					case mosaicNativeScanCodes[8]:
 						toggleCharacterBit(0x20); // Clear all
+						break;
+					case mosaicNativeScanCodes[9]:
+						toggleCharacterBit(0x66); // Dither
 						break;
 				}
 				return;
