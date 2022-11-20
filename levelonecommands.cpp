@@ -415,8 +415,18 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 	if (m_selectionActive) {
 		m_selectionCornerRow = m_teletextDocument->selectionCornerRow();
 		m_selectionCornerColumn = m_teletextDocument->selectionCornerColumn();
+		m_pasteTopRow = m_teletextDocument->selectionTopRow();
+		m_pasteBottomRow = m_teletextDocument->selectionBottomRow();
+		m_pasteLeftColumn = m_teletextDocument->selectionLeftColumn();
+		m_pasteRightColumn = m_teletextDocument->selectionRightColumn();
+	} else {
+		m_pasteTopRow = m_row;
+		m_pasteLeftColumn = m_column;
+		// m_pasteBottomRow and m_pasteRightColumn will be filled in later
+		// when the size of the clipboard data is known
 	}
 
+	// Zero size here represents invalid or empty clipboard data
 	m_clipboardDataHeight = m_clipboardDataWidth = 0;
 
 	// Try to get something from the clipboard
@@ -424,6 +434,7 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 	nativeData = mimeData->data("application/x-teletext");
 	if (nativeData.size() > 2) {
 		// Native clipboard data: we put it there ourselves
+		m_plainText = false;
 		m_clipboardDataHeight = nativeData.at(0);
 		m_clipboardDataWidth = nativeData.at(1);
 
@@ -431,25 +442,119 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 		if (m_clipboardDataHeight > 0 && m_clipboardDataWidth > 0 && m_clipboardDataHeight <= 25 && m_clipboardDataWidth <= 40 && nativeData.size() == m_clipboardDataHeight * m_clipboardDataWidth + 2)
 			for (int r=0; r<m_clipboardDataHeight; r++)
 				m_pastingCharacters.append(nativeData.mid(2 + r * m_clipboardDataWidth, m_clipboardDataWidth));
-		else
+		else {
 			// Invalidate
 			m_clipboardDataHeight = m_clipboardDataWidth = 0;
+			return;
+		}
+
+		if (!m_selectionActive) {
+			m_pasteBottomRow = m_row + m_clipboardDataHeight - 1;
+			m_pasteRightColumn = m_column + m_clipboardDataWidth - 1;
+		}
 	} else if (mimeData->hasText()) {
 		// Plain text
+		m_plainText = true;
+
+		const int rightColumn = m_selectionActive ? m_pasteRightColumn : 39;
+
+		// Parse line-feeds in the clipboard data
 		QStringList plainTextData = mimeData->text().split(QRegExp("\n|\r\n|\r"));
+
+		// "if" statement will be false if clipboard data is a single line of text
+		// that will fit from the cursor position
+		if (plainTextData.size() != 1 || m_pasteLeftColumn + plainTextData.at(0).size() - 1 > rightColumn) {
+			bool wrappingNeeded = false;
+
+			if (!m_selectionActive) {
+				// If selection is NOT active, use the full width of the page to paste.
+				// The second and subsequent lines will start at column 1, unless the
+				// cursor is explicitly on column 0.
+				if (m_pasteLeftColumn != 0)
+					m_pasteLeftColumn = 1;
+
+				// Check if first word in the first line will fit from the cursor position
+				bool firstWordFits = true;
+				const int firstSpace = plainTextData.at(0).indexOf(' ');
+
+				if (firstSpace == -1 && m_column + plainTextData.at(0).size() > 40)
+					firstWordFits = false; // Only one word in first line, and it won't fit
+				else if (m_column + firstSpace > 40)
+					firstWordFits = false; // First word in first line won't fit
+
+				// If the first word WILL fit at the cursor position, pad the first line
+				// to match the cursor position using null characters.
+				// In the QString null characters represent character cells in the
+				// pasting rectangle that won't overwrite what's on the page.
+				// If the first word WON'T fit, start pasting at the beginning of the next row.
+				if (firstWordFits)
+					plainTextData[0] = QString(m_column-m_pasteLeftColumn, QChar::Null) + plainTextData.at(0);
+				else if (m_pasteTopRow < 24)
+					m_pasteTopRow++;
+				else
+					return;
+			}
+
+			const int pasteWidth = rightColumn - m_pasteLeftColumn + 1;
+
+			// Find out if we need to word-wrap
+			for (int i=0; i<plainTextData.size(); i++)
+				if (plainTextData.at(i).size() > pasteWidth) {
+					wrappingNeeded = true;
+					break;
+				}
+
+			if (wrappingNeeded) {
+				QStringList wrappedText;
+
+				for (int i=0; i<plainTextData.size(); i++) {
+					// Split this line into individual words
+					QStringList lineWords = plainTextData.at(i).split(' ');
+
+					// If there's any words which are too long to fit,
+					// break them across multiple lines
+					for (int j=0; j<lineWords.size(); j++)
+						if (lineWords.at(j).size() > pasteWidth) {
+							lineWords.insert(j+1, lineWords.at(j).mid(pasteWidth));
+							lineWords[j].truncate(pasteWidth);
+						}
+
+					// Now reassemble the words into lines that will fit
+					QString currentLine = lineWords.at(0);
+
+					for (int j=1; j<lineWords.size(); j++)
+						if (currentLine.size() + 1 + lineWords.at(j).size() <= pasteWidth)
+							currentLine.append(' ' + lineWords.at(j));
+						else {
+							wrappedText.append(currentLine);
+							currentLine = lineWords.at(j);
+						}
+
+					wrappedText.append(currentLine);
+				}
+				plainTextData.swap(wrappedText);
+			}
+		}
 
 		m_clipboardDataHeight = plainTextData.size();
 		m_clipboardDataWidth = 0;
 
+		// Convert the unicode clipboard text into teletext bytes matching the current Level 1
+		// character set of this page
 		for (int r=0; r<m_clipboardDataHeight; r++) {
 			m_pastingCharacters.append(QByteArray());
 			for (int c=0; c<plainTextData.at(r).size(); c++) {
-				// Try to map the unicode character to the current Level 1 character set of this page
-
 				char convertedChar;
 				const QChar charToConvert = plainTextData.at(r).at(c);
 
-				if (keymapping[pageCharSet].contains(charToConvert))
+				// Map a null character in the QString to 0xff (or -1)
+				// In the QByteArray 0xff bytes represent character cells in the pasting rectangle
+				// that won't overwrite what's on the page
+				if (charToConvert == QChar::Null)
+					convertedChar = -1;
+				else if (charToConvert >= 0x01 && charToConvert <= 0x1f)
+					convertedChar = ' ';
+				else if (keymapping[pageCharSet].contains(charToConvert))
 					// Remapped character or non-Latin character converted successfully
 					convertedChar = keymapping[pageCharSet].value(charToConvert);
 				else {
@@ -465,25 +570,18 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 			}
 			m_clipboardDataWidth = qMax(m_pastingCharacters.at(r).size(), m_clipboardDataWidth);
 		}
-		// Pad short lines with spaces to make a box
+		// Pad the end of short lines with spaces to make a box
 		for (int r=0; r<m_clipboardDataHeight; r++)
 			m_pastingCharacters[r] = m_pastingCharacters.at(r).leftJustified(m_clipboardDataWidth);
+
+		if (!m_selectionActive) {
+			m_pasteBottomRow = m_pasteTopRow + m_clipboardDataHeight - 1;
+			m_pasteRightColumn = m_pasteLeftColumn + m_clipboardDataWidth - 1;
+		}
 	}
 
 	if (m_clipboardDataWidth == 0 || m_clipboardDataHeight == 0)
 		return;
-
-	if (m_selectionActive) {
-		m_pasteTopRow = m_teletextDocument->selectionTopRow();
-		m_pasteBottomRow = m_teletextDocument->selectionBottomRow();
-		m_pasteLeftColumn = m_teletextDocument->selectionLeftColumn();
-		m_pasteRightColumn = m_teletextDocument->selectionRightColumn();
-	} else {
-		m_pasteTopRow = m_row;
-		m_pasteBottomRow = m_row + m_clipboardDataHeight - 1;
-		m_pasteLeftColumn = m_column;
-		m_pasteRightColumn = m_column + m_clipboardDataWidth - 1;
-	}
 
 	// Store copy of the characters that we're about to overwrite
 	for (int r=m_pasteTopRow; r<=m_pasteBottomRow; r++) {
@@ -519,11 +617,21 @@ void PasteCommand::redo()
 		for (int c=m_pasteLeftColumn; c<=m_pasteRightColumn; c++)
 			// Guard against size of pasted block going beyond last line or column
 			if (r < 25 && c < 40) {
-				m_teletextDocument->currentSubPage()->setCharacter(r, c, m_pastingCharacters[arrayR].at(arrayC++));
+				// Check for 0xff bytes using "-1"
+				// gcc complains about "comparision always true due to limited range"
+				if (m_pastingCharacters.at(arrayR).at(arrayC) != -1)
+					m_teletextDocument->currentSubPage()->setCharacter(r, c, m_pastingCharacters.at(arrayR).at(arrayC));
+
+				arrayC++;
 
 				// If paste area is wider than clipboard data, repeat the pattern
-				if (arrayC == m_clipboardDataWidth)
-					arrayC = 0;
+				// if it wasn't plain text
+				if (arrayC == m_clipboardDataWidth) {
+					if (!m_plainText)
+						arrayC = 0;
+					else
+						break;
+				}
 			}
 
 		if (r < 25)
@@ -531,8 +639,13 @@ void PasteCommand::redo()
 
 		arrayR++;
 		// If paste area is taller than clipboard data, repeat the pattern
-		if (arrayR == m_clipboardDataHeight)
-			arrayR = 0;
+		// if it wasn't plain text
+		if (arrayR == m_clipboardDataHeight) {
+			if (!m_plainText)
+				arrayR = 0;
+			else
+				break;
+		}
 	}
 
 	if (m_selectionActive) {
@@ -558,8 +671,11 @@ void PasteCommand::undo()
 		arrayC = 0;
 		for (int c=m_pasteLeftColumn; c<=m_pasteRightColumn; c++)
 			// Guard against size of pasted block going beyond last line or column
-			if (r < 25 && c < 40)
-				m_teletextDocument->currentSubPage()->setCharacter(r, c, m_deletedCharacters[arrayR].at(arrayC++));
+			if (r < 25 && c < 40) {
+				m_teletextDocument->currentSubPage()->setCharacter(r, c, m_deletedCharacters[arrayR].at(arrayC));
+
+				arrayC++;
+			}
 
 		if (r < 25)
 			emit m_teletextDocument->contentsChange(r);

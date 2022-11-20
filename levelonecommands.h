@@ -179,7 +179,7 @@ private:
 	int m_pasteTopRow, m_pasteBottomRow, m_pasteLeftColumn, m_pasteRightColumn;
 	int m_clipboardDataHeight, m_clipboardDataWidth;
 	int m_selectionCornerRow, m_selectionCornerColumn;
-	bool m_selectionActive;
+	bool m_selectionActive, m_plainText;
 };
 #endif // !QT_NO_CLIPBOARD
 
