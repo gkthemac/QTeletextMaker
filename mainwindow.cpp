@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2022 Gavin MacGregor
+ * Copyright (C) 2020-2023 Gavin MacGregor
  *
  * This file is part of QTeletextMaker.
  *
@@ -246,7 +246,7 @@ void MainWindow::about()
 	QMessageBox::about(this, tr("About"), QString("<b>%1</b><br>"
 	"An open source Level 2.5 teletext page editor.<br>"
 	"<i>Version %2</i><br><br>"
-	"Copyright (C) 2020-2022 Gavin MacGregor<br><br>"
+	"Copyright (C) 2020-2023 Gavin MacGregor<br><br>"
 	"Released under the GNU General Public License version 3<br>"
 	"<a href=\"https://github.com/gkthemac/qteletextmaker\">https://github.com/gkthemac/qteletextmaker</a>").arg(QApplication::applicationDisplayName()).arg(QApplication::applicationVersion()));
 }
