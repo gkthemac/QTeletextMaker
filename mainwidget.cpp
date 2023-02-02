@@ -694,18 +694,13 @@ void LevelOneScene::toggleGrid(bool gridOn)
 void LevelOneScene::hideGUIElements(bool hidden)
 {
 	if (hidden) {
-		m_mainGridItemGroup->setVisible(false);
 		m_cursorRectItem->setVisible(false);
 		m_selectionRectItem->setVisible(false);
-		for (int i=0; i<32; i++)
-			if (m_sidePanelGridNeeded[i])
-				m_sidePanelGridItemGroup[i]->setVisible(false);
 	} else {
 		if (static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->selectionActive())
 			m_selectionRectItem->setVisible(true);
 
 		m_cursorRectItem->setVisible(true);
-		toggleGrid(m_grid);
 	}
 }
 

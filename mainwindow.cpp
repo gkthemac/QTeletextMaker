@@ -186,9 +186,6 @@ void MainWindow::exportPNG()
 	// Prepare widget image for extraction
 	m_textWidget->pauseFlash(true);
 	m_textScene->hideGUIElements(true);
-	bool reshowControlCodes = m_textWidget->showControlCodes();
-	if (reshowControlCodes)
-		m_textWidget->setShowControlCodes(false);
 	// Disable exporting in Mix mode as it corrupts the background
 	bool reMix = m_textWidget->pageRender()->mix();
 	if (reMix) {
@@ -206,8 +203,6 @@ void MainWindow::exportPNG()
 
 	// Now we've extracted the image we can put the GUI things back
 	m_textScene->hideGUIElements(false);
-	if (reshowControlCodes)
-		m_textWidget->setShowControlCodes(true);
 	if (reMix) {
 		m_textWidget->setMix(true);
 		m_textScene->setMix(true);
