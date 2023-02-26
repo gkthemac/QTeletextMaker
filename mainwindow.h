@@ -60,12 +60,14 @@ private slots:
 	bool save();
 	bool saveAs();
 	void reload();
-	void exportT42();
+	void exportAuto();
+	void exportT42(bool);
 	void exportZXNet();
 	void exportEditTF();
 	void exportPNG();
 	void exportM29();
 	void updateRecentFileActions();
+	void updateExportAutoAction();
 	void openRecentFile();
 	void about();
 	void updatePageWidgets();
@@ -121,6 +123,7 @@ private:
 	QAction *m_recentFileActs[m_MaxRecentFiles];
 	QAction *m_recentFileSeparator;
 	QAction *m_recentFileSubMenuAct;
+	QAction *m_exportAutoAct;
 	QAction *m_deleteSubPageAction;
 	QAction *m_borderActs[3];
 	QAction *m_aspectRatioActs[4];
@@ -131,7 +134,7 @@ private:
 	QPushButton *m_insertModePushButton;
 	QRadioButton *m_levelRadioButton[4];
 
-	QString m_curFile;
+	QString m_curFile, m_exportAutoFileName;
 	bool m_isUntitled;
 };
 

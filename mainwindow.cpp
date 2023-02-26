@@ -371,9 +371,16 @@ void MainWindow::createActions()
 
 	setRecentFilesVisible(MainWindow::hasRecentFiles());
 
+	m_exportAutoAct = fileMenu->addAction(tr("Export subpage..."));
+	m_exportAutoAct->setEnabled(false);
+	m_exportAutoAct->setShortcut(tr("Ctrl+E"));
+	m_exportAutoAct->setStatusTip("Export this subpage back to the imported file");
+	connect(fileMenu, &QMenu::aboutToShow, this, &MainWindow::updateExportAutoAction);
+	connect(m_exportAutoAct, &QAction::triggered, this, &MainWindow::exportAuto);
+
 	QAction *exportT42Act = fileMenu->addAction(tr("Export subpage as t42..."));
 	exportT42Act->setStatusTip("Export this subpage as a t42 file");
-	connect(exportT42Act, &QAction::triggered, this, &MainWindow::exportT42);
+	connect(exportT42Act, &QAction::triggered, this, [=]() { exportT42(false); });
 
 	QMenu *exportHashStringSubMenu = fileMenu->addMenu(tr("Export subpage to online editor"));
 
@@ -934,10 +941,13 @@ void MainWindow::loadFile(const QString &fileName)
 
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 
-	if (fileInfo.suffix() == "t42")
+	if (fileInfo.suffix() == "t42") {
 		importT42(&file, m_textWidget->document());
-	else
+		m_exportAutoFileName = fileName;
+	} else {
 		loadTTI(&file, m_textWidget->document());
+		m_exportAutoFileName.clear();
+	}
 
 	levelSeen = m_textWidget->document()->levelRequired();
 	m_levelRadioButton[levelSeen]->toggle();
@@ -1021,6 +1031,18 @@ void MainWindow::updateRecentFileActions()
 		m_recentFileActs[i]->setVisible(false);
 }
 
+void MainWindow::updateExportAutoAction()
+{
+	if (m_exportAutoFileName.isEmpty()) {
+		m_exportAutoAct->setText(tr("Export subpage..."));
+		m_exportAutoAct->setEnabled(false);
+		return;
+	}
+
+	m_exportAutoAct->setText(tr("Overwrite &%1").arg(MainWindow::strippedName(m_exportAutoFileName)));
+	m_exportAutoAct->setEnabled(true);
+}
+
 void MainWindow::openRecentFile()
 {
 	if (const QAction *action = qobject_cast<const QAction *>(sender()))
@@ -1051,16 +1073,30 @@ bool MainWindow::saveFile(const QString &fileName)
 	return true;
 }
 
-void MainWindow::exportT42()
+void MainWindow::exportAuto()
+{
+	// Menu should be disabled if m_exportAutoFileName is empty, but just in case...
+	if (m_exportAutoFileName.isEmpty())
+		return;
+
+	exportT42(true);
+}
+
+void MainWindow::exportT42(bool fromAuto)
 {
 	QString errorMessage;
-	QString exportFileName = m_curFile;
+	QString exportFileName;
 
-	changeSuffixFromTTI(exportFileName, "t42");
+	if (fromAuto)
+		exportFileName = m_exportAutoFileName;
+	else {
+		exportFileName = m_curFile;
+		changeSuffixFromTTI(exportFileName, "t42");
 
-	exportFileName = QFileDialog::getSaveFileName(this, tr("Export t42"), exportFileName, "t42 stream (*.t42)");
-	if (exportFileName.isEmpty())
-		return;
+		exportFileName = QFileDialog::getSaveFileName(this, tr("Export t42"), exportFileName, "t42 stream (*.t42)");
+		if (exportFileName.isEmpty())
+			return;
+	}
 
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 	QSaveFile file(exportFileName);
@@ -1072,8 +1108,20 @@ void MainWindow::exportT42()
 		errorMessage = tr("Cannot open file %1 for writing:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
 	QApplication::restoreOverrideCursor();
 
-	if (!errorMessage.isEmpty())
+	if (!errorMessage.isEmpty()) {
 		QMessageBox::warning(this, QApplication::applicationDisplayName(), errorMessage);
+		return;
+	}
+
+	// Only mark as cleanly saved if the document was a single subpage
+	// otherwise the other subpages could be lost if not saved as TTI
+	if (m_textWidget->document()->numberOfSubPages() == 1) {
+		setCurrentFile(exportFileName);
+	} else
+		MainWindow::prependToRecentFiles(exportFileName);
+
+	m_exportAutoFileName = exportFileName;
+	statusBar()->showMessage(tr("File exported"), 2000);
 }
 
 void MainWindow::exportM29()
