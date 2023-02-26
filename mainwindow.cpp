@@ -1113,12 +1113,7 @@ void MainWindow::exportT42(bool fromAuto)
 		return;
 	}
 
-	// Only mark as cleanly saved if the document was a single subpage
-	// otherwise the other subpages could be lost if not saved as TTI
-	if (m_textWidget->document()->numberOfSubPages() == 1) {
-		setCurrentFile(exportFileName);
-	} else
-		MainWindow::prependToRecentFiles(exportFileName);
+	MainWindow::prependToRecentFiles(exportFileName);
 
 	m_exportAutoFileName = exportFileName;
 	statusBar()->showMessage(tr("File exported"), 2000);
