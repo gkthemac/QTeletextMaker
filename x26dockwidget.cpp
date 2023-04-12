@@ -1074,6 +1074,9 @@ void X26DockWidget::insertTriplet(int modeExt, bool after)
 	// For character triplets, ensure Data is not reserved
 	if (modeExt == 0x21 || modeExt == 0x22 || modeExt == 0x29 || modeExt == 0x2b || modeExt >= 0x2f)
 		newTriplet.setData(0x20);
+	// For Address Row 0, set Address
+	if (modeExt == 0x07)
+		newTriplet.setAddress(63);
 	// For Termination Marker, set Address and Mode
 	if (modeExt == 0x1f) {
 		newTriplet.setAddress(63);
