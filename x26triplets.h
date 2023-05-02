@@ -61,6 +61,8 @@ public:
 
 	int activePositionRow() const { return m_activePositionRow; }
 	int activePositionColumn() const { return m_activePositionColumn; }
+	int activePositionRow1p5() const { return m_activePositionRow1p5; }
+	int activePositionColumn1p5() const { return m_activePositionColumn1p5; }
 	X26TripletError error() const { return m_error; }
 	bool reservedMode() const { return m_reservedMode; }
 	bool reservedData() const { return m_reservedData; }
@@ -68,9 +70,13 @@ public:
 	friend class X26TripletList;
 
 private:
+	// Only these variables are manipulated by the X26Triplet class
 	int m_address, m_mode, m_data;
+	// and the following are filled in by X26TripletList::updateInternalData()
 	int m_activePositionRow = -1;
 	int m_activePositionColumn = -1;
+	int m_activePositionRow1p5 = -1;
+	int m_activePositionColumn1p5 = -1;
 	X26TripletError m_error = NoError;
 	bool m_reservedMode = false;
 	bool m_reservedData = false;

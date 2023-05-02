@@ -74,6 +74,7 @@ void X26TripletList::updateInternalData()
 	ActivePosition activePosition;
 	X26Triplet *triplet;
 
+	// Check for errors, and fill in where the Active Position goes for Level 2.5 and above
 	for (int i=0; i < m_list.size(); i++) {
 		triplet = &m_list[i];
 		triplet->m_error = X26Triplet::NoError;
@@ -182,6 +183,34 @@ void X26TripletList::updateInternalData()
 		triplet->m_activePositionRow = activePosition.row();
 		triplet->m_activePositionColumn = activePosition.column();
 	}
+
+	// Now work out where the Active Position goes on a Level 1.5 decoder
+	activePosition.reset();
+
+	for (int i=0; i < m_list.size(); i++) {
+		triplet = &m_list[i];
+
+		if (triplet->modeExt() == 0x1f) // Termination marker
+			break;
+
+		switch (triplet->modeExt()) {
+			case 0x04: // Set Active Position;
+				activePosition.setRow(triplet->addressRow());
+				break;
+			case 0x07: // Address row 0
+				if (triplet->m_address == 63 && activePosition.setRow(0))
+					activePosition.setColumn(8);
+				break;
+			case 0x22: // G3 mosaic character at level 1.5
+			case 0x2f ... 0x3f: // G2 character or G0 diacritical mark
+				activePosition.setColumn(triplet->addressColumn());
+				break;
+		}
+
+		triplet->m_activePositionRow1p5 = activePosition.row();
+		triplet->m_activePositionColumn1p5 = activePosition.column();
+	}
+
 }
 
 void X26TripletList::append(const X26Triplet &value)
