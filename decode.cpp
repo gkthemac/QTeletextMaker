@@ -17,21 +17,145 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <QMultiMap>
-//#include <QTime>
-#include <QPair>
-#include <algorithm>
-#include <vector>
-
 #include "decode.h"
+
+#include <QList>
+#include <QMultiMap>
+
+TeletextPageDecode::Invocation::Invocation()
+{
+	m_tripletList = nullptr;
+	m_startTripletNumber = 0;
+	m_endTripletNumber = -1;
+	m_originRow = 0;
+	m_originColumn = 0;
+	m_fullScreenCLUT = -1;
+}
+
+void TeletextPageDecode::Invocation::setTripletList(X26TripletList *tripletList)
+{
+	m_tripletList = tripletList;
+}
+
+void TeletextPageDecode::Invocation::setStartTripletNumber(int n)
+{
+	m_startTripletNumber = n;
+}
+
+void TeletextPageDecode::Invocation::setEndTripletNumber(int n)
+{
+	m_endTripletNumber = n;
+}
+
+void TeletextPageDecode::Invocation::setOrigin(int row, int column)
+{
+	m_originRow = row;
+	m_originColumn = column;
+}
+
+void TeletextPageDecode::Invocation::buildMap(int level)
+{
+	int endTripletNumber;
+
+	if (m_endTripletNumber == -1)
+		endTripletNumber = m_tripletList->size();
+	else
+		endTripletNumber = m_endTripletNumber;
+
+	m_characterMap.clear();
+	m_attributeMap.clear();
+	m_rightMostColumn.clear();
+	m_fullScreenCLUT = -1;
+	m_fullRowCLUTMap.clear();
+
+	for (int i=m_startTripletNumber; i<=endTripletNumber; i++) {
+		const X26Triplet triplet = m_tripletList->at(i);
+
+		if (triplet.error() != 0)
+			continue;
+
+		int targetRow, targetColumn;
+
+		if (level == 1) {
+			targetRow = m_originRow + triplet.activePositionRow1p5();
+			targetColumn = m_originColumn + triplet.activePositionColumn1p5();
+		} else {
+			targetRow = m_originRow + triplet.activePositionRow();
+			targetColumn = m_originColumn + triplet.activePositionColumn();
+		}
+
+		if (triplet.activePositionRow() == -1)
+			targetRow++;
+		if (triplet.activePositionColumn() == -1)
+			targetColumn++;
+
+		if (targetRow > 24 || targetColumn > 71)
+			continue;
+
+		switch (triplet.modeExt()) {
+			case 0x21: // G1 character
+			case 0x22: // G3 character at Level 1.5
+			case 0x29: // G0 character
+			case 0x2b: // G3 character at Level 2.5
+			case 0x2f: // G2 character
+			case 0x30 ... 0x3f: // G0 character with diacritical
+				m_characterMap.insert(qMakePair(targetRow, targetColumn), triplet);
+				// Store rightmost column in this row for Adaptive Object attribute tracking
+				// QMap stores one value per key, QMap::insert will replace the value if the key already exists
+				m_rightMostColumn.insert(targetRow, targetColumn);
+				break;
+			case 0x20: // Foreground colour
+			case 0x23: // Background colour
+			case 0x27: // Additional flash functions
+			case 0x2c: // Display attributes
+				m_attributeMap.insert(qMakePair(targetRow, targetColumn), triplet);
+				m_rightMostColumn.insert(targetRow, targetColumn);
+				break;
+			case 0x00: // Full screen colour
+				if ((triplet.data() & 0x60) != 0x00)
+					break;
+				m_fullScreenCLUT = triplet.data();
+				// Full Screen Colour triplet overrides both the X/28 Full Screen Colour AND Full Row Colour.
+				// For the latter, place a Full Row Colour "down to bottom" at the Active Position.
+				m_fullRowCLUTMap.insert(targetRow, X26Triplet(triplet.address(), triplet.mode(), triplet.data() | 0x60));
+				break;
+			case 0x01: // Full row colour
+				m_fullRowCLUTMap.insert(targetRow, triplet);
+				break;
+			case 0x07: // Address row 0
+				if (targetRow == 0)
+					m_fullRowCLUTMap.insert(targetRow, triplet);
+				break;
+		}
+	}
+}
+
+
+int TeletextPageDecode::s_instances = 0;
+
+TeletextPageDecode::textPainter TeletextPageDecode::s_blankPainter;
 
 TeletextPageDecode::TeletextPageDecode()
 {
+	if (s_instances == 0) {
+		for (int c=0; c<72; c++)
+			s_blankPainter.bottomHalfCell[c].character.code = 0x00;
+		s_blankPainter.rightHalfCell.character.code = 0x00;
+	}
+	s_instances++;
+
 	m_level = 0;
 
-	for (int r=0; r<25; r++)
-		for (int c=0; c<72; c++)
+	for (int r=0; r<25; r++) {
+		m_rowHeight[r] = NormalHeight;
+		for (int c=0; c<72; c++) {
+			if (c < 40) {
+				m_cellLevel1Mosaic[r][c] = false;
+				m_cellLevel1CharSet[r][c] = 0;
+			}
 			m_refresh[r][c] = true;
+		}
+	}
 
 	m_finalFullScreenColour = 0;
 	m_finalFullScreenQColor.setRgb(0, 0, 0);
@@ -40,16 +164,11 @@ TeletextPageDecode::TeletextPageDecode()
 		m_fullRowQColor[r].setRgb(0, 0, 0);
 	}
 	m_leftSidePanelColumns = m_rightSidePanelColumns = 0;
-	m_textLayer.push_back(&m_level1Layer);
-	m_textLayer.push_back(new EnhanceLayer);
 }
 
 TeletextPageDecode::~TeletextPageDecode()
 {
-	while (m_textLayer.size()>1) {
-		delete m_textLayer.back();
-		m_textLayer.pop_back();
-	}
+	s_instances--;
 }
 
 void TeletextPageDecode::setRefresh(int r, int c, bool refresh)
@@ -60,7 +179,7 @@ void TeletextPageDecode::setRefresh(int r, int c, bool refresh)
 void TeletextPageDecode::setTeletextPage(LevelOnePage *newCurrentPage)
 {
 	m_levelOnePage = newCurrentPage;
-	m_level1Layer.setTeletextPage(newCurrentPage);
+	m_localEnhancements.setTripletList(m_levelOnePage->enhancements());
 	updateSidePanels();
 }
 
@@ -75,6 +194,7 @@ void TeletextPageDecode::setLevel(int level)
 		for (int c=0; c<72; c++)
 			m_refresh[r][c] = true;
 
+	updateSidePanels();
 	decodePage();
 }
 
@@ -99,385 +219,773 @@ void TeletextPageDecode::updateSidePanels()
 	}
 }
 
-void TeletextPageDecode::buildEnhanceMap(TextLayer *enhanceLayer, int tripletNumber)
+void TeletextPageDecode::buildInvocationList(Invocation &invocation, int objectType)
 {
-	bool terminatorFound=false;
-	ActivePosition activePosition;
-	const X26Triplet *x26Triplet;
-	int originModifierR=0;
-	int originModifierC=0;
+	if (invocation.tripletList()->isEmpty())
+		return;
 
-	do {
-		x26Triplet = &m_levelOnePage->enhancements()->at(tripletNumber);
-		if (x26Triplet->isRowTriplet())
-			// Row address group
-			switch (x26Triplet->mode()) {
-				case 0x00: // Full screen colour
-					if (m_level >= 2 && ((x26Triplet->data() & 0x60) == 0x00) && !activePosition.isDeployed())
-						enhanceLayer->setFullScreenColour(x26Triplet->data());
-					break;
-				case 0x01: // Full row colour
-					if (m_level >= 2 && activePosition.setRow(x26Triplet->addressRow()) && ((x26Triplet->data() & 0x60) == 0x00 || (x26Triplet->data() & 0x60) == 0x60))
-						enhanceLayer->setFullRowColour(activePosition.row(), x26Triplet->data() & 0x1f, (x26Triplet->data() & 0x60) == 0x60);
-					break;
-				case 0x04: // Set active position
-					if (activePosition.setRow(x26Triplet->addressRow()) && m_level >= 2 && x26Triplet->data() < 40)
-						activePosition.setColumn(x26Triplet->data());
-					break;
-				case 0x07: // Address row 0
-					if (x26Triplet->address() == 0x3f && !activePosition.isDeployed()) {
-						activePosition.setRow(0);
-						activePosition.setColumn(8);
-						if (m_level >= 2 && ((x26Triplet->data() & 0x60) == 0x00 || (x26Triplet->data() & 0x60) == 0x60))
-							enhanceLayer->setFullRowColour(0, x26Triplet->data() & 0x1f, (x26Triplet->data() & 0x60) == 0x60);
-					}
-					break;
-				case 0x10: // Origin modifier
-					if (m_level >= 2 && (tripletNumber+1) < m_levelOnePage->enhancements()->size() && m_levelOnePage->enhancements()->at(tripletNumber+1).mode() >= 0x11 && m_levelOnePage->enhancements()->at(tripletNumber+1).mode() <= 0x13 && x26Triplet->address() >= 40 && x26Triplet->data() < 72) {
-						originModifierR = x26Triplet->address()-40;
-						originModifierC = x26Triplet->data();
-					}
-					break;
-				case 0x11 ... 0x13: // Invoke Object
-					if (m_level >= 2) {
-						if ((x26Triplet->address() & 0x18) == 0x08) {
-							// Local Object
-							// Check if the pointer in the Invocation triplet is valid
-							// Can't point to triplets 13-15; only triplets 0-12 per packet
-							if ((x26Triplet->data() & 0x0f) > 12)
-								break;
-							int tripletPointer = ((x26Triplet->data() >> 4) | ((x26Triplet->address() & 1) << 3)) * 13 + (x26Triplet->data() & 0x0f);
-							// Can't point to triplet beyond the end of the Local Enhancement Data
-							if ((tripletPointer+1) >= m_levelOnePage->enhancements()->size())
-								break;
-							// Check if we're pointing to an actual Object Definition of the same type
-							if ((x26Triplet->mode() | 0x04) != m_levelOnePage->enhancements()->at(tripletPointer).mode())
-								break;
-							// The Object Definition can't declare it's at triplet 13-15; only triplets 0-12 per packet
-							if ((m_levelOnePage->enhancements()->at(tripletPointer).data() & 0x0f) > 12)
-								break;
-							// Check if the Object Definition triplet is where it declares it is
-							if ((((m_levelOnePage->enhancements()->at(tripletPointer).data() >> 4) | ((m_levelOnePage->enhancements()->at(tripletPointer).address() & 1) << 3)) * 13 + (m_levelOnePage->enhancements()->at(tripletPointer).data() & 0x0f)) != tripletPointer)
-								break;
-							// Check if (sub)Object type can be invoked by Object type we're within
-							if (enhanceLayer->objectType() >= (x26Triplet->mode() & 0x03))
-								break;
-							// Is the object required at the current presentation Level?
-							if (m_level == 2 && (m_levelOnePage->enhancements()->at(tripletPointer).address() & 0x08) == 0x00)
-								break;
-							if (m_level == 3 && (m_levelOnePage->enhancements()->at(tripletPointer).address() & 0x10) == 0x00)
-								break;
-							EnhanceLayer *newLayer = new EnhanceLayer;
-							m_textLayer.push_back(newLayer);
-							newLayer->setObjectType(x26Triplet->mode() & 0x03);
-							newLayer->setOrigin(enhanceLayer->originR() + activePosition.row() + originModifierR, enhanceLayer->originC() + activePosition.column() + originModifierC);
-							buildEnhanceMap(newLayer, tripletPointer+1);
-						} else
-							qDebug("POP or GPOP");
-						originModifierR = originModifierC = 0;
-					}
-					break;
-				case 0x15 ... 0x17: // Define Object, also used as terminator
-					terminatorFound = true;
-					break;
-				case 0x1f: // Terminator
-					if (x26Triplet->address() == 63)
-						terminatorFound = true;
-					break;
+	int i;
+
+	for (i=invocation.startTripletNumber(); i<invocation.tripletList()->size(); i++) {
+		const X26Triplet triplet = invocation.tripletList()->at(i);
+
+		if (triplet.modeExt() == 0x1f && triplet.address() == 63)
+			// Termination marker
+			break;
+		if (triplet.modeExt() >= 0x15 && triplet.modeExt() <= 0x17)
+			// Object Definition, also used as terminator
+			break;
+		if (m_level >= 2 && triplet.modeExt() >= 0x11 && triplet.modeExt() <= 0x13 && triplet.error() == 0) {
+			// Object Invocation
+			//TODO POP and GPOP objects
+			if (triplet.objectSource() != X26Triplet::LocalObject) {
+				qDebug("POP or GPOP");
+				continue;
 			}
-		else {
-			// Column address group
-			bool columnTripletActioned = true;
-			switch (x26Triplet->mode()) {
-				// First we deal with column triplets that are also valid at Level 1.5
-				case 0x0b: // G3 mosaic character at Level 2.5
-					if (m_level <= 1)
-						break;
-					// fall-through
-				case 0x02: // G3 mosaic character at Level 1.5
-				case 0x0f: // G2 character
-				case 0x10 ... 0x1f: // Diacritical mark
-					if (activePosition.setColumn(x26Triplet->addressColumn()) && x26Triplet->data() >= 0x20)
-						enhanceLayer->enhanceMap.insert(qMakePair(activePosition.row(), activePosition.column()), qMakePair(x26Triplet->mode() | 0x20, x26Triplet->data()));
-					break;
-				// Make sure that PDC and reserved triplets don't affect the Active Position
-				case 0x04 ... 0x06: // 0x04 and 0x05 are reserved, 0x06 for PDC
-				case 0x0a: // Reserved
-					break;
-				default:
-					columnTripletActioned = false;
+
+			// Check if (sub)Object type can be invoked by Object type we're within
+			if (triplet.modeExt() - 0x11 <= objectType)
+				continue;
+
+			// See if Object Definition is required at selected level
+			if (m_level == 2 && (invocation.tripletList()->at(triplet.objectLocalIndex()).address() & 0x08) == 0x00)
+				continue;
+			if (m_level == 3 && (invocation.tripletList()->at(triplet.objectLocalIndex()).address() & 0x10) == 0x00)
+				continue;
+
+			// Work out the absolute position where the Object is invoked
+			int originRow = invocation.originRow() + triplet.activePositionRow();
+			int originColumn = invocation.originColumn() + triplet.activePositionColumn();
+			// -1, -1 happens if Object is invoked before the Active Position is deployed
+			if (triplet.activePositionRow() == -1)
+				originRow++;
+			if (triplet.activePositionColumn() == -1)
+				originColumn++;
+			// Use Origin Modifier in previous triplet if there's one there
+			if (i > 0 && invocation.tripletList()->at(i-1).modeExt() == 0x10) {
+				originRow += invocation.tripletList()->at(i-1).address()-40;
+				originColumn += invocation.tripletList()->at(i-1).data();
 			}
-			// All remaining possible column triplets at Level 2.5 affect the Active Position
-			if (m_level >= 2 && !columnTripletActioned && activePosition.setColumn(x26Triplet->addressColumn()))
-				enhanceLayer->enhanceMap.insert(qMakePair(activePosition.row(), activePosition.column()), qMakePair(x26Triplet->mode() | 0x20, x26Triplet->data()));
+
+			// Add the Invocation to the list, and recurse
+			Invocation newInvocation;
+			const int newObjectType = triplet.modeExt() - 0x11;
+
+			newInvocation.setTripletList(invocation.tripletList());
+			newInvocation.setStartTripletNumber(triplet.objectLocalIndex()+1);
+			newInvocation.setOrigin(originRow, originColumn);
+			m_invocations[newObjectType].append(newInvocation);
+			buildInvocationList(m_invocations[newObjectType].last(), newObjectType);
 		}
-		tripletNumber++;
-	} while (!terminatorFound && tripletNumber < m_levelOnePage->enhancements()->size());
+	}
+
+	invocation.setEndTripletNumber(i-1);
+	invocation.buildMap(m_level);
+}
+
+TeletextPageDecode::textCharacter TeletextPageDecode::characterFromTriplets(const QList<X26Triplet> triplets, int g0CharSet)
+{
+	textCharacter result;
+	result.code = 0x00;
+
+	// QMultiMap::values returns a QList with the most recently inserted value sorted first,
+	// so do the loop backwards to iterate from least to most recent value
+	for (int a=triplets.size()-1; a>=0; a--) {
+		const X26Triplet triplet = triplets.at(a);
+
+		if (triplet.data() < 0x20)
+			continue;
+
+		const unsigned char charCode = triplet.data();
+
+		// Deal with Level 1.5 valid characters first
+		switch (triplet.modeExt()) {
+			case 0x22: // G3 character at Level 1.5
+				result = { charCode, 26, 0 };
+				break;
+			case 0x2f: // G2 character
+				result.code = charCode;
+				// Duplicated from decodePage
+				switch (m_level1DefaultCharSet) {
+					case 1:
+					case 2:
+					case 3:
+						// Cyrillic G2
+						result.set = 8;
+						break;
+					case 4:
+						// Greek G2
+						result.set = 9;
+						break;
+					case 5:
+						// Arabic G2
+						result.set = 10;
+						break;
+					default:
+						// Latin G2
+						result.set = 7;
+						break;
+				}
+				result.diacritical = 0;
+				break;
+			case 0x30 ... 0x3f: // G0 character with diacritical
+				result = { charCode, g0CharSet, triplet.mode() & 0xf };
+				break;
+		}
+
+		if (m_level == 1)
+			continue;
+
+		// Now deal with Level 2.5 characters
+		switch (triplet.modeExt()) {
+			case 0x21: // G1 character
+				result.code = charCode;
+				if (triplet.data() & 0x20)
+					result.set = 24;
+				else
+					result.set = g0CharSet;
+				result.diacritical = 0;
+				break;
+			case 0x29: // G0 character
+				result = { charCode, g0CharSet, 0 };
+				break;
+			case 0x2b: // G3 character at Level 2.5
+				result = { charCode, 26, 0 };
+				break;
+		}
+	}
+
+	return result;
 }
 
 void TeletextPageDecode::decodePage()
 {
-	int currentFullRowColour, downwardsFullRowColour;
-	int renderedFullScreenColour;
-	struct {
-		bool operator() (TextLayer *i, TextLayer *j) { return (i->objectType() < j->objectType()); }
-	} compareLayer;
+	m_invocations[0].clear();
+	m_invocations[1].clear();
+	m_invocations[2].clear();
 
-//	QTime renderPageTime;
+	buildInvocationList(m_localEnhancements, -1);
 
-//	renderPageTime.start();
+	// Append Local Enhancement Data to end of Active Object QList
+	m_invocations[0].append(m_localEnhancements);
 
-	updateSidePanels();
+	m_level1ActivePainter = s_blankPainter;
 
-	while (m_textLayer.size()>2) {
-		delete m_textLayer.back();
-		m_textLayer.pop_back();
+	m_adapPassPainter[0].clear();
+	m_adapPassPainter[1].clear();
+
+	for (int t=1; t<3; t++)
+		for (int i=0; i<m_invocations[t].size(); i++)
+			m_adapPassPainter[t-1].append(s_blankPainter);
+
+	if (m_level >= 2) {
+		// Pick up default full screen/row colours from X/28
+		setFullScreenColour(m_levelOnePage->defaultScreenColour());
+		int downwardsRowCLUT = m_levelOnePage->defaultRowColour();
+
+		// Check for Full Screen Colour X/26 triplets in Local Enhancement Data and Active Objects
+		for (int i=0; i<m_invocations[0].size(); i++)
+			if (m_invocations[0].at(i).fullScreenColour() != -1)
+				setFullScreenColour(m_invocations[0].at(i).fullScreenColour());
+
+		// Now do the Full Row Colours
+		for (int r=0; r<25; r++) {
+			int thisFullRowColour = downwardsRowCLUT;
+
+			for (int i=0; i<m_invocations[0].size(); i++) {
+				const QList<X26Triplet> fullRowColoursHere = m_invocations[0].at(i).fullRowColoursMappedAt(r);
+
+				// QMultiMap::values returns QList with most recent value first...
+				for (int a=fullRowColoursHere.size()-1; a>=0; a--) {
+					thisFullRowColour = fullRowColoursHere.at(a).data() & 0x1f;
+					if ((fullRowColoursHere.at(a).data() & 0x60) == 0x60)
+						downwardsRowCLUT = thisFullRowColour;
+				}
+			}
+
+			setFullRowColour(r, thisFullRowColour);
+		}
+	} else {
+		setFullScreenColour(0);
+		for (int r=0; r<25; r++)
+			setFullRowColour(r, 0);
 	}
 
-	renderedFullScreenColour = (m_level >= 2) ? m_levelOnePage->defaultScreenColour() : 0;
-	downwardsFullRowColour = (m_level >= 2) ? m_levelOnePage->defaultRowColour() : 0;
-	setFullScreenColour(renderedFullScreenColour);
-	for (int r=0; r<25; r++)
-		setFullRowColour(r, downwardsFullRowColour);
+	m_level1DefaultCharSet = m_g0CharacterMap.value(((m_levelOnePage->defaultCharSet() << 3) | m_levelOnePage->defaultNOS()), 0);
+	if (m_levelOnePage->secondCharSet() != 0xf)
+		m_level1SecondCharSet = m_g0CharacterMap.value(((m_levelOnePage->secondCharSet() << 3) | m_levelOnePage->secondNOS()), 0);
+	else
+		m_level1SecondCharSet = m_level1DefaultCharSet;
 
-	m_textLayer[1]->enhanceMap.clear();
+	// This will be true if the Level 1 character set is non-Latin
+	if (m_level1DefaultCharSet <= 6)
+		m_x26DefaultG0CharSet = m_level1DefaultCharSet;
+	else
+		m_x26DefaultG0CharSet = 0;
 
-	if (m_level > 0 && !m_levelOnePage->enhancements()->isEmpty()) {
-		m_textLayer[1]->setFullScreenColour(-1);
-		for (int r=0; r<25; r++)
-			m_textLayer[1]->setFullRowColour(r, -1, false);
-		buildEnhanceMap(m_textLayer[1]);
+	switch (m_level1DefaultCharSet) {
+		case 1:
+		case 2:
+		case 3:
+			// Cyrillic G2
+			m_x26DefaultG2CharSet = 8;
+			break;
+		case 4:
+			// Greek G2
+			m_x26DefaultG2CharSet = 9;
+			break;
+		case 5:
+			// Arabic G2
+			m_x26DefaultG2CharSet = 10;
+			break;
+		default:
+			// Latin G2
+			m_x26DefaultG2CharSet = 7;
+			break;
+	}
 
-		if (m_textLayer.size() > 2)
-			std::stable_sort(m_textLayer.begin()+2, m_textLayer.end(), compareLayer);
+	// Work out rows containing top and bottom halves of Level 1 double height characters
+	for (int r=1; r<24; r++) {
+		bool doubleHeightAttributeFound = false;
 
-		if (m_level >= 2) {
-			if (m_textLayer[1]->fullScreenColour() != -1)
-				downwardsFullRowColour = m_textLayer[1]->fullScreenColour();
-			for (int r=0; r<25; r++) {
-				for (int l=0; l<2; l++) {
-					if (r == 0 && m_textLayer[l]->fullScreenColour() != - 1)
-						renderedFullScreenColour = m_textLayer[l]->fullScreenColour();
-					if (m_textLayer[l]->fullRowColour(r) == - 1)
-						currentFullRowColour = downwardsFullRowColour;
-					else {
-						currentFullRowColour = m_textLayer[l]->fullRowColour(r);
-						if (m_textLayer[l]->fullRowDownwards(r))
-							downwardsFullRowColour = currentFullRowColour;
-					}
-				}
-				setFullRowColour(r ,currentFullRowColour);
+		for (int c=0; c<40; c++)
+			if (m_levelOnePage->character(r, c) == 0x0d || m_levelOnePage->character(r, c) == 0x0f) {
+				doubleHeightAttributeFound = true;
+				break;
 			}
-			setFullScreenColour(renderedFullScreenColour);
-		}
+
+		if (doubleHeightAttributeFound && r < 23) {
+			m_rowHeight[r] = TopHalf;
+			r++;
+			m_rowHeight[r] = BottomHalf;
+		} else
+			m_rowHeight[r] = NormalHeight;
 	}
 
 	for (int r=0; r<25; r++)
 		decodeRow(r);
-//	qDebug("Full page render: %d ms", renderPageTime.elapsed());
 }
 
 void TeletextPageDecode::decodeRow(int r)
 {
-	int c;
-	int phaseNumberRender = 0;
-	bool decodeNextRow = false;
-	bool applyRightHalf = false;
-	bool previouslyDoubleHeight, previouslyBottomHalf, underlined;
-	bool doubleHeightFound = false;
-	textCharacter resultCharacter, layerCharacter;
-	applyAttributes layerApplyAttributes;
-	textAttributes underlyingAttributes, resultAttributes;
-	int level1CharSet;
+	int level1ForegroundCLUT = 7;
+	bool level1Mosaics = false;
+	bool level1SeparatedMosaics = false;
+	bool level1HoldMosaics = false;
+	unsigned char level1HoldMosaicCharacter = 0x20;
+	bool level1HoldMosaicSeparated = false;
+	int level1CharSet = 0;
+	bool level1EscapeSwitch = false;
+	int x26G0CharSet = 0;
 
-	for (c=0; c<72; c++) {
-		textCell oldTextCell = m_cell[r][c];
+	textPainter *painter;
 
-		resultAttributes = underlyingAttributes;
-		for (int l=0; l<m_textLayer.size(); l++) {
-			layerCharacter = m_textLayer[l]->character(r, c);
-			if (layerCharacter.code != 0x00)
-				resultCharacter = layerCharacter;
-			if (l == 0) {
-//				m_cell[r][c].level1Mosaic = (resultCharacter.set == 24 || resultCharacter.set == 25) && m_levelOnePage->character(r, c) >= 0x20;
-				m_cell[r][c].level1Mosaic = (resultCharacter.set == 24 || resultCharacter.set == 25);
-				if (!m_cell[r][c].level1Mosaic)
-					level1CharSet = resultCharacter.set;
-				m_cell[r][c].level1CharSet = level1CharSet;
-			}
+	// Used for tracking which Adaptive Invocation is applying which attribute type(s)
+	// A.7.1 and A.7.2 of the spec says Adaptive Objects can't overlap but can be interleaved
+	// if they don't have attributes, so we only need to track one
+	int adapInvokeAttrs = -1;
+	bool adapForeground = false;
+	bool adapBackground = false;
+	bool adapFlash = false;
+	bool adapDisplayAttrs = false;
 
-			layerApplyAttributes = { false, false, false, false, false, false, false, false };
-			m_textLayer[l]->attributes(r, c, &layerApplyAttributes);
-			if (layerApplyAttributes.copyAboveAttributes) {
-				resultAttributes = m_cell[r-1][c].attribute;
-				layerApplyAttributes.copyAboveAttributes = false;
-				break;
+	for (int c=0; c<72; c++) {
+		textCell previousCellContents = m_cell[r][c];
+
+		// Start of row default conditions, also when crossing into and across side panels
+		if (c == 0 || c == 40 || c == 56) {
+			level1CharSet = m_level1DefaultCharSet;
+			x26G0CharSet = m_x26DefaultG0CharSet;
+
+			m_level1ActivePainter.attribute.flash.mode = 0;
+			m_level1ActivePainter.attribute.flash.ratePhase = 0;
+			m_level1ActivePainter.attribute.display.doubleHeight = false;
+			m_level1ActivePainter.attribute.display.doubleWidth = false;
+			m_level1ActivePainter.attribute.display.boxingWindow = false;
+			m_level1ActivePainter.attribute.display.conceal = false;
+			m_level1ActivePainter.attribute.display.invert = false;
+			m_level1ActivePainter.attribute.display.underlineSeparated = false;
+
+			if (m_level >= 2) {
+				m_level1ActivePainter.attribute.foregroundCLUT = 7 | m_foregroundRemap[m_levelOnePage->colourTableRemap()];
+				if (m_levelOnePage->blackBackgroundSubst() || c >= 40)
+					m_level1ActivePainter.attribute.backgroundCLUT = m_fullRowColour[r];
+				else
+					m_level1ActivePainter.attribute.backgroundCLUT = m_backgroundRemap[m_levelOnePage->colourTableRemap()];
+			} else {
+				m_level1ActivePainter.attribute.foregroundCLUT = 7;
+				m_level1ActivePainter.attribute.backgroundCLUT = 0;
 			}
-			if (layerApplyAttributes.applyForeColour) {
-				resultAttributes.foreColour = layerApplyAttributes.attribute.foreColour;
-				if (l == 0 && m_level >= 2)
-					resultAttributes.foreColour |= m_foregroundRemap[m_levelOnePage->colourTableRemap()];
-			}
-			if (layerApplyAttributes.applyBackColour) {
-				resultAttributes.backColour = layerApplyAttributes.attribute.backColour;
-				if (l == 0) {
-					if (m_level >= 2)
-						if (resultAttributes.backColour == 0x20)
-							resultAttributes.backColour = (c > 39 || m_levelOnePage->blackBackgroundSubst()) ? m_fullRowColour[r] : m_backgroundRemap[m_levelOnePage->colourTableRemap()];
+		}
+
+		// Level 1 set-at and "set-between" spacing attributes
+		if (c < 40 && m_rowHeight[r] != BottomHalf)
+			switch (m_levelOnePage->character(r, c)) {
+				case 0x09: // Steady
+					m_level1ActivePainter.attribute.flash.mode = 0;
+					m_level1ActivePainter.attribute.flash.ratePhase = 0;
+					break;
+				case 0x0a: // End box
+					// "Set-between" - requires two consecutive "end box" codes
+					if (c > 0 && m_levelOnePage->character(r, c-1) == 0x0a)
+						m_level1ActivePainter.attribute.display.boxingWindow = false;
+					break;
+				case 0x0b: // Start box
+					// "Set-between" - requires two consecutive "start box" codes
+					if (c > 0 && m_levelOnePage->character(r, c-1) == 0x0b)
+						m_level1ActivePainter.attribute.display.boxingWindow = true;
+					break;
+				case 0x0c: // Normal size
+					if (m_level1ActivePainter.attribute.display.doubleHeight || m_level1ActivePainter.attribute.display.doubleWidth) {
+						// Change of size resets hold mosaic character
+						level1HoldMosaicCharacter = 0x20;
+						level1HoldMosaicSeparated = false;
+					}
+					m_level1ActivePainter.attribute.display.doubleHeight = false;
+					m_level1ActivePainter.attribute.display.doubleWidth = false;
+					break;
+				case 0x18: // Conceal
+					m_level1ActivePainter.attribute.display.conceal = true;
+					break;
+				case 0x19: // Contiguous mosaics
+					// This spacing attribute cannot cancel an X/26 underlined/separated attribute
+					if (!m_level1ActivePainter.attribute.display.underlineSeparated)
+						level1SeparatedMosaics = false;
+					break;
+				case 0x1a: // Separated mosaics
+					level1SeparatedMosaics = true;
+					break;
+				case 0x1c: // Black background
+					if (m_level >= 2) {
+						if (m_levelOnePage->blackBackgroundSubst())
+							m_level1ActivePainter.attribute.backgroundCLUT = m_fullRowColour[r];
 						else
-							resultAttributes.backColour |= m_backgroundRemap[m_levelOnePage->colourTableRemap()];
+							m_level1ActivePainter.attribute.backgroundCLUT = m_backgroundRemap[m_levelOnePage->colourTableRemap()];
+					} else
+						m_level1ActivePainter.attribute.backgroundCLUT = 0;
+					break;
+				case 0x1d: // New background
+					if (m_level >= 2)
+						m_level1ActivePainter.attribute.backgroundCLUT = level1ForegroundCLUT | m_backgroundRemap[m_levelOnePage->colourTableRemap()];
 					else
-						if (resultAttributes.backColour == 0x20)
-							resultAttributes.backColour = 0x00;
+						m_level1ActivePainter.attribute.backgroundCLUT = level1ForegroundCLUT;
+					break;
+				case 0x1e: // Hold mosaics
+					level1HoldMosaics = true;
+					break;
+			}
+
+		if (m_level < 2)
+			m_level1ActivePainter.result.attribute = m_level1ActivePainter.attribute;
+		else{
+			// Deal with incremental and decremental flash
+			rotateFlashMovement(m_level1ActivePainter.attribute.flash);
+
+			for (int t=0; t<2; t++)
+				for (int i=0; i<m_adapPassPainter[t].size(); i++)
+					rotateFlashMovement(m_adapPassPainter[t][i].attribute.flash);
+
+			// X/26 attributes
+			for (int t=0; t<3; t++)
+				for (int i=0; i<m_invocations[t].size(); i++) {
+					QList<X26Triplet> attributesHere = m_invocations[t].at(i).attributesMappedAt(r, c);
+
+					painter = (t == 0) ? &m_level1ActivePainter : &m_adapPassPainter[t-1][i];
+
+					// Adaptive Invocation painter: pick up the attributes we're NOT adapting from
+					// m_level1ActivePainter, which by now has taken into account all the attributes
+					// from the Level 1 page, Active Objects and the Local Enhancement Data
+					if (t == 1) {
+						if (!adapForeground)
+							painter->attribute.foregroundCLUT = m_level1ActivePainter.attribute.foregroundCLUT;
+						if (!adapBackground)
+							painter->attribute.backgroundCLUT = m_level1ActivePainter.attribute.backgroundCLUT;
+						if (!adapFlash)
+							painter->attribute.flash = m_level1ActivePainter.attribute.flash;
+						if (!adapDisplayAttrs)
+							painter->attribute.display = m_level1ActivePainter.attribute.display;
+					}
+
+					// QMultiMap::values returns QList with most recent value first...
+					for (int a=attributesHere.size()-1; a>=0; a--) {
+						const X26Triplet triplet = attributesHere.at(a);
+
+						bool applyAdapt = false;
+
+						// Adaptive Invocation that is applying an attribute
+						// If we're not tracking an Adaptive Invocation yet, start tracking this one
+						// Otherwise check if this Invocation is the the same one as we are tracking
+						if (t == 1) {
+							if (adapInvokeAttrs == -1) {
+								adapInvokeAttrs = i;
+								applyAdapt = true;
+							} else if (adapInvokeAttrs == i)
+								applyAdapt = true;
+//							else
+//								qDebug("Multiple adaptive object attributes");
+						}
+
+						switch (triplet.modeExt()) {
+							case 0x20: // Foreground colour
+								if (applyAdapt)
+									adapForeground = true;
+								painter->attribute.foregroundCLUT = triplet.data();
+								break;
+							case 0x23: // Background colour
+								if (applyAdapt)
+									adapBackground = true;
+								painter->attribute.backgroundCLUT = triplet.data();
+								break;
+							case 0x27: // Additional flash functions
+								if (applyAdapt)
+									adapFlash = true;
+								painter->attribute.flash.mode = triplet.data() & 0x03;
+								painter->attribute.flash.ratePhase = triplet.data() >> 2;
+								// For incremental/decremental 2Hz flash, start at phase 1
+								if (painter->attribute.flash.mode != 0 && painter->attribute.flash.ratePhase & 0x4)
+									painter->attribute.flash.phase2HzShown = 1;
+								else
+									painter->attribute.flash.phase2HzShown = painter->attribute.flash.ratePhase;
+								break;
+							case 0x2c: // Display attributes
+								if (applyAdapt)
+									adapDisplayAttrs = true;
+								painter->attribute.display.doubleHeight = triplet.data() & 0x01;
+								painter->attribute.display.boxingWindow = triplet.data() & 0x02;
+								painter->attribute.display.conceal = triplet.data() & 0x04;
+								painter->attribute.display.invert = triplet.data() & 0x10;
+								painter->attribute.display.underlineSeparated = triplet.data() & 0x20;
+								painter->attribute.display.doubleWidth = triplet.data() & 0x40;
+								// Cancelling separated mosaics with X/26 attribute
+								// also cancels the Level 1 separated mosaic attribute
+								if (t == 0 && !painter->attribute.display.underlineSeparated)
+									level1SeparatedMosaics = false;
+								break;
+						}
+					}
+
+					painter->result.attribute = painter->attribute;
 				}
 			}
 
-			if (layerApplyAttributes.applyFlash) {
-				//BUG Adaptive Objects disrupt inc/dec flash
-				resultAttributes.flash = layerApplyAttributes.attribute.flash;
-				if (resultAttributes.flash.mode != 0)
-					phaseNumberRender = (resultAttributes.flash.ratePhase == 4 || resultAttributes.flash.ratePhase == 5) ? 1 : resultAttributes.flash.ratePhase;
+		// Level 1 character
+		if (c < 40 && m_rowHeight[r] != BottomHalf) {
+			m_level1ActivePainter.result.character.diacritical = 0;
+			if (m_levelOnePage->character(r, c) >= 0x20) {
+				m_level1ActivePainter.result.character.code = m_levelOnePage->character(r, c);
+				// Set to true on mosaic character - not on blast through alphanumerics
+				m_cellLevel1Mosaic[r][c] = level1Mosaics && (m_levelOnePage->character(r, c) & 0x20);
+				if (m_cellLevel1Mosaic[r][c]) {
+					m_level1ActivePainter.result.character.set = 24 + (level1SeparatedMosaics || m_level1ActivePainter.attribute.display.underlineSeparated);
+					level1HoldMosaicCharacter = m_levelOnePage->character(r, c);
+					level1HoldMosaicSeparated = level1SeparatedMosaics;
+				} else
+					m_level1ActivePainter.result.character.set = level1CharSet;
+			} else if (level1HoldMosaics) {
+				m_level1ActivePainter.result.character = { level1HoldMosaicCharacter, 24 + level1HoldMosaicSeparated, 0 };
+			} else
+				m_level1ActivePainter.result.character = { 0x20, 0, 0 };
+		} else
+			// In side panel or on bottom half of Level 1 double height row, no Level 1 characters here
+			m_level1ActivePainter.result.character = { 0x20, 0, 0 };
+
+		if (c < 40)
+			m_cellLevel1CharSet[r][c] = level1CharSet;
+
+		// X/26 characters
+
+		// Used to track if character was placed by X/26 data
+		// 0=Level 1 character, 1=Active Object or Local Enhancement Data, 2=Adaptive Object
+		int x26Character = 0;
+
+		if (m_level == 1 && !m_invocations[0].isEmpty()) {
+			// For Level 1.5 only do characters from Local Enhancements
+			// which is the last entry on the Active Objects QList
+			const textCharacter result = characterFromTriplets(m_invocations[0].constLast().charactersMappedAt(r, c), x26G0CharSet);
+
+			if (result.code != 0x00) {
+				m_level1ActivePainter.result.character = result;
+				x26Character = 1;
 			}
-			if (layerApplyAttributes.applyDisplayAttributes)
-				resultAttributes.display = layerApplyAttributes.attribute.display;
-			else {
-				// Selecting contiguous mosaics wih a triplet will override an earlier Level 1 separated mosaics attribute until a further Level 1 contiguous mosaic attribute is encountered
-				resultAttributes.display.forceContiguous = (layerApplyAttributes.applyContiguousOnly) ? false : underlyingAttributes.display.forceContiguous;
-				if (layerApplyAttributes.applyTextSizeOnly) {
-					resultAttributes.display.doubleHeight = layerApplyAttributes.attribute.display.doubleHeight;
-					resultAttributes.display.doubleWidth = layerApplyAttributes.attribute.display.doubleWidth;
+		} else if (m_level >= 2)
+			for (int t=0; t<3; t++)
+				for (int i=0; i<m_invocations[t].size(); i++) {
+					painter = (t == 0) ? &m_level1ActivePainter : &m_adapPassPainter[t-1][i];
+
+					const textCharacter result = characterFromTriplets(m_invocations[t].at(i).charactersMappedAt(r, c), x26G0CharSet);
+
+					if (t == 0 && result.code == 0x00)
+						continue;
+					// For an Adaptive Invocation that is applying attribute(s) but not a character here
+					// pick up the character underneath so we can still place the attributes
+					if (t == 1 && adapInvokeAttrs == i && result.code == 0x00) {
+						painter->result.character = m_level1ActivePainter.result.character;
+						x26Character = 2;
+						continue;
+					}
+
+					painter->result.character = result;
+					if (painter->result.character.set == 24 && painter->attribute.display.underlineSeparated)
+						painter->result.character.set++;
+
+					if (t < 2 && result.code != 0x00)
+						x26Character = t + 1;
 				}
-				if (layerApplyAttributes.applyBoxingOnly)
-					resultAttributes.display.boxingWindow = layerApplyAttributes.attribute.display.boxingWindow;
-				if (layerApplyAttributes.applyConcealOnly || layerApplyAttributes.applyForeColour)
-					resultAttributes.display.conceal = layerApplyAttributes.attribute.display.conceal;
+
+		// Allow Active Objects or Local Enhancement Data to overlap bottom half of a Level 1 double height row
+		// where the character on the top half is normal size or double width
+		if (m_rowHeight[r] == BottomHalf && c < 40 && x26Character == 1 && m_level1ActivePainter.bottomHalfCell[c].fragment == NormalSize)
+			m_level1ActivePainter.bottomHalfCell[c].character.code = 0x00;
+
+		// Allow Adaptive Objects to always overlap bottom half of a Level 1 double height row
+		if (m_rowHeight[r] == BottomHalf && c < 40 && x26Character == 2)
+			m_level1ActivePainter.bottomHalfCell[c].character.code = 0x00;
+
+		// Work out which fragment of an enlarged character to display
+		for (int t=0; t<3; t++) {
+			for (int i=0; i<m_invocations[t].size(); i++) {
+				// This loop will only iterate once when t == 0 because m_level1ActivePainter is
+				// now the overall result of Level 1, Active Objects and Local Enhancement Data
+				painter = (t == 0) ? &m_level1ActivePainter : &m_adapPassPainter[t-1][i];
+
+				bool cellCovered = false;
+
+				// Deal with non-origin parts of enlarged characters if placed during previous iteration
+				if (painter->rightHalfCell.character.code != 0x00) {
+					painter->result = painter->rightHalfCell;
+					// Corner cases of right half of double-width characters overlapping
+					// a Level 1 double height row need this to avoid spurious characters below
+					if (painter->result.fragment == DoubleWidthRightHalf)
+						painter->bottomHalfCell[c].character.code = 0x00;
+					painter->rightHalfCell.character.code = 0x00;
+					cellCovered = true;
+				} else if (painter->bottomHalfCell[c].character.code != 0x00) {
+					painter->result = painter->bottomHalfCell[c];
+					painter->bottomHalfCell[c].character.code = 0x00;
+					cellCovered = true;
+				}
+
+				if (!cellCovered) {
+					// Cell is not covered by previous enlarged character
+					// Work out which fragments of enlarged characters are needed from size attributes,
+					// place origin of character here and other fragments into right half or bottom half
+					// painter buffer ready to be picked up on the next iteration
+					bool doubleHeight = painter->attribute.display.doubleHeight;
+					bool doubleWidth = painter->attribute.display.doubleWidth;
+
+					if (r == 0 || r > 22)
+						doubleHeight = false;
+					if (c == 39 || c == 39+m_rightSidePanelColumns || c == 71-m_leftSidePanelColumns || c == 71)
+						doubleWidth = false;
+
+					if (doubleHeight) {
+						if (doubleWidth) {
+							// Double size
+							painter->result.fragment = DoubleSizeTopLeftQuarter;
+							painter->bottomHalfCell[c] = painter->result;
+							painter->bottomHalfCell[c].fragment = DoubleSizeBottomLeftQuarter;
+							painter->rightHalfCell = painter->result;
+							painter->rightHalfCell.fragment = DoubleSizeTopRightQuarter;
+							painter->bottomHalfCell[c+1] = painter->result;
+							painter->bottomHalfCell[c+1].fragment = DoubleSizeBottomRightQuarter;
+						} else {
+							// Double height
+							painter->result.fragment = DoubleHeightTopHalf;
+							painter->bottomHalfCell[c] = painter->result;
+							painter->bottomHalfCell[c].fragment = DoubleHeightBottomHalf;
+						}
+					} else if (doubleWidth) {
+						// Double width
+						painter->result.fragment = DoubleWidthLeftHalf;
+						painter->rightHalfCell = painter->result;
+						painter->rightHalfCell.fragment = DoubleWidthRightHalf;
+					} else
+						// Normal size
+						painter->result.fragment = NormalSize;
+
+					// Now the enlargements and fragments are worked out, prevent Adaptive Objects that
+					// are NOT applying Display Attributes from trying to overlap wrong fragments of characters
+					// on the underlying page
+					if (t == 1 && !adapDisplayAttrs && painter->result.fragment != m_level1ActivePainter.result.fragment) {
+						painter->result.character.code = 0x00;
+						if (painter->result.fragment == DoubleWidthLeftHalf || painter->result.fragment == DoubleSizeTopLeftQuarter)
+							painter->rightHalfCell.character.code = 0x00;
+						if (painter->result.fragment == DoubleHeightTopHalf || painter->result.fragment == DoubleSizeTopLeftQuarter)
+							painter->bottomHalfCell[c].character.code = 0x00;
+						if (painter->result.fragment == DoubleSizeTopLeftQuarter && c < 71)
+							painter->bottomHalfCell[c+1].character.code = 0x00;
+					}
+				}
+
+				if (t == 0)
+					break;
 			}
-			if (m_textLayer[l]->objectType() <= 1)
-				underlyingAttributes = resultAttributes;
-
-			if (m_level == 0)
-				break;
 		}
 
-		underlined = false;
-		if (resultAttributes.display.underlineSeparated) {
-			if (resultCharacter.set == 24)
-				resultCharacter.set = 25;
-			else
-				underlined = resultCharacter.set < 24;
-		}
-		if (resultAttributes.display.forceContiguous && resultCharacter.set == 25)
-			resultCharacter.set = 24;
-
-		resultAttributes.flash.phaseNumber = phaseNumberRender;
-
-		previouslyDoubleHeight = m_cell[r][c].attribute.display.doubleHeight;
-		previouslyBottomHalf = m_cell[r][c].bottomHalf;
-
-		m_cell[r][c].character = resultCharacter;
-		m_cell[r][c].attribute = resultAttributes;
-
-		if (m_cell[r][c] != oldTextCell) {
-			m_refresh[r][c] = true;
-
-			if (static_cast<Level1Layer *>(m_textLayer[0])->rowHeight(r) == Level1Layer::TopHalf) {
-				m_refresh[r+1][c] = true;
-				decodeNextRow = true;
+		// Top half of Level 1 double height row: normal or double width characters will cause a space
+		// with the same attributes to be on the bottom half
+		// Also occurs with bottom halves of X/26 double height characters overlapping a
+		// Level 1 top half row
+		if (m_rowHeight[r] == TopHalf && c < 40) {
+			if (m_level1ActivePainter.result.fragment != DoubleHeightTopHalf && m_level1ActivePainter.result.fragment != DoubleSizeTopLeftQuarter && m_level1ActivePainter.result.fragment != DoubleSizeTopRightQuarter) {
+				m_level1ActivePainter.bottomHalfCell[c] = m_level1ActivePainter.result;
+				m_level1ActivePainter.bottomHalfCell[c].character = { 0x20, 0, 0 };
+				m_level1ActivePainter.bottomHalfCell[c].fragment = NormalSize;
 			}
 
-			if ((m_cell[r][c].attribute.display.doubleHeight || oldTextCell.attribute.display.doubleHeight) && r < 25)
-				m_refresh[r+1][c] = true;
-			if ((m_cell[r][c].attribute.display.doubleWidth || oldTextCell.attribute.display.doubleWidth) && c < 72)
-				m_refresh[r][c+1] = true;
-			if (((m_cell[r][c].attribute.display.doubleHeight && m_cell[r][c].attribute.display.doubleWidth) || (oldTextCell.attribute.display.doubleHeight && oldTextCell.attribute.display.doubleWidth)) && r < 25 && c < 72)
-				m_refresh[r+1][c+1] = true;
 		}
 
-		if (resultAttributes.flash.ratePhase == 4 && ++phaseNumberRender == 4)
-			phaseNumberRender = 1;
-		if (resultAttributes.flash.ratePhase == 5 && --phaseNumberRender == 0)
-			phaseNumberRender = 3;
+		// Now we've finally worked out what characters and attributes are in place on
+		// the underlying page and Invoked Objects, work out which of those to actually render
+		if (m_level < 2)
+			m_cell[r][c] = m_level1ActivePainter.result;
+		else {
+			bool objectCell = false;
 
-		if (r > 0)
-			m_cell[r][c].bottomHalf = m_cell[r-1][c].attribute.display.doubleHeight && !m_cell[r-1][c].bottomHalf;
-		if ((resultAttributes.display.doubleHeight != previouslyDoubleHeight) || (m_cell[r][c].bottomHalf != previouslyBottomHalf))
-			decodeNextRow = true;
-		m_cell[r][c].rightHalf = applyRightHalf;
+			// Passive Objects highest priority, followed by Adaptive Objects
+			// Most recently invoked Object has priority
+			for (int t=1; t>=0; t--) {
+				for (int i=m_adapPassPainter[t].size()-1; i>=0; i--)
+					if (m_adapPassPainter[t][i].result.character.code != 0x00) {
+						m_cell[r][c] = m_adapPassPainter[t][i].result;
+						objectCell = true;
+						break;
+					}
+				if (objectCell)
+					break;
+			}
 
-		if (resultAttributes.display.doubleHeight)
-			doubleHeightFound = true;
-		if (resultAttributes.display.doubleWidth || (m_cell[r][c].bottomHalf && c > 0 && m_cell[r-1][c-1].rightHalf))
-			applyRightHalf ^= true;
-		else
-			applyRightHalf = false;
+			if (!objectCell)
+				// No Adaptive or Passive Object here: will either be Local Enhancement Data, Active Object
+				// or underlying Level 1 page
+				m_cell[r][c] = m_level1ActivePainter.result;
+		}
+
+		// Check for end of Adaptive Object row
+		if (adapInvokeAttrs != -1 && c == m_invocations[1].at(adapInvokeAttrs).rightMostColumn(r)) {
+			// Neutralise size attributes as they could interfere with double height stuff
+			// not sure if this is really necessary
+			m_adapPassPainter[0][adapInvokeAttrs].attribute.display.doubleHeight = false;
+			m_adapPassPainter[0][adapInvokeAttrs].attribute.display.doubleWidth = false;
+			adapInvokeAttrs = -1;
+			adapForeground = adapBackground = adapFlash = adapDisplayAttrs = false;
+		}
+
+		// Level 1 set-after spacing attributes
+		if (c < 40 && m_rowHeight[r] != BottomHalf)
+			switch (m_levelOnePage->character(r, c)) {
+				case 0x00 ... 0x07: // Alphanumeric and foreground colour
+					level1Mosaics = false;
+					level1ForegroundCLUT = m_levelOnePage->character(r, c);
+					if (m_level >= 2)
+						m_level1ActivePainter.attribute.foregroundCLUT = level1ForegroundCLUT | m_foregroundRemap[m_levelOnePage->colourTableRemap()];
+					else
+						m_level1ActivePainter.attribute.foregroundCLUT = level1ForegroundCLUT;
+					m_level1ActivePainter.attribute.display.conceal = false;
+					// Switch from mosaics to alpha resets hold mosaic character
+					level1HoldMosaicCharacter = 0x20;
+					level1HoldMosaicSeparated = false;
+					break;
+				case 0x10 ... 0x17: // Mosaic and foreground colour
+					level1Mosaics = true;
+					level1ForegroundCLUT = m_levelOnePage->character(r, c) & 0x07;
+					if (m_level >= 2)
+						m_level1ActivePainter.attribute.foregroundCLUT = level1ForegroundCLUT | m_foregroundRemap[m_levelOnePage->colourTableRemap()];
+					else
+						m_level1ActivePainter.attribute.foregroundCLUT = level1ForegroundCLUT;
+					m_level1ActivePainter.attribute.display.conceal = false;
+					break;
+				case 0x08: // Flashing
+					m_level1ActivePainter.attribute.flash.mode = 1;
+					m_level1ActivePainter.attribute.flash.ratePhase = 0;
+					break;
+				case 0x0d: // Double height
+					if (!m_level1ActivePainter.attribute.display.doubleHeight || m_level1ActivePainter.attribute.display.doubleWidth) {
+						// Change of size resets hold mosaic character
+						level1HoldMosaicCharacter = 0x20;
+						level1HoldMosaicSeparated = false;
+					}
+					m_level1ActivePainter.attribute.display.doubleHeight = true;
+					m_level1ActivePainter.attribute.display.doubleWidth = false;
+					break;
+				case 0x0e: // Double width
+					if (m_level1ActivePainter.attribute.display.doubleHeight || !m_level1ActivePainter.attribute.display.doubleWidth) {
+						// Change of size resets hold mosaic character
+						level1HoldMosaicCharacter = 0x20;
+						level1HoldMosaicSeparated = false;
+					}
+					m_level1ActivePainter.attribute.display.doubleHeight = false;
+					m_level1ActivePainter.attribute.display.doubleWidth = true;
+					break;
+				case 0x0f: // Double size
+					if (!m_level1ActivePainter.attribute.display.doubleHeight || !m_level1ActivePainter.attribute.display.doubleWidth) {
+						// Change of size resets hold mosaic character
+						level1HoldMosaicCharacter = 0x20;
+						level1HoldMosaicSeparated = false;
+					}
+					m_level1ActivePainter.attribute.display.doubleHeight = true;
+					m_level1ActivePainter.attribute.display.doubleWidth = true;
+					break;
+				case 0x1b: // ESC/switch
+					level1EscapeSwitch ^= true;
+					if (level1EscapeSwitch)
+						level1CharSet = m_level1SecondCharSet;
+					else
+						level1CharSet = m_level1DefaultCharSet;
+					break;
+				case 0x1f: // Release mosaics
+					level1HoldMosaics = false;
+					break;
+			}
+
+		if (m_cell[r][c] != previousCellContents)
+			setRefresh(r, c, true);
 	}
-
-	if (decodeNextRow && r<24)
-		decodeRow(r+1);
 }
 
-textCell& TeletextPageDecode::cellAtCharacterOrigin(int r, int c)
+inline void TeletextPageDecode::rotateFlashMovement(flashFunctions &flash)
 {
-/*	if (m_cell[r][c].bottomHalf && r > 0) {
-		if (m_cell[r][c].rightHalf && c > 0)
-			// Double size
-			return m_cell[r-1][c-1];
-		else
-			// Double height
-			return m_cell[r-1][c];
-	} else {
-		if (m_cell[r][c].rightHalf && c > 0)
-			// Double width
-			return m_cell[r][c-1];
-		else
-			// Normal size
-			return m_cell[r][c];
-	}*/
-	switch (cellCharacterFragment(r, c)) {
-		case TeletextPageDecode::DoubleHeightBottomHalf:
-		case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
-			return m_cell[r-1][c];
-		case TeletextPageDecode::DoubleWidthRightHalf:
-		case TeletextPageDecode::DoubleSizeTopRightQuarter:
-			return m_cell[r][c-1];
-		case TeletextPageDecode::DoubleSizeBottomRightQuarter:
-			return m_cell[r-1][c-1];
-		default:
-			return m_cell[r][c];
+	if (flash.ratePhase == 4) {
+		flash.phase2HzShown++;
+		if (flash.phase2HzShown == 4)
+			flash.phase2HzShown = 1;
+	} else if (flash.ratePhase == 5) {
+		flash.phase2HzShown--;
+		if (flash.phase2HzShown == 0)
+			flash.phase2HzShown = 3;
 	}
 }
 
 QColor TeletextPageDecode::cellQColor(int r, int c, ColourPart colourPart)
 {
-	const textCell& cell = cellAtCharacterOrigin(r, c);
 	const bool newsFlashOrSubtitle = m_levelOnePage->controlBit(PageBase::C5Newsflash) || m_levelOnePage->controlBit(PageBase::C6Subtitle);
-	int resultCLUT;
+	int resultCLUT = 0;
 
 	switch (colourPart) {
 		case Foreground:
-			if (!cell.attribute.display.invert)
-				resultCLUT = cell.attribute.foreColour;
+			if (!m_cell[r][c].attribute.display.invert)
+				resultCLUT = m_cell[r][c].attribute.foregroundCLUT;
 			else
-				resultCLUT = cell.attribute.backColour;
+				resultCLUT = m_cell[r][c].attribute.backgroundCLUT;
 			break;
 		case Background:
-			if (!cell.attribute.display.invert)
-				resultCLUT = cell.attribute.backColour;
+			if (!m_cell[r][c].attribute.display.invert)
+				resultCLUT = m_cell[r][c].attribute.backgroundCLUT;
 			else
-				resultCLUT = cell.attribute.foreColour;
+				resultCLUT = m_cell[r][c].attribute.foregroundCLUT;
 			break;
 		case FlashForeground:
-			if (!cell.attribute.display.invert)
-				resultCLUT = cell.attribute.foreColour ^ 8;
+			if (!m_cell[r][c].attribute.display.invert)
+				resultCLUT = m_cell[r][c].attribute.foregroundCLUT ^ 8;
 			else
-				resultCLUT = cell.attribute.backColour ^ 8;
+				resultCLUT = m_cell[r][c].attribute.backgroundCLUT ^ 8;
 			break;
 	}
 
 	if (resultCLUT == 8) {
 		// Transparent CLUT - either Full Row Colour or Video
 		// Logic of table C.1 in spec implemented to find out which it is
-		if (cell.attribute.display.boxingWindow != newsFlashOrSubtitle)
+		if (m_cell[r][c].attribute.display.boxingWindow != newsFlashOrSubtitle)
 			return QColor(Qt::transparent);
 
 		int rowColour;
@@ -493,7 +1001,7 @@ QColor TeletextPageDecode::cellQColor(int r, int c, ColourPart colourPart)
 			return QColor(Qt::transparent);
 		else
 			return m_levelOnePage->CLUTtoQColor(rowColour, m_level);
-	} else if (!cell.attribute.display.boxingWindow && newsFlashOrSubtitle)
+	} else if (!m_cell[r][c].attribute.display.boxingWindow && newsFlashOrSubtitle)
 		return QColor(Qt::transparent);
 
 	return m_levelOnePage->CLUTtoQColor(resultCLUT, m_level);
@@ -514,31 +1022,20 @@ QColor TeletextPageDecode::cellFlashForegroundQColor(int r, int c)
 	return cellQColor(r, c, FlashForeground);
 }
 
-TeletextPageDecode::CharacterFragment TeletextPageDecode::cellCharacterFragment(int r, int c) const
+TeletextPageDecode::textCell& TeletextPageDecode::cellAtCharacterOrigin(int r, int c)
 {
-	if (m_cell[r][c].bottomHalf && r > 0) {
-		if (m_cell[r][c].rightHalf && c > 0)
-			return CharacterFragment::DoubleSizeBottomRightQuarter;
-		else if (m_cell[r-1][c].attribute.display.doubleWidth)
-			return CharacterFragment::DoubleSizeBottomLeftQuarter;
-		else
-			return CharacterFragment::DoubleHeightBottomHalf;
-	} else if (m_cell[r][c].rightHalf && c > 0) {
-		if (m_cell[r][c-1].attribute.display.doubleHeight)
-			return CharacterFragment::DoubleSizeTopRightQuarter;
-		else
-			return CharacterFragment::DoubleWidthRightHalf;
+	switch (cellCharacterFragment(r, c)) {
+		case TeletextPageDecode::DoubleHeightBottomHalf:
+		case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
+			return m_cell[r-1][c];
+		case TeletextPageDecode::DoubleWidthRightHalf:
+		case TeletextPageDecode::DoubleSizeTopRightQuarter:
+			return m_cell[r][c-1];
+		case TeletextPageDecode::DoubleSizeBottomRightQuarter:
+			return m_cell[r-1][c-1];
+		default:
+			return m_cell[r][c];
 	}
-
-	if (m_cell[r][c].attribute.display.doubleHeight) {
-		if (m_cell[r][c].attribute.display.doubleWidth)
-			return CharacterFragment::DoubleSizeTopLeftQuarter;
-		else
-			return CharacterFragment::DoubleHeightTopHalf;
-	} else if (m_cell[r][c].attribute.display.doubleWidth)
-		return CharacterFragment::DoubleWidthLeftHalf;
-
-	return CharacterFragment::NormalSize;
 }
 
 inline void TeletextPageDecode::setFullScreenColour(int newColour)
@@ -568,431 +1065,10 @@ inline void TeletextPageDecode::setFullRowColour(int row, int newColour)
 	QColor newFullRowQColor = m_levelOnePage->CLUTtoQColor(newColour, m_level);
 	if (m_fullRowQColor[row] != newFullRowQColor) {
 		for (int c=0; c<72; c++) {
-			if (m_cell[row][c].attribute.foreColour == 8 || m_cell[row][c].attribute.backColour == 8)
+			if (m_cell[row][c].attribute.foregroundCLUT == 8 || m_cell[row][c].attribute.backgroundCLUT == 8)
 				setRefresh(row, c, true);
 		}
 		m_fullRowQColor[row] = newFullRowQColor;
 		emit fullRowColourChanged(row, m_fullRowQColor[row]);
 	}
 }
-
-void TextLayer::setTeletextPage(LevelOnePage *newCurrentPage) { m_levelOnePage = newCurrentPage; }
-void TextLayer::setFullScreenColour(int newColour) { m_layerFullScreenColour = newColour; }
-
-void TextLayer::setFullRowColour(int r, int newColour, bool newDownwards)
-{
-	m_layerFullRowColour[r] = newColour;
-	m_layerFullRowDownwards[r] = newDownwards;
-}
-
-void EnhanceLayer::setObjectType(int newObjectType) { m_objectType = newObjectType; }
-
-void EnhanceLayer::setOrigin(int r, int c)
-{
-	m_originR = r;
-	m_originC = c;
-}
-
-Level1Layer::Level1Layer()
-{
-	for (int r=0; r<25; r++) {
-		m_rowHasDoubleHeightAttr[r] = false;
-		m_rowHeight[r] = Normal;
-	}
-}
-
-EnhanceLayer::EnhanceLayer()
-{
-	for (int r=0; r<25; r++) {
-		m_layerFullRowColour[r] = -1;
-		m_layerFullRowDownwards[r] = false;
-	}
-}
-
-textCharacter EnhanceLayer::character(int r, int c)
-{
-	r -= m_originR;
-	c -= m_originC;
-	if (r < 0 || c < 0)
-		return { 0, 0 };
-
-	// QPair.first is triplet mode, QPair.second is triplet data
-	QList<QPair<int, int>> enhancements = enhanceMap.values(qMakePair(r, c));
-
-	if (enhancements.size() > 0)
-		for (int i=0; i<enhancements.size(); i++)
-			switch (enhancements.at(i).first) {
-				case 0x2b: // G3 mosaic character at Level 2.5
-				case 0x22: // G3 mosaic character at Level 1.5
-					return { enhancements.at(i).second, 26 };
-				case 0x29: // G0 character at Level 2.5
-					return { enhancements.at(i).second, 0 };
-				case 0x2f: // G2 character
-					return { enhancements.at(i).second, 7 };
-				case 0x30 ... 0x3f: // Diacritical
-					// Deal with @ symbol replacing * symbol - clause 15.6.1 note 3 in spec
-					if (enhancements.at(i).first == 0x30 && enhancements.at(i).second == 0x2a)
-						return { 0x40, 0 };
-					else
-						return { enhancements.at(i).second, 0, enhancements.at(i).first & 0x0f };
-				case 0x21: // G1 character
-					if ((enhancements.at(i).second) >= 0x20)
-						return { enhancements.at(i).second, (enhancements.at(i).second & 0x20) ? 24 : 0 };
-			}
-	return { 0, 0 };
-}
-
-void EnhanceLayer::attributes(int r, int c, applyAttributes *layerApplyAttributes)
-{
-	r -= m_originR;
-	c -= m_originC;
-	if (r < 0 || c < 0)
-		return;
-	if (m_objectType == 2) {
-		// Adaptive Object - find rightmost column addressed on this row if we haven't already
-		if (r != m_rowCached) {
-			m_rightMostColumn[r] = 0;
-			m_rowCached = r;
-			for (int cc=39; cc>0; cc--)
-				if (enhanceMap.contains(qMakePair(r, cc))) {
-					m_rightMostColumn[r] = cc;
-					break;
-				}
-		}
-		// On new row, default to attributes already on page
-		// At end of rightmost column, let go of all attributes
-		if (c == 0 || c == m_rightMostColumn[r]+1)
-			m_applyAttributes = { false, false, false, false, false, false, false, false };
-		else {
-			// Re-apply attributes that Object has defined previously on this row
-			if (m_applyAttributes.applyForeColour) {
-				layerApplyAttributes->applyForeColour = true;
-				layerApplyAttributes->attribute.foreColour = m_applyAttributes.attribute.foreColour;
-			}
-			if (m_applyAttributes.applyBackColour) {
-				layerApplyAttributes->applyBackColour = true;
-				layerApplyAttributes->attribute.backColour = m_applyAttributes.attribute.backColour;
-			}
-			//BUG Adaptive Objects disrupt inc/dec flash
-			if (m_applyAttributes.applyFlash) {
-				layerApplyAttributes->applyFlash = true;
-				layerApplyAttributes->attribute.flash.mode = m_applyAttributes.attribute.flash.mode;
-				layerApplyAttributes->attribute.flash.ratePhase = m_applyAttributes.attribute.flash.ratePhase;
-			}
-			if (m_applyAttributes.applyDisplayAttributes) {
-				layerApplyAttributes->applyDisplayAttributes = true;
-				layerApplyAttributes->attribute.display = m_applyAttributes.attribute.display;
-			}
-		}
-	}
-	if (m_objectType == 3) {
-		if (r == 0 && c == 0) {
-			// Passive Objects always start with all these default attributes
-			m_applyAttributes.applyForeColour = true;
-			m_applyAttributes.attribute.foreColour = 0x07;
-			m_applyAttributes.applyBackColour = true;
-			m_applyAttributes.attribute.backColour = 0x00;
-			m_applyAttributes.applyDisplayAttributes = true;
-			m_applyAttributes.applyFlash = true;
-			m_applyAttributes.attribute.flash.mode = 0;
-			m_applyAttributes.attribute.flash.ratePhase = 0;
-			m_applyAttributes.attribute.display.doubleHeight = false;
-			m_applyAttributes.attribute.display.doubleWidth = false;
-			m_applyAttributes.attribute.display.boxingWindow = false;
-			m_applyAttributes.attribute.display.conceal = false;
-			m_applyAttributes.attribute.display.invert = false;
-			m_applyAttributes.attribute.display.underlineSeparated = false;
-			m_applyAttributes.attribute.display.forceContiguous = false;
-		}
-		if (character(r+m_originR, c+m_originC).code == 0x00)
-			// Passive Object attributes only apply where it also defines a character
-			// In this case, wrench the pointer-parameter to alter only the attributes of the Object
-			layerApplyAttributes = &m_applyAttributes;
-		else
-			*layerApplyAttributes = m_applyAttributes;
-	}
-
-	// QPair.first is triplet mode, QPair.second is triplet data
-	QList<QPair<int, int>> enhancements = enhanceMap.values(qMakePair(r, c));
-
-	for (int i=0; i<enhancements.size(); i++)
-		switch (enhancements.at(i).first) {
-			case 0x20: // Foreground colour
-				if ((enhancements.at(i).second & 0x60) == 0) {
-					layerApplyAttributes->applyForeColour = true;
-					layerApplyAttributes->attribute.foreColour = enhancements.at(i).second;
-				}
-				break;
-			case 0x23: // Background colour
-				if ((enhancements.at(i).second & 0x60) == 0) {
-					layerApplyAttributes->applyBackColour = true;
-					layerApplyAttributes->attribute.backColour = enhancements.at(i).second;
-				}
-				break;
-			case 0x27: // Additional flash functions
-				if ((enhancements.at(i).second & 0x60) == 0 && (enhancements.at(i).second & 0x18) != 0x18) { // Avoid reserved rate/phase
-					layerApplyAttributes->applyFlash = true;
-					layerApplyAttributes->attribute.flash.mode = enhancements.at(i).second & 0x03;
-					layerApplyAttributes->attribute.flash.ratePhase = (enhancements.at(i).second >> 2) & 0x07;
-				}
-				break;
-			case 0x2c: // Display attributes
-				layerApplyAttributes->applyDisplayAttributes = true;
-				layerApplyAttributes->attribute.display.doubleHeight = enhancements.at(i).second & 0x01;
-				layerApplyAttributes->attribute.display.boxingWindow = enhancements.at(i).second & 0x02;
-				layerApplyAttributes->attribute.display.conceal = enhancements.at(i).second & 0x04;
-				layerApplyAttributes->attribute.display.invert = enhancements.at(i).second & 0x10;
-				layerApplyAttributes->attribute.display.underlineSeparated = enhancements.at(i).second & 0x20;
-				// Selecting contiguous mosaics wih a triplet will override an earlier Level 1 separated mosaics attribute
-				layerApplyAttributes->attribute.display.forceContiguous = !layerApplyAttributes->attribute.display.underlineSeparated;
-				layerApplyAttributes->attribute.display.doubleWidth = enhancements.at(i).second & 0x40;
-				break;
-		}
-	if (m_objectType >= 2)
-		m_applyAttributes = *layerApplyAttributes;
-}
-
-
-void Level1Layer::updateRowCache(int r)
-{
-	level1CacheAttributes buildCacheAttributes;
-	bool doubleHeightAttrFound = false;
-
-	for (int c=0; c<40; c++) {
-		unsigned char charCode = m_levelOnePage->character(r, c);
-		// Set at spacing attributes
-		switch (charCode) {
-			case 0x0c: // Normal size
-				if (buildCacheAttributes.sizeCode != 0x0c) // Size CHANGE resets held mosaic to space
-					buildCacheAttributes.holdChar = 0x20;
-				buildCacheAttributes.sizeCode = 0x0c;
-				break;
-			case 0x19: // Contiguous mosaics
-				buildCacheAttributes.separated = false;
-				break;
-			case 0x1a: // Separated mosaics
-				buildCacheAttributes.separated = true;
-				break;
-			case 0x1c: // Black background
-				buildCacheAttributes.backColour = 0x00;
-				break;
-			case 0x1d: // New background
-				buildCacheAttributes.backColour = buildCacheAttributes.foreColour & 0x07;
-				break;
-			case 0x1e: // Hold mosaics
-				buildCacheAttributes.held = true;
-				break;
-		}
-
-		if (buildCacheAttributes.mosaics && (charCode & 0x20)) {
-			buildCacheAttributes.holdChar = charCode;
-			buildCacheAttributes.holdSeparated = buildCacheAttributes.separated;
-		}
-
-		m_attributeCache[c] = buildCacheAttributes;
-
-		// Set-after spacing attributes
-		switch (charCode) {
-			case 0x00 ... 0x07: // Alphanumeric + foreground colour
-				buildCacheAttributes.foreColour = charCode;
-				buildCacheAttributes.mosaics = false;
-				buildCacheAttributes.holdChar = 0x20; // Switch from mosaics to alpha resets held mosaic
-				buildCacheAttributes.holdSeparated = false;
-				break;
-			case 0x10 ... 0x17: // Mosaic + foreground colour
-				buildCacheAttributes.foreColour = charCode & 0x07;
-				buildCacheAttributes.mosaics = true;
-				break;
-			case 0x0d: // Double height
-			case 0x0f: // Double size
-				doubleHeightAttrFound = true;
-				// fall-through
-			case 0x0e: // Double width
-				if (buildCacheAttributes.sizeCode != charCode) // Size CHANGE resets held mosaic to space
-					buildCacheAttributes.holdChar = 0x20;
-				buildCacheAttributes.sizeCode = charCode;
-				break;
-			case 0x1b: // ESC/switch
-				buildCacheAttributes.escSwitch ^= true;
-				break;
-			case 0x1f: // Release mosaics
-				buildCacheAttributes.held = false;
-				break;
-		}
-	}
-
-	if (doubleHeightAttrFound != m_rowHasDoubleHeightAttr[r]) {
-		m_rowHasDoubleHeightAttr[r] = doubleHeightAttrFound;
-		for (int dr=r; dr<24; dr++)
-			if (m_rowHasDoubleHeightAttr[dr]) {
-				m_rowHeight[dr] = TopHalf;
-				m_rowHeight[++dr] = BottomHalf;
-			} else
-				m_rowHeight[dr] = Normal;
-	}
-}
-
-textCharacter Level1Layer::character(int r, int c)
-{
-	textCharacter result;
-
-	if (r != m_rowCached)
-		updateRowCache(r);
-	if (c > 39 || m_rowHeight[r] == BottomHalf)
-		return { 0x20, 0 };
-	result.code = m_levelOnePage->character(r, c);
-	if (m_levelOnePage->secondCharSet() != 0xf && m_attributeCache[c].escSwitch)
-		result.set = g0CharacterMap.value(((m_levelOnePage->secondCharSet() << 3) | m_levelOnePage->secondNOS()), 0);
-	else
-		result.set = g0CharacterMap.value(((m_levelOnePage->defaultCharSet() << 3) | m_levelOnePage->defaultNOS()), 0);
-	if (result.code < 0x20) {
-		result.code = m_attributeCache[c].held ? m_attributeCache[c].holdChar : 0x20;
-		if (m_attributeCache[c].held && c > 0)
-			result.set = 24+m_attributeCache[c].holdSeparated;
-//		else
-//			result.set = m_attributeCache[c].mosaics*24;
-	} else if (m_attributeCache[c].mosaics && (result.code & 0x20))
-		result.set = 24+m_attributeCache[c].separated;
-	return result;
-}
-
-void Level1Layer::attributes(int r, int c, applyAttributes *layerApplyAttributes)
-{
-	unsigned char characterCode;
-
-	if (m_rowHeight[r] == BottomHalf) {
-		layerApplyAttributes->copyAboveAttributes = true;
-		return;
-	}
-	if (r != m_rowCached)
-		updateRowCache(r);
-	if (c == 0 || c == 40 || c == 56) {
-		// Start of row default conditions, also when crossing into side panels
-		layerApplyAttributes->applyForeColour = true;
-		layerApplyAttributes->attribute.foreColour = 0x07;
-		layerApplyAttributes->applyBackColour = true;
-		layerApplyAttributes->attribute.backColour = 0x20;
-		layerApplyAttributes->applyDisplayAttributes = true;
-		layerApplyAttributes->applyFlash = true;
-		layerApplyAttributes->attribute.flash.mode = 0;
-		layerApplyAttributes->attribute.flash.ratePhase = 0;
-		layerApplyAttributes->attribute.display.doubleHeight = false;
-		layerApplyAttributes->attribute.display.doubleWidth = false;
-		layerApplyAttributes->attribute.display.boxingWindow = false;
-		layerApplyAttributes->attribute.display.conceal = false;
-		layerApplyAttributes->attribute.display.invert = false;
-		layerApplyAttributes->attribute.display.underlineSeparated = false;
-		layerApplyAttributes->attribute.display.forceContiguous = false;
-		//TODO fontstyle
-	}
-	if (c > 39)
-		return;
-	if (c > 0) {
-		// Set-after
-		characterCode = m_levelOnePage->character(r, c-1);
-		switch (characterCode) {
-			case 0x00 ... 0x07: // Alphanumeric + Foreground colour
-			case 0x10 ... 0x17: // Mosaic + Foreground colour
-				layerApplyAttributes->applyForeColour = true;
-				layerApplyAttributes->attribute.foreColour = characterCode & 0x07;
-				layerApplyAttributes->attribute.display.conceal = false;
-				break;
-			case 0x08: // Flashing
-				layerApplyAttributes->applyFlash = true;
-				layerApplyAttributes->attribute.flash.mode = 1;
-				layerApplyAttributes->attribute.flash.ratePhase = 0;
-				break;
-			case 0x0a: // End box
-				if (m_levelOnePage->character(r, c) == 0x0a) {
-					layerApplyAttributes->applyBoxingOnly = true;
-					layerApplyAttributes->attribute.display.boxingWindow = false;
-				}
-				break;
-			case 0x0b: // Start box
-				if (m_levelOnePage->character(r, c) == 0x0b) {
-					layerApplyAttributes->applyBoxingOnly = true;
-					layerApplyAttributes->attribute.display.boxingWindow = true;
-				}
-				break;
-			case 0x0d: // Double height
-				layerApplyAttributes->applyTextSizeOnly = true;
-				layerApplyAttributes->attribute.display.doubleHeight = true;
-				layerApplyAttributes->attribute.display.doubleWidth = false;
-				break;
-			case 0x0e: // Double width
-				layerApplyAttributes->applyTextSizeOnly = true;
-				layerApplyAttributes->attribute.display.doubleHeight = false;
-				layerApplyAttributes->attribute.display.doubleWidth = true;
-				break;
-			case 0x0f: // Double size
-				layerApplyAttributes->applyTextSizeOnly = true;
-				layerApplyAttributes->attribute.display.doubleHeight = true;
-				layerApplyAttributes->attribute.display.doubleWidth = true;
-				break;
-		}
-	}
-	// Set-at
-	characterCode = m_levelOnePage->character(r, c);
-	switch (characterCode) {
-		case 0x09: // Steady
-			layerApplyAttributes->applyFlash = true;
-			layerApplyAttributes->attribute.flash.mode = 0;
-			layerApplyAttributes->attribute.flash.ratePhase = 0;
-			break;
-		case 0x0c: // Normal size
-			layerApplyAttributes->applyTextSizeOnly = true;
-			layerApplyAttributes->attribute.display.doubleHeight = false;
-			layerApplyAttributes->attribute.display.doubleWidth = false;
-			break;
-		case 0x18: // Conceal
-			layerApplyAttributes->applyConcealOnly = true;
-			layerApplyAttributes->attribute.display.conceal = true;
-			break;
-		case 0x19: // Contiguous mosaics
-			layerApplyAttributes->applyContiguousOnly = true;
-			break;
-		case 0x1c: // Black background
-			layerApplyAttributes->applyBackColour = true;
-			layerApplyAttributes->attribute.backColour = 0x20;
-			break;
-		case 0x1d: // New background
-			layerApplyAttributes->applyBackColour = true;
-			layerApplyAttributes->attribute.backColour = m_attributeCache[c].backColour;
-			break;
-	}
-}
-
-
-ActivePosition::ActivePosition()
-{
-	m_row = m_column = -1;
-}
-
-bool ActivePosition::setRow(int newRow)
-{
-	if (newRow < m_row)
-		return false;
-	if (newRow > m_row) {
-		m_row = newRow;
-		m_column = -1;
-	}
-	return true;
-}
-
-bool ActivePosition::setColumn(int newColumn)
-{
-	if (newColumn < m_column)
-		return false;
-	if (m_row == -1)
-		m_row = 0;
-	m_column = newColumn;
-	return true;
-}
-/*
-bool ActivePosition::setRowAndColumn(int newRow, int newColumn)
-{
-	if (!setRow(newRow))
-		return false;
-	return setColumn(newColumn);
-}
-*/

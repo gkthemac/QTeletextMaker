@@ -96,7 +96,10 @@ void TeletextWidget::subPageSelected()
 
 void TeletextWidget::refreshRow(int rowChanged)
 {
-	m_pageDecode.decodeRow(rowChanged);
+	Q_UNUSED(rowChanged);
+
+	// TODO trace signals where this is called so we can remove this
+	m_pageDecode.decodePage();
 	update();
 }
 
@@ -181,8 +184,10 @@ void TeletextWidget::setShowControlCodes(bool showControlCodes)
 void TeletextWidget::setControlBit(int bitNumber, bool active)
 {
 	m_levelOnePage->setControlBit(bitNumber, active);
-	if (bitNumber == 1 || bitNumber == 2)
+	if (bitNumber == 1 || bitNumber == 2) {
 		m_pageDecode.decodePage();
+		m_pageRender.renderPage(true);
+	}
 }
 
 void TeletextWidget::setDefaultCharSet(int newDefaultCharSet)
