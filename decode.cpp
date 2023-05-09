@@ -32,6 +32,15 @@ TeletextPageDecode::Invocation::Invocation()
 	m_fullScreenCLUT = -1;
 }
 
+void TeletextPageDecode::Invocation::clear()
+{
+	m_characterMap.clear();
+	m_attributeMap.clear();
+	m_rightMostColumn.clear();
+	m_fullScreenCLUT = -1;
+	m_fullRowCLUTMap.clear();
+}
+
 void TeletextPageDecode::Invocation::setTripletList(X26TripletList *tripletList)
 {
 	m_tripletList = tripletList;
@@ -62,11 +71,7 @@ void TeletextPageDecode::Invocation::buildMap(int level)
 	else
 		endTripletNumber = m_endTripletNumber;
 
-	m_characterMap.clear();
-	m_attributeMap.clear();
-	m_rightMostColumn.clear();
-	m_fullScreenCLUT = -1;
-	m_fullRowCLUTMap.clear();
+	clear();
 
 	for (int i=m_startTripletNumber; i<=endTripletNumber; i++) {
 		const X26Triplet triplet = m_tripletList->at(i);
@@ -221,8 +226,10 @@ void TeletextPageDecode::updateSidePanels()
 
 void TeletextPageDecode::buildInvocationList(Invocation &invocation, int objectType)
 {
-	if (invocation.tripletList()->isEmpty())
+	if (invocation.tripletList()->isEmpty()) {
+		invocation.clear();
 		return;
+	}
 
 	int i;
 

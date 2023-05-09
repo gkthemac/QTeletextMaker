@@ -184,6 +184,7 @@ private:
 		Invocation();
 
 		X26TripletList *tripletList() const { return m_tripletList; };
+		void clear();
 		void setTripletList(X26TripletList *);
 		int startTripletNumber() const { return m_startTripletNumber; };
 		void setStartTripletNumber(int);
