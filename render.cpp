@@ -295,9 +295,7 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 	// the flashing cells in those buffers
 	if (rowRefreshed && m_flashBuffersHz > 0) {
 		pixmapPainter.begin(m_pagePixmap[3]);
-		pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
-		pixmapPainter.eraseRect(0, r*10, 864, 10);
-		pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+		pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
 		pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[0], 0, r*10, 864, 10);
 		pixmapPainter.end();
 
@@ -305,27 +303,19 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 
 		if (m_flashBuffersHz == 2) {
 			pixmapPainter.begin(m_pagePixmap[1]);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
-			pixmapPainter.eraseRect(0, r*10, 864, 10);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
 			pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[0], 0, r*10, 864, 10);
 			pixmapPainter.end();
 			pixmapPainter.begin(m_pagePixmap[2]);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
-			pixmapPainter.eraseRect(0, r*10, 864, 10);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
 			pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[0], 0, r*10, 864, 10);
 			pixmapPainter.end();
 			pixmapPainter.begin(m_pagePixmap[4]);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
-			pixmapPainter.eraseRect(0, r*10, 864, 10);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
 			pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[3], 0, r*10, 864, 10);
 			pixmapPainter.end();
 			pixmapPainter.begin(m_pagePixmap[5]);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
-			pixmapPainter.eraseRect(0, r*10, 864, 10);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
 			pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[3], 0, r*10, 864, 10);
 			pixmapPainter.end();
 
