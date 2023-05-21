@@ -618,7 +618,7 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 						if (triplet.data() >= 0x18)
 							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0, role));
 						break;
-					case 0x28: // Display attributes
+					case 0x2c: // Display attributes
 					case 0x2e: // Font style
 						// Clear reserved bit D3
 						if (triplet.data() & 0x08)
