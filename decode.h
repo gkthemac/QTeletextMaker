@@ -58,6 +58,9 @@ public:
 	bool cellBoxed(int r, int c) const { return m_cell[r][c].attribute.display.boxingWindow; };
 	bool cellConceal(int r, int c) const { return m_cell[r][c].attribute.display.conceal; };
 	bool cellUnderlined(int r, int c) const { return cellCharacterSet(r, c) < 24 ? m_cell[r][c].attribute.display.underlineSeparated : false; };
+	bool cellBold(int r, int c) const { return m_cell[r][c].attribute.style.bold; };
+	bool cellItalic(int r, int c) const { return m_cell[r][c].attribute.style.italic; };
+	bool cellProportional(int r, int c) const { return m_cell[r][c].attribute.style.proportional; };
 
 	bool level1MosaicAttribute(int r, int c) const { return m_cellLevel1Mosaic[r][c]; };
 	int level1CharSet(int r, int c) const { return m_cellLevel1CharSet[r][c]; };
@@ -109,7 +112,7 @@ private:
 		int mode=0;
 		int ratePhase=0;
 		int phase2HzShown=0;
-	} flash;
+	};
 
 	struct displayAttributes {
 		bool doubleHeight=false;
@@ -118,6 +121,12 @@ private:
 		bool conceal=false;
 		bool invert=false;
 		bool underlineSeparated=false;
+	};
+
+	struct fontStyle {
+		bool proportional=false;
+		bool bold=false;
+		bool italic=false;
 	};
 
 	friend inline bool operator!=(const displayAttributes &lhs, const displayAttributes &rhs)
@@ -135,6 +144,7 @@ private:
 		int backgroundCLUT=0;
 		flashFunctions flash;
 		displayAttributes display;
+		fontStyle style;
 	};
 
 	friend inline bool operator!=(const textAttributes &lhs, const textAttributes &rhs)
@@ -144,7 +154,10 @@ private:
 		       lhs.flash.mode          != rhs.flash.mode          ||
 		       lhs.flash.ratePhase     != rhs.flash.ratePhase     ||
 		       lhs.flash.phase2HzShown != rhs.flash.phase2HzShown ||
-		       lhs.display             != rhs.display;
+		       lhs.display             != rhs.display             ||
+		       lhs.style.proportional  != rhs.style.proportional  ||
+		       lhs.style.bold          != rhs.style.bold          ||
+		       lhs.style.italic        != rhs.style.italic;
 	}
 
 	struct textCell {
@@ -165,6 +178,11 @@ private:
 		textCell result;
 		textCell rightHalfCell;
 		textCell bottomHalfCell[72];
+
+		int styleSpreadRows=0;
+		int setProportionalRows[72], clearProportionalRows[72];
+		int setBoldRows[72], clearBoldRows[72];
+		int setItalicRows[72], clearItalicRows[72];
 	};
 
 	const QMap<int, int> m_g0CharacterMap {

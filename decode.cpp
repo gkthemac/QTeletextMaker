@@ -113,6 +113,7 @@ void TeletextPageDecode::Invocation::buildMap(int level)
 			case 0x23: // Background colour
 			case 0x27: // Additional flash functions
 			case 0x2c: // Display attributes
+			case 0x2e: // Font style
 				m_attributeMap.insert(qMakePair(targetRow, targetColumn), triplet);
 				m_rightMostColumn.insert(targetRow, targetColumn);
 				break;
@@ -143,8 +144,15 @@ TeletextPageDecode::textPainter TeletextPageDecode::s_blankPainter;
 TeletextPageDecode::TeletextPageDecode()
 {
 	if (s_instances == 0) {
-		for (int c=0; c<72; c++)
+		for (int c=0; c<72; c++) {
 			s_blankPainter.bottomHalfCell[c].character.code = 0x00;
+			s_blankPainter.setProportionalRows[c] = 0;
+			s_blankPainter.clearProportionalRows[c] = 0;
+			s_blankPainter.setBoldRows[c] = 0;
+			s_blankPainter.clearBoldRows[c] = 0;
+			s_blankPainter.setItalicRows[c] = 0;
+			s_blankPainter.clearItalicRows[c] = 0;
+		}
 		s_blankPainter.rightHalfCell.character.code = 0x00;
 	}
 	s_instances++;
@@ -495,6 +503,7 @@ void TeletextPageDecode::decodeRow(int r)
 	bool adapBackground = false;
 	bool adapFlash = false;
 	bool adapDisplayAttrs = false;
+	bool adapStyle = false;
 
 	for (int c=0; c<72; c++) {
 		textCell previousCellContents = m_cell[r][c];
@@ -512,6 +521,9 @@ void TeletextPageDecode::decodeRow(int r)
 			m_level1ActivePainter.attribute.display.conceal = false;
 			m_level1ActivePainter.attribute.display.invert = false;
 			m_level1ActivePainter.attribute.display.underlineSeparated = false;
+			m_level1ActivePainter.attribute.style.proportional = false;
+			m_level1ActivePainter.attribute.style.bold = false;
+			m_level1ActivePainter.attribute.style.italic = false;
 
 			if (m_level >= 2) {
 				m_level1ActivePainter.attribute.foregroundCLUT = 7 | m_foregroundRemap[m_levelOnePage->colourTableRemap()];
@@ -599,6 +611,41 @@ void TeletextPageDecode::decodeRow(int r)
 
 					painter = (t == 0) ? &m_level1ActivePainter : &m_adapPassPainter[t-1][i];
 
+					if (m_level == 3) {
+						// Reset font style "row spread" at start of row and side panels
+						if (c == 0 || c == 40 || c == 56)
+							painter->styleSpreadRows = 0;
+
+						// Apply any font style attributes from previous rows
+						// For m_level1ActivePainter, ensure we deal with font style row counters only once
+						if (t >= 1 || i == 0) {
+							if (painter->clearProportionalRows[c] != 0) {
+								painter->attribute.style.proportional = false;
+								painter->clearProportionalRows[c]--;
+							}
+							if (painter->setProportionalRows[c] != 0) {
+								painter->attribute.style.proportional = true;
+								painter->setProportionalRows[c]--;
+							}
+							if (painter->clearBoldRows[c] != 0) {
+								painter->attribute.style.bold = false;
+								painter->clearBoldRows[c]--;
+							}
+							if (painter->setBoldRows[c] != 0) {
+								painter->attribute.style.bold = true;
+								painter->setBoldRows[c]--;
+							}
+							if (painter->clearItalicRows[c] != 0) {
+								painter->attribute.style.italic = false;
+								painter->clearItalicRows[c]--;
+							}
+							if (painter->setItalicRows[c] != 0) {
+								painter->attribute.style.italic = true;
+								painter->setItalicRows[c]--;
+							}
+						}
+					}
+
 					// Adaptive Invocation painter: pick up the attributes we're NOT adapting from
 					// m_level1ActivePainter, which by now has taken into account all the attributes
 					// from the Level 1 page, Active Objects and the Local Enhancement Data
@@ -611,6 +658,8 @@ void TeletextPageDecode::decodeRow(int r)
 							painter->attribute.flash = m_level1ActivePainter.attribute.flash;
 						if (!adapDisplayAttrs)
 							painter->attribute.display = m_level1ActivePainter.attribute.display;
+						if (!adapStyle)
+							painter->attribute.style = m_level1ActivePainter.attribute.style;
 					}
 
 					// QMultiMap::values returns QList with most recent value first...
@@ -668,10 +717,36 @@ void TeletextPageDecode::decodeRow(int r)
 								if (t == 0 && !painter->attribute.display.underlineSeparated)
 									level1SeparatedMosaics = false;
 								break;
+							case 0x2e: // Font style
+								if (m_level != 3)
+									break;
+								if (applyAdapt)
+									adapStyle = true;
+								painter->attribute.style.proportional = triplet.data() & 0x01;
+								painter->attribute.style.bold = triplet.data() & 0x02;
+								painter->attribute.style.italic = triplet.data() & 0x04;
+								painter->styleSpreadRows = triplet.data() >> 4;
+								break;
 						}
 					}
 
 					painter->result.attribute = painter->attribute;
+
+					// Font style attribute that spreads across more than one row
+					if (m_level == 3 && painter->styleSpreadRows != 0) {
+						if (painter->attribute.style.proportional)
+							painter->setProportionalRows[c] = painter->styleSpreadRows;
+						else
+							painter->clearProportionalRows[c] = painter->styleSpreadRows;
+						if (painter->attribute.style.bold)
+							painter->setBoldRows[c] = painter->styleSpreadRows;
+						else
+							painter->clearBoldRows[c] = painter->styleSpreadRows;
+						if (painter->attribute.style.italic)
+							painter->setItalicRows[c] = painter->styleSpreadRows;
+						else
+							painter->clearItalicRows[c] = painter->styleSpreadRows;
+					}
 				}
 			}
 
@@ -875,7 +950,7 @@ void TeletextPageDecode::decodeRow(int r)
 			m_adapPassPainter[0][adapInvokeAttrs].attribute.display.doubleHeight = false;
 			m_adapPassPainter[0][adapInvokeAttrs].attribute.display.doubleWidth = false;
 			adapInvokeAttrs = -1;
-			adapForeground = adapBackground = adapFlash = adapDisplayAttrs = false;
+			adapForeground = adapBackground = adapFlash = adapDisplayAttrs = adapStyle = false;
 		}
 
 		// Level 1 set-after spacing attributes

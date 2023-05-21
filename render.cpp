@@ -73,6 +73,39 @@ void TeletextPageRender::setDecoder(TeletextPageDecode *decoder)
 	m_decoder = decoder;
 }
 
+inline void TeletextPageRender::drawFromBitmap(QPainter &pixmapPainter, int r, int c, const QBitmap bitmap, TeletextPageDecode::CharacterFragment characterFragment)
+{
+	switch (characterFragment) {
+		case TeletextPageDecode::NormalSize:
+			pixmapPainter.drawPixmap(c*12, r*10, bitmap);
+			break;
+		case TeletextPageDecode::DoubleHeightTopHalf:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 0, 12, 5);
+			break;
+		case TeletextPageDecode::DoubleHeightBottomHalf:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 5, 12, 5);
+			break;
+		case TeletextPageDecode::DoubleWidthLeftHalf:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 0, 6, 10);
+			break;
+		case TeletextPageDecode::DoubleWidthRightHalf:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 6, 0, 6, 10);
+			break;
+		case TeletextPageDecode::DoubleSizeTopLeftQuarter:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 0, 6, 5);
+			break;
+		case TeletextPageDecode::DoubleSizeTopRightQuarter:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 6, 0, 6, 5);
+			break;
+		case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 5, 6, 5);
+			break;
+		case TeletextPageDecode::DoubleSizeBottomRightQuarter:
+			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 6, 5, 6, 5);
+			break;
+	}
+}
+
 inline void TeletextPageRender::drawFromFontBitmap(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment)
 {
 	switch (characterFragment) {
@@ -152,6 +185,8 @@ inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, in
 		pixmapPainter.fillRect(c*12, r*10, 12, 10, pixmapPainter.background().color());
 	else if (characterCode == 0x7f && characterSet == 24)
 		pixmapPainter.fillRect(c*12, r*10, 12, 10, pixmapPainter.pen().color());
+	else if ((m_decoder->cellBold(r, c) || m_decoder->cellItalic(r, c)) && characterSet < 24)
+		drawBoldOrItalicCharacter(pixmapPainter, r, c, characterCode, characterSet, characterFragment);
 	else
 		drawFromFontBitmap(pixmapPainter, r, c, characterCode, characterSet, characterFragment);
 
@@ -180,6 +215,38 @@ inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, in
 
 	if (pixmapPainter.compositionMode() != QPainter::CompositionMode_SourceOver)
 		pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+}
+
+inline void TeletextPageRender::drawBoldOrItalicCharacter(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment)
+{
+	QBitmap bitmap = QBitmap(12, 10);
+	QPainter bitmapPainter;
+
+	// TODO italic glyph-making is VERY slow!
+	if (m_decoder->cellItalic(r, c)) {
+		bitmap.clear();
+
+		bitmapPainter.begin(&bitmap);
+		bitmapPainter.setBackgroundMode(Qt::OpaqueMode);
+		bitmapPainter.drawPixmap(1, 0, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 11, 3);
+		bitmapPainter.drawPixmap(0, 3, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+3, 12, 3);
+		bitmapPainter.drawPixmap(0, 6, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+1, characterSet*10+6, 11, 4);
+		bitmapPainter.end();
+	} else
+		bitmap = m_fontBitmap.rawBitmap()->copy((characterCode-32)*12, characterSet*10, 12, 10);
+
+	if (m_decoder->cellBold(r, c)) {
+		QBitmap boldeningBitmap;
+
+		boldeningBitmap = bitmap.copy();
+		bitmapPainter.begin(&bitmap);
+		// No idea why we need this setPen workaround when character is made italic first?!
+		if (!m_decoder->cellItalic(r, c))
+			bitmapPainter.setPen(Qt::color0);
+		bitmapPainter.drawPixmap(1, 0, boldeningBitmap);
+		bitmapPainter.end();
+	}
+	drawFromBitmap(pixmapPainter, r, c, bitmap, characterFragment);
 }
 
 void TeletextPageRender::renderPage(bool force)
