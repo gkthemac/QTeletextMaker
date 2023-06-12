@@ -112,6 +112,7 @@ void TeletextPageDecode::Invocation::buildMap(int level)
 			case 0x20: // Foreground colour
 			case 0x23: // Background colour
 			case 0x27: // Additional flash functions
+			case 0x28: // Modified G0 and G2 character set designation
 			case 0x2c: // Display attributes
 			case 0x2e: // Font style
 				m_attributeMap.insert(qMakePair(targetRow, targetColumn), triplet);
@@ -298,7 +299,7 @@ void TeletextPageDecode::buildInvocationList(Invocation &invocation, int objectT
 	invocation.buildMap(m_level);
 }
 
-TeletextPageDecode::textCharacter TeletextPageDecode::characterFromTriplets(const QList<X26Triplet> triplets, int g0CharSet)
+TeletextPageDecode::textCharacter TeletextPageDecode::characterFromTriplets(const QList<X26Triplet> triplets)
 {
 	textCharacter result;
 	result.code = 0x00;
@@ -319,32 +320,10 @@ TeletextPageDecode::textCharacter TeletextPageDecode::characterFromTriplets(cons
 				result = { charCode, 26, 0 };
 				break;
 			case 0x2f: // G2 character
-				result.code = charCode;
-				// Duplicated from decodePage
-				switch (m_level1DefaultCharSet) {
-					case 1:
-					case 2:
-					case 3:
-						// Cyrillic G2
-						result.set = 8;
-						break;
-					case 4:
-						// Greek G2
-						result.set = 9;
-						break;
-					case 5:
-						// Arabic G2
-						result.set = 10;
-						break;
-					default:
-						// Latin G2
-						result.set = 7;
-						break;
-				}
-				result.diacritical = 0;
+				result = { charCode, 2, 0 };
 				break;
 			case 0x30 ... 0x3f: // G0 character with diacritical
-				result = { charCode, g0CharSet, triplet.mode() & 0xf };
+				result = { charCode, 0, triplet.mode() & 0xf };
 				break;
 		}
 
@@ -358,11 +337,11 @@ TeletextPageDecode::textCharacter TeletextPageDecode::characterFromTriplets(cons
 				if (triplet.data() & 0x20)
 					result.set = 24;
 				else
-					result.set = g0CharSet;
+					result.set = 0;
 				result.diacritical = 0;
 				break;
 			case 0x29: // G0 character
-				result = { charCode, g0CharSet, 0 };
+				result = { charCode, 0, 0 };
 				break;
 			case 0x2b: // G3 character at Level 2.5
 				result = { charCode, 26, 0 };
@@ -426,38 +405,14 @@ void TeletextPageDecode::decodePage()
 			setFullRowColour(r, 0);
 	}
 
-	m_level1DefaultCharSet = m_g0CharacterMap.value(((m_levelOnePage->defaultCharSet() << 3) | m_levelOnePage->defaultNOS()), 0);
+	m_defaultG0andG2 = (m_levelOnePage->defaultCharSet() << 3) | m_levelOnePage->defaultNOS();
+	m_secondG0andG2 = -1;
+
+	m_level1DefaultCharSet = m_level1CharacterMap.value(m_defaultG0andG2, 0);
 	if (m_levelOnePage->secondCharSet() != 0xf)
-		m_level1SecondCharSet = m_g0CharacterMap.value(((m_levelOnePage->secondCharSet() << 3) | m_levelOnePage->secondNOS()), 0);
+		m_level1SecondCharSet = m_level1CharacterMap.value((m_levelOnePage->secondCharSet() << 3) | m_levelOnePage->secondNOS(), 0);
 	else
 		m_level1SecondCharSet = m_level1DefaultCharSet;
-
-	// This will be true if the Level 1 character set is non-Latin
-	if (m_level1DefaultCharSet <= 6)
-		m_x26DefaultG0CharSet = m_level1DefaultCharSet;
-	else
-		m_x26DefaultG0CharSet = 0;
-
-	switch (m_level1DefaultCharSet) {
-		case 1:
-		case 2:
-		case 3:
-			// Cyrillic G2
-			m_x26DefaultG2CharSet = 8;
-			break;
-		case 4:
-			// Greek G2
-			m_x26DefaultG2CharSet = 9;
-			break;
-		case 5:
-			// Arabic G2
-			m_x26DefaultG2CharSet = 10;
-			break;
-		default:
-			// Latin G2
-			m_x26DefaultG2CharSet = 7;
-			break;
-	}
 
 	// Work out rows containing top and bottom halves of Level 1 double height characters
 	for (int r=1; r<24; r++) {
@@ -491,7 +446,6 @@ void TeletextPageDecode::decodeRow(int r)
 	bool level1HoldMosaicSeparated = false;
 	int level1CharSet = 0;
 	bool level1EscapeSwitch = false;
-	int x26G0CharSet = 0;
 
 	textPainter *painter;
 
@@ -511,7 +465,9 @@ void TeletextPageDecode::decodeRow(int r)
 		// Start of row default conditions, also when crossing into and across side panels
 		if (c == 0 || c == 40 || c == 56) {
 			level1CharSet = m_level1DefaultCharSet;
-			x26G0CharSet = m_x26DefaultG0CharSet;
+
+			m_level1ActivePainter.g0CharSet = m_g0CharacterMap.value(m_defaultG0andG2, 0);
+			m_level1ActivePainter.g2CharSet = m_g2CharacterMap.value(m_defaultG0andG2, 7);
 
 			m_level1ActivePainter.attribute.flash.mode = 0;
 			m_level1ActivePainter.attribute.flash.ratePhase = 0;
@@ -703,6 +659,16 @@ void TeletextPageDecode::decodeRow(int r)
 								else
 									painter->attribute.flash.phase2HzShown = painter->attribute.flash.ratePhase;
 								break;
+							case 0x28: // Modified G0 and G2 character set designation
+								if (m_level == 3 || triplet.data() == m_defaultG0andG2 || triplet.data() == m_secondG0andG2) {
+									painter->g0CharSet = m_g0CharacterMap.value(triplet.data(), 0);
+									painter->g2CharSet = m_g2CharacterMap.value(triplet.data(), 7);
+								} else if (m_secondG0andG2 == -1) {
+									m_secondG0andG2 = triplet.data();
+									painter->g0CharSet = m_g0CharacterMap.value(triplet.data(), 0);
+									painter->g2CharSet = m_g2CharacterMap.value(triplet.data(), 7);
+								}
+								break;
 							case 0x2c: // Display attributes
 								if (applyAdapt)
 									adapDisplayAttrs = true;
@@ -783,10 +749,14 @@ void TeletextPageDecode::decodeRow(int r)
 		if (m_level == 1 && !m_invocations[0].isEmpty()) {
 			// For Level 1.5 only do characters from Local Enhancements
 			// which is the last entry on the Active Objects QList
-			const textCharacter result = characterFromTriplets(m_invocations[0].constLast().charactersMappedAt(r, c), x26G0CharSet);
+			const textCharacter result = characterFromTriplets(m_invocations[0].constLast().charactersMappedAt(r, c));
 
 			if (result.code != 0x00) {
 				m_level1ActivePainter.result.character = result;
+				if (result.set == 0)
+					m_level1ActivePainter.result.character.set = m_level1ActivePainter.g0CharSet;
+				else if (result.set == 2)
+					m_level1ActivePainter.result.character.set = m_level1ActivePainter.g2CharSet;
 				x26Character = 1;
 			}
 		} else if (m_level >= 2)
@@ -794,7 +764,7 @@ void TeletextPageDecode::decodeRow(int r)
 				for (int i=0; i<m_invocations[t].size(); i++) {
 					painter = (t == 0) ? &m_level1ActivePainter : &m_adapPassPainter[t-1][i];
 
-					const textCharacter result = characterFromTriplets(m_invocations[t].at(i).charactersMappedAt(r, c), x26G0CharSet);
+					const textCharacter result = characterFromTriplets(m_invocations[t].at(i).charactersMappedAt(r, c));
 
 					if (t == 0 && result.code == 0x00)
 						continue;
@@ -807,8 +777,18 @@ void TeletextPageDecode::decodeRow(int r)
 					}
 
 					painter->result.character = result;
-					if (painter->result.character.set == 24 && painter->attribute.display.underlineSeparated)
-						painter->result.character.set++;
+					switch (result.set) {
+						case 0:
+							painter->result.character.set = painter->g0CharSet;
+							break;
+						case 2:
+							painter->result.character.set = painter->g2CharSet;
+							break;
+						case 24:
+							if (painter->attribute.display.underlineSeparated)
+								painter->result.character.set = 25;
+							break;
+					}
 
 					if (t < 2 && result.code != 0x00)
 						x26Character = t + 1;

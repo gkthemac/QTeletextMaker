@@ -179,13 +179,16 @@ private:
 		textCell rightHalfCell;
 		textCell bottomHalfCell[72];
 
+		int g0CharSet=0;
+		int g2CharSet=7;
+
 		int styleSpreadRows=0;
 		int setProportionalRows[72], clearProportionalRows[72];
 		int setBoldRows[72], clearBoldRows[72];
 		int setItalicRows[72], clearItalicRows[72];
 	};
 
-	const QMap<int, int> m_g0CharacterMap {
+	const QMap<int, int> m_level1CharacterMap {
 		{ 0x00, 12 }, { 0x01, 15 }, { 0x02, 22 }, { 0x03, 16 }, { 0x04, 14 }, { 0x05, 19 }, { 0x06, 11 },
 		{ 0x08, 18 }, { 0x09, 15 }, { 0x0a, 22 }, { 0x0b, 16 }, { 0x0c, 14 }, { 0x0e, 11 },
 		{ 0x10, 12 }, { 0x11, 15 }, { 0x12, 22 }, { 0x13, 16 }, { 0x14, 14 }, { 0x15, 19 }, { 0x16, 23 },
@@ -194,6 +197,18 @@ private:
 		{ 0x36, 23 }, { 0x37,  4 },
 		{ 0x40, 12 }, { 0x44, 14 }, { 0x47,  5 },
 		{ 0x55,  6 }, { 0x57,  5 }
+	};
+	const QMap<int, int> m_g0CharacterMap {
+		{ 0x20,  1 }, { 0x24,  2 }, { 0x25,  3 },
+		{ 0x37,  4 },
+		{ 0x47,  5 },
+		{ 0x55,  6 }, { 0x57,  5 }
+	};
+	const QMap<int, int> m_g2CharacterMap {
+		{ 0x20,  8 }, { 0x24,  8 }, { 0x25,  8 },
+		{ 0x37,  9 },
+		{ 0x40, 10 }, { 0x44, 10 }, { 0x47, 10 },
+		{ 0x55, 10 }, { 0x57, 10 }
 	};
 
 	class Invocation
@@ -240,7 +255,7 @@ private:
 	QColor cellQColor(int, int, ColourPart);
 	textCell& cellAtCharacterOrigin(int, int);
 	void buildInvocationList(Invocation &, int);
-	textCharacter characterFromTriplets(const QList<X26Triplet>, int);
+	textCharacter characterFromTriplets(const QList<X26Triplet>);
 	inline void rotateFlashMovement(flashFunctions &);
 
 	bool m_refresh[25][72];
@@ -255,7 +270,7 @@ private:
 	textPainter m_level1ActivePainter;
 	QList<textPainter> m_adapPassPainter[2];
 	int m_level1DefaultCharSet, m_level1SecondCharSet;
-	int m_x26DefaultG0CharSet, m_x26DefaultG2CharSet;
+	int m_defaultG0andG2, m_secondG0andG2;
 
 	RowHeight m_rowHeight[25];
 };
