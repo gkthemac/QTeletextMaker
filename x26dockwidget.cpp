@@ -218,7 +218,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 		QMenu *reservedColumnSubMenu = pdcSubMenu->addMenu(tr("Reserved column"));
 		newModeMenuAction(reservedColumnSubMenu, 0x24);
 		newModeMenuAction(reservedColumnSubMenu, 0x25);
-		newModeMenuAction(reservedColumnSubMenu, 0x26);
+		newModeMenuAction(reservedColumnSubMenu, 0x2a);
 	}
 
 	m_cookedModePushButton->setMenu(m_cookedModeMenu);
