@@ -39,6 +39,9 @@ PaletteDockWidget::PaletteDockWidget(TeletextWidget *parent): QDockWidget(parent
 
 	m_parentMainWidget = parent;
 
+	m_level3p5Accepted = false; // true when Level 3.5 radio button is checked in main window
+	m_level3p5Seen = false;     // true when CLUT 0 or 1 is redefined
+
 	this->setObjectName("PaletteDockWidget");
 	this->setWindowTitle("Palette");
 	for (int c=0; c<=7; c++)
@@ -57,6 +60,9 @@ PaletteDockWidget::PaletteDockWidget(TeletextWidget *parent): QDockWidget(parent
 			connect(m_colourButton[i], &QAbstractButton::clicked, [=]() { selectColour(i); });
 		}
 	}
+
+	updateLevel3p5Cursor();
+
 	m_showHexValuesCheckBox = new QCheckBox(tr("Show colour hex values"));
 	paletteGridLayout->addWidget(m_showHexValuesCheckBox, 5, 1, 1, 8);
 	connect(m_showHexValuesCheckBox, &QCheckBox::stateChanged, this, &PaletteDockWidget::updateAllColourButtons);
@@ -70,32 +76,75 @@ void PaletteDockWidget::updateColourButton(int colourIndex)
 {
 	if (colourIndex == 8)
 		return;
+
 	QString colourString = QString("%1").arg(m_parentMainWidget->document()->currentSubPage()->CLUT(colourIndex), 3, 16, QChar('0'));
 	if (m_showHexValuesCheckBox->isChecked())
 		m_colourButton[colourIndex]->setText(colourString);
 	else
 		m_colourButton[colourIndex]->setText(nullptr);
 
-	// Set text itself to black or white so it can be seen over background colour - http://alienryderflex.com/hsp.html
 	int r = m_parentMainWidget->document()->currentSubPage()->CLUT(colourIndex) >> 8;
 	int g = (m_parentMainWidget->document()->currentSubPage()->CLUT(colourIndex) >> 4) & 0xf;
 	int b = m_parentMainWidget->document()->currentSubPage()->CLUT(colourIndex) & 0xf;
+	// Set text itself to black or white so it can be seen over background colour - http://alienryderflex.com/hsp.html
 	char blackOrWhite = (sqrt(r*r*0.299 + g*g*0.587 + b*b*0.114) > 7.647) ? '0' : 'f';
 
 	QString qss = QString("background-color: #%1; color: #%2%2%2; border: none").arg(colourString).arg(blackOrWhite);
 	m_colourButton[colourIndex]->setStyleSheet(qss);
 
-	if (m_parentMainWidget->document()->currentSubPage()->isPaletteDefault(colourIndex))
-		// Default colour was set, disable Reset button if all colours in row are default as well
-		m_resetButton[colourIndex>>3]->setEnabled(!m_parentMainWidget->document()->currentSubPage()->isPaletteDefault(colourIndex & 0x18, colourIndex | 0x07));
-	else
-		m_resetButton[colourIndex>>3]->setEnabled(true);
+	if (m_parentMainWidget->document()->currentSubPage()->isPaletteDefault(colourIndex)) {
+		// Default colour was set, disable Reset button if all colours in a CLUT row are default as well
+		m_resetButton[colourIndex >> 3]->setEnabled(!m_parentMainWidget->document()->currentSubPage()->isPaletteDefault(colourIndex & 0x18, colourIndex | 0x07));
+		// Check if CLUTs 0 and 1 are all default if necessary
+		if (colourIndex < 16 && m_parentMainWidget->document()->currentSubPage()->isPaletteDefault(0, 15))
+			setLevel3p5Seen(false);
+	} else {
+		// Custom colour was set, enable Reset button for that CLUT
+		m_resetButton[colourIndex >> 3]->setEnabled(true);
+		if (colourIndex < 16)
+			setLevel3p5Seen(true);
+	}
 }
 
 void PaletteDockWidget::updateAllColourButtons()
 {
 	for (int i=0; i<32; i++)
 		updateColourButton(i);
+}
+
+void PaletteDockWidget::setLevel3p5Accepted(bool b)
+{
+	if (b == m_level3p5Accepted)
+		return;
+
+	m_level3p5Accepted = b;
+
+	updateLevel3p5Cursor();
+}
+
+void PaletteDockWidget::setLevel3p5Seen(bool b)
+{
+	if (b == m_level3p5Seen)
+		return;
+
+	m_level3p5Seen = b;
+
+	updateLevel3p5Cursor();
+}
+
+void PaletteDockWidget::updateLevel3p5Cursor()
+{
+	const Qt::CursorShape cursor = (m_level3p5Accepted || m_level3p5Seen) ? Qt::ArrowCursor : Qt::ForbiddenCursor;
+
+	if (m_colourButton[0]->cursor() == cursor)
+		return;
+
+	for (int i=0; i<16; i++) {
+		if (i == 8)
+			continue;
+
+		m_colourButton[i]->setCursor(cursor);
+	}
 }
 
 void PaletteDockWidget::showEvent(QShowEvent *event)
@@ -106,6 +155,9 @@ void PaletteDockWidget::showEvent(QShowEvent *event)
 
 void PaletteDockWidget::selectColour(int colourIndex)
 {
+	if (colourIndex < 16 && !m_level3p5Accepted && !m_level3p5Seen)
+		return;
+
     const QColor newColour = QColorDialog::getColor(m_parentMainWidget->document()->currentSubPage()->CLUTtoQColor(colourIndex), this, "Select Colour");
 
 	if (newColour.isValid())

@@ -36,18 +36,22 @@ public:
 
 public slots:
 	void updateColourButton(int);
+	void setLevel3p5Accepted(bool);
 
 protected:
 	void showEvent(QShowEvent *);
 
 private slots:
 	void selectColour(int);
+	void setLevel3p5Seen(bool);
+	void updateLevel3p5Cursor();
 
 private:
 	void resetCLUT(int);
 
 	QPushButton *m_colourButton[32], *m_resetButton[4];
 	QCheckBox *m_showHexValuesCheckBox;
+	bool m_level3p5Accepted, m_level3p5Seen;
 
 	TeletextWidget *m_parentMainWidget;
 };

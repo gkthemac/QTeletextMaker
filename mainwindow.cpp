@@ -836,10 +836,10 @@ void MainWindow::createStatusBar()
 		statusBar()->addPermanentWidget(m_levelRadioButton[i]);
 	}
 	m_levelRadioButton[0]->toggle();
-	connect(m_levelRadioButton[0], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(0); m_textWidget->update(); });
-	connect(m_levelRadioButton[1], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(1); m_textWidget->update(); });
-	connect(m_levelRadioButton[2], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(2); m_textWidget->update(); });
-	connect(m_levelRadioButton[3], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(3); m_textWidget->update(); });
+	connect(m_levelRadioButton[0], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(0); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(false); });
+	connect(m_levelRadioButton[1], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(1); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(false);});
+	connect(m_levelRadioButton[2], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(2); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(false);});
+	connect(m_levelRadioButton[3], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(3); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(true);});
 	statusBar()->showMessage(tr("Ready"));
 }
 
@@ -952,6 +952,8 @@ void MainWindow::loadFile(const QString &fileName)
 	levelSeen = m_textWidget->document()->levelRequired();
 	m_levelRadioButton[levelSeen]->toggle();
 	m_textWidget->pageDecode()->setLevel(levelSeen);
+	if (levelSeen == 3)
+		m_paletteDockWidget->setLevel3p5Accepted(true);
 	updatePageWidgets();
 
 	QApplication::restoreOverrideCursor();
