@@ -266,7 +266,30 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					return result;
 				}
 				break;
-			//TODO case 0x28: // G0 and G2 designation
+			case 0x28: // Modified G0 and G2 character set
+				switch (triplet.data()) {
+					case 0x20:
+						return QString("0x20 Cyrillic 1 Serbian/Croatian");
+					case 0x24:
+						return QString("0x24 Cyrillic 2 Russian/Bulgarian");
+					case 0x25:
+						return QString("0x25 Cyrillic 3 Ukranian");
+					case 0x36:
+						return QString("0x36 Latin");
+					case 0x37:
+						return QString("0x37 Greek");
+					case 0x40:
+					case 0x44:
+						return QString("0x%1 G0 Latin, G2 Arabic").arg(triplet.data(), 2, 16);
+					case 0x47:
+					case 0x57:
+						return QString("0x%1 Arabic").arg(triplet.data(), 2, 16);
+					case 0x55:
+						return QString("0x55 G0 Hebrew, G2 Arabic");
+				}
+				if (triplet.data() < 0x27)
+					return QString("0x%1 Latin").arg(triplet.data(), 2, 16, QChar('0'));
+				break;
 			case 0x2c: // Display attributes
 				if (triplet.data() & 0x02)
 					result.append("Boxing ");
@@ -314,7 +337,6 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					result.chop(1);
 				result.append(QString(", %1 row(s)").arg(triplet.data() >> 4));
 				return result;
-			case 0x28: // Modified G0 and G2 character set
 			case 0x26: // PDC
 				return QString("0x%1").arg(triplet.data(), 2, 16, QChar('0'));
 			default: // Reserved

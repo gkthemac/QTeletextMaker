@@ -174,6 +174,21 @@ void X26TripletList::updateInternalData()
 					if (triplet->m_data >= 0x18)
 						triplet->m_reservedData = true;
 					break;
+				case 0x28: // Modified G0 and G2 character set
+					if (triplet->m_data > 0x26)
+						switch (triplet->m_data) {
+							case 0x36:
+							case 0x37:
+							case 0x40:
+							case 0x44:
+							case 0x47:
+							case 0x55:
+							case 0x57:
+								break;
+							default:
+								triplet->m_reservedData = true;
+						}
+					break;
 				case 0x2d: // DRCS character
 					if ((triplet->m_data & 0x3f) >= 48)
 						// Should really be an error?
