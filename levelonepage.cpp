@@ -297,7 +297,7 @@ bool LevelOnePage::packetExists(int packetNumber, int designationCode) const
 			return !isPaletteDefault(16, 31);
 		}
 		if (designationCode == 4)
-			return !isPaletteDefault(0,15);
+			return !isPaletteDefault(0, 15);
 	}
 
 	return PageBase::packetExists(packetNumber, designationCode);
@@ -396,7 +396,7 @@ bool LevelOnePage::isPaletteDefault(int colour) const
 
 bool LevelOnePage::isPaletteDefault(int fromColour, int toColour) const
 {
-	for (int i=fromColour; i<toColour; i++)
+	for (int i=fromColour; i<=toColour; i++)
 		if (m_CLUT[i] != m_defaultCLUT[i])
 			return false;
 
@@ -412,7 +412,7 @@ int LevelOnePage::levelRequired() const
 	// TODO Check for X/28/1 for DCLUT for mode 1-3 DRCS characters - return 3
 
 	// Assume Level 2.5 if any X/28 page enhancements are present, otherwise assume Level 1
-	int levelSeen = (!isPaletteDefault(16,31) || m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf) ? 2 : 0;
+	int levelSeen = (!isPaletteDefault(16, 31) || m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf) ? 2 : 0;
 
 	// If there's no X/26 triplets, exit here as Level 1 or 2.5
 	if (m_enhancements.isEmpty())
