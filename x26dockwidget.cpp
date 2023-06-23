@@ -749,16 +749,13 @@ void X26DockWidget::updateAllCookedTripletWidgets(const QModelIndex &index)
 		case 0x29: // G0 character
 		case 0x2b: // G3 character at Level 2.5
 		case 0x2f ... 0x3f: // G2 character, G0 character with diacritical
-			// TODO non-Latin G0 and G2 character sets
 			m_characterCodeComboBox->blockSignals(true);
-			if (modeExt == 0x22 || modeExt == 0x2b)
-				m_characterListModel.setCharacterSet(26);
-			else if (modeExt == 0x2f)
-				m_characterListModel.setCharacterSet(7);
-			else if (modeExt == 0x21)
+			if (modeExt == 0x21)
 				m_characterListModel.setCharacterSet(24);
+			else if (modeExt == 0x22 || modeExt == 0x2b)
+				m_characterListModel.setCharacterSet(26);
 			else
-				m_characterListModel.setCharacterSet(0);
+				m_characterListModel.setCharacterSet(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+2).toInt());
 			m_characterCodeComboBox->setCurrentIndex(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt()-32);
 			m_characterCodeComboBox->blockSignals(false);
 			m_tripletParameterStackedLayout->setCurrentIndex(2);

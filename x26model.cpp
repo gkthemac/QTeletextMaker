@@ -368,16 +368,11 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				if (triplet.data() >= 0x20)
 					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, 26*10, 12, 10);
 				break;
-			case 0x2f: // G2 character
-				// TODO non-Latin G2 character sets
-				if (triplet.data() >= 0x20)
-					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, 7*10, 12, 10);
-				break;
 			case 0x29: // G0 character
+			case 0x2f: // G2 character
 			case 0x30 ... 0x3f: // G0 diacritical mark
-				// TODO non-Latin G0 character sets
 				if (triplet.data() >= 0x20)
-					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, 0, 12, 10);
+					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, m_parentMainWidget->pageDecode()->cellCharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())*10, 12, 10);
 				break;
 		};
 
@@ -493,9 +488,16 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					return triplet.data() >> 4;
 			}
 			break;
+		case 0x29: // G0 character
+		case 0x2f: // G2 character
+		case 0x30 ... 0x3f: // G0 diacritical mark
+			// Qt::UserRole+1 is character number, returned by default below
+			if (role == Qt::UserRole+2) // Character set
+				return m_parentMainWidget->pageDecode()->cellCharacterSet(triplet.activePositionRow(), triplet.activePositionColumn());
+			break;
 	};
 
-	// Fpr other triplet modes, return the complete data value
+	// For characters and other triplet modes, return the complete data value
 	if (role == Qt::UserRole+1)
 		return triplet.data();
 
