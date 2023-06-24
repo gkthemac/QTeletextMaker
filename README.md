@@ -28,7 +28,6 @@ Optionally, type `make install` afterwards to place the executable into /usr/loc
 The following X/26 enhancement triplets are not rendered by the editor, although the list is fully aware of them.
 - Invocation of Objects from POP and GPOP pages.
 - DRCS characters.
-- Modified G0 and G2 character set designation using X/26 triplets with mode 01000.
 - Proportional font spacing on Level 3.5
 
 ## Using the X/26 triplet editor
