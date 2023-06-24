@@ -29,8 +29,7 @@ The following X/26 enhancement triplets are not rendered by the editor, although
 - Invocation of Objects from POP and GPOP pages.
 - DRCS characters.
 - Modified G0 and G2 character set designation using X/26 triplets with mode 01000.
-- Full screen and full row colours set by Active Objects.
-- Level 3.5 font style: bold, italic and proportional spacing.
+- Proportional font spacing on Level 3.5
 
 ## Using the X/26 triplet editor
 The X/26 triplet editor sorts all the triplet modes available into categories, which are:
