@@ -280,7 +280,7 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 
 		if (ph == 0) {
 			if (m_decoder->cellFlashMode(r, c) != 0)
-				flashingRow = (m_decoder->cellFlashRatePhase(r, c) == 0) ? 1 : 2;
+				flashingRow = qMax(flashingRow, (m_decoder->cellFlashRatePhase(r, c) == 0) ? 1 : 2);
 		} else
 			force = m_decoder->cellFlashMode(r, c) != 0;
 
