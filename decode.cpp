@@ -67,7 +67,7 @@ void TeletextPageDecode::Invocation::buildMap(int level)
 	int endTripletNumber;
 
 	if (m_endTripletNumber == -1)
-		endTripletNumber = m_tripletList->size();
+		endTripletNumber = m_tripletList->size()-1;
 	else
 		endTripletNumber = m_endTripletNumber;
 
