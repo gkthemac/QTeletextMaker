@@ -561,7 +561,7 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 					// Either a Latin character or non-Latin character that can't be converted
 					// See if it's a Latin character
 					convertedChar = charToConvert.toLatin1();
-					if (convertedChar == 0)
+					if (convertedChar <= 0)
 						// Couldn't convert - make it a block character so it doesn't need to be inserted-between later on
 						convertedChar = 0x7f;
 				}
