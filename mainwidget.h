@@ -74,10 +74,6 @@ public slots:
 	void setControlBit(int, bool);
 	void setDefaultCharSet(int);
 	void setDefaultNOS(int);
-	void setDefaultScreenColour(int);
-	void setDefaultRowColour(int);
-	void setColourTableRemap(int);
-	void setBlackBackgroundSubst(bool);
 	void setSidePanelWidths(int, int);
 	void setSidePanelAtL35Only(bool);
 

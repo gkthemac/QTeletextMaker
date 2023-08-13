@@ -26,6 +26,8 @@
 
 #include "pageenhancementsdockwidget.h"
 
+#include "levelonecommands.h"
+
 PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): QDockWidget(parent)
 {
 	QVBoxLayout *pageEnhancementsLayout = new QVBoxLayout;
@@ -48,9 +50,9 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 	m_defaultRowColourCombo = new QComboBox;
 	m_defaultRowColourCombo->setModel(m_parentMainWidget->document()->clutModel());
 	colourLayout->addWidget(m_defaultScreenColourCombo, 0, 1, 1, 1, Qt::AlignTop);
-	connect(m_defaultScreenColourCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->setDefaultScreenColour(index); });
+	connect(m_defaultScreenColourCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->document()->undoStack()->push(new SetFullScreenColourCommand(m_parentMainWidget->document(), index)); });
 	colourLayout->addWidget(m_defaultRowColourCombo, 1, 1, 1, 1, Qt::AlignTop);
-	connect(m_defaultRowColourCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->setDefaultRowColour(index); });
+	connect(m_defaultRowColourCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->document()->undoStack()->push(new SetFullRowColourCommand(m_parentMainWidget->document(), index)); });
 
 	// CLUT remapping
 	colourLayout->addWidget(new QLabel(tr("CLUT remapping")), 2, 0, 1, 1);
@@ -64,12 +66,12 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 	m_colourTableCombo->addItem("Fore 2  Back 2");
 	m_colourTableCombo->addItem("Fore 2  Back 3");
 	colourLayout->addWidget(m_colourTableCombo, 2, 1, 1, 1, Qt::AlignTop);
-	connect(m_colourTableCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->setColourTableRemap(index); });
+	connect(m_colourTableCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ m_parentMainWidget->document()->undoStack()->push(new SetCLUTRemapCommand(m_parentMainWidget->document(), index)); });
 
 	// Black background colour substitution
 	m_blackBackgroundSubstAct = new QCheckBox("Black background colour substitution");
 	colourLayout->addWidget(m_blackBackgroundSubstAct, 3, 0, 1, 2, Qt::AlignTop);
-	connect(m_blackBackgroundSubstAct, &QCheckBox::stateChanged, m_parentMainWidget, &TeletextWidget::setBlackBackgroundSubst);
+	connect(m_blackBackgroundSubstAct, &QCheckBox::stateChanged, [=](int state){ m_parentMainWidget->document()->undoStack()->push(new SetBlackBackgroundSubstCommand(m_parentMainWidget->document(), state)); });
 
 	// Add group box to the main layout
 	colourGroupBox->setLayout(colourLayout);

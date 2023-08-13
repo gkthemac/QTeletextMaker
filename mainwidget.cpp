@@ -200,33 +200,6 @@ void TeletextWidget::setDefaultNOS(int newDefaultNOS)
 	m_levelOnePage->setDefaultNOS(newDefaultNOS);
 }
 
-void TeletextWidget::setDefaultScreenColour(int newColour)
-{
-	m_levelOnePage->setDefaultScreenColour(newColour);
-	m_pageDecode.decodePage();
-}
-
-void TeletextWidget::setDefaultRowColour(int newColour)
-{
-	m_levelOnePage->setDefaultRowColour(newColour);
-	m_pageDecode.decodePage();
-	update();
-}
-
-void TeletextWidget::setColourTableRemap(int newMap)
-{
-	m_levelOnePage->setColourTableRemap(newMap);
-	m_pageDecode.decodePage();
-	update();
-}
-
-void TeletextWidget::setBlackBackgroundSubst(bool substOn)
-{
-	m_levelOnePage->setBlackBackgroundSubst(substOn);
-	m_pageDecode.decodePage();
-	update();
-}
-
 void TeletextWidget::setSidePanelWidths(int newLeftSidePanelColumns, int newRightSidePanelColumns)
 {
 	m_levelOnePage->setLeftSidePanelDisplayed(newLeftSidePanelColumns != 0);

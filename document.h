@@ -108,6 +108,7 @@ signals:
 	void selectionMoved();
 	void colourChanged(int);
 	void contentsChange(int);
+	void pageOptionsChanged();
 	void aboutToChangeSubPage();
 	void subPageSelected();
 	void refreshNeeded();

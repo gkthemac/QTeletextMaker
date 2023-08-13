@@ -732,6 +732,161 @@ void DeleteSubPageCommand::undo()
 }
 
 
+SetFullScreenColourCommand::SetFullScreenColourCommand(TeletextDocument *teletextDocument, int newColour, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+{
+	m_oldColour = teletextDocument->currentSubPage()->defaultScreenColour();
+	m_newColour = newColour;
+
+	setText(QObject::tr("full screen colour"));
+}
+
+void SetFullScreenColourCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setDefaultScreenColour(m_newColour);
+
+	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->pageOptionsChanged();
+}
+
+void SetFullScreenColourCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setDefaultScreenColour(m_oldColour);
+
+	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->pageOptionsChanged();
+}
+
+bool SetFullScreenColourCommand::mergeWith(const QUndoCommand *command)
+{
+	const SetFullScreenColourCommand *newerCommand = static_cast<const SetFullScreenColourCommand *>(command);
+
+	if (m_subPageIndex != newerCommand->m_subPageIndex)
+		return false;
+
+	m_newColour = newerCommand->m_newColour;
+
+	return true;
+}
+
+
+SetFullRowColourCommand::SetFullRowColourCommand(TeletextDocument *teletextDocument, int newColour, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+{
+	m_oldColour = teletextDocument->currentSubPage()->defaultRowColour();
+	m_newColour = newColour;
+
+	setText(QObject::tr("full row colour"));
+}
+
+void SetFullRowColourCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setDefaultRowColour(m_newColour);
+
+	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->pageOptionsChanged();
+}
+
+void SetFullRowColourCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setDefaultRowColour(m_oldColour);
+
+	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->pageOptionsChanged();
+}
+
+bool SetFullRowColourCommand::mergeWith(const QUndoCommand *command)
+{
+	const SetFullRowColourCommand *newerCommand = static_cast<const SetFullRowColourCommand *>(command);
+
+	if (m_subPageIndex != newerCommand->m_subPageIndex)
+		return false;
+
+	m_newColour = newerCommand->m_newColour;
+
+	return true;
+}
+
+
+SetCLUTRemapCommand::SetCLUTRemapCommand(TeletextDocument *teletextDocument, int newMap, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+{
+	m_oldMap = teletextDocument->currentSubPage()->colourTableRemap();
+	m_newMap = newMap;
+
+	setText(QObject::tr("CLUT remapping"));
+}
+
+void SetCLUTRemapCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setColourTableRemap(m_newMap);
+
+	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->pageOptionsChanged();
+}
+
+void SetCLUTRemapCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setColourTableRemap(m_oldMap);
+
+	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->pageOptionsChanged();
+}
+
+bool SetCLUTRemapCommand::mergeWith(const QUndoCommand *command)
+{
+	const SetCLUTRemapCommand *newerCommand = static_cast<const SetCLUTRemapCommand *>(command);
+
+	if (m_subPageIndex != newerCommand->m_subPageIndex)
+		return false;
+
+	m_newMap = newerCommand->m_newMap;
+
+	return true;
+}
+
+
+SetBlackBackgroundSubstCommand::SetBlackBackgroundSubstCommand(TeletextDocument *teletextDocument, bool newSub, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+{
+	m_oldSub = teletextDocument->currentSubPage()->blackBackgroundSubst();
+	m_newSub = newSub;
+
+	setText(QObject::tr("black background substitution"));
+}
+
+void SetBlackBackgroundSubstCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setBlackBackgroundSubst(m_newSub);
+
+	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->pageOptionsChanged();
+}
+
+void SetBlackBackgroundSubstCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setBlackBackgroundSubst(m_oldSub);
+
+	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->pageOptionsChanged();
+}
+
+bool SetBlackBackgroundSubstCommand::mergeWith(const QUndoCommand *command)
+{
+	const SetBlackBackgroundSubstCommand *newerCommand = static_cast<const SetBlackBackgroundSubstCommand *>(command);
+
+	if (m_subPageIndex != newerCommand->m_subPageIndex)
+		return false;
+
+	setObsolete(true);
+	return true;
+}
+
+
 SetColourCommand::SetColourCommand(TeletextDocument *teletextDocument, int colourIndex, int newColour, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
 	m_colourIndex = colourIndex;

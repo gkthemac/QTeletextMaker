@@ -183,6 +183,70 @@ private:
 };
 #endif // !QT_NO_CLIPBOARD
 
+class SetFullScreenColourCommand : public LevelOneCommand
+{
+public:
+	enum { Id = 105 };
+
+	SetFullScreenColourCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+	bool mergeWith(const QUndoCommand *) override;
+	int id() const override { return Id; }
+
+private:
+	int m_oldColour, m_newColour;
+};
+
+class SetFullRowColourCommand : public LevelOneCommand
+{
+public:
+	enum { Id = 106 };
+
+	SetFullRowColourCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+	bool mergeWith(const QUndoCommand *) override;
+	int id() const override { return Id; }
+
+private:
+	int m_oldColour, m_newColour;
+};
+
+class SetCLUTRemapCommand : public LevelOneCommand
+{
+public:
+	enum { Id = 107 };
+
+	SetCLUTRemapCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+	bool mergeWith(const QUndoCommand *) override;
+	int id() const override { return Id; }
+
+private:
+	int m_oldMap, m_newMap;
+};
+
+class SetBlackBackgroundSubstCommand : public LevelOneCommand
+{
+public:
+	enum { Id = 108 };
+
+	SetBlackBackgroundSubstCommand(TeletextDocument *, bool, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+	bool mergeWith(const QUndoCommand *) override;
+	int id() const override { return Id; }
+
+private:
+	int m_oldSub, m_newSub;
+};
+
 class SetColourCommand : public LevelOneCommand
 {
 public:
