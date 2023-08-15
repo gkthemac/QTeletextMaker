@@ -187,6 +187,7 @@ void TeletextWidget::setControlBit(int bitNumber, bool active)
 	if (bitNumber == 1 || bitNumber == 2) {
 		m_pageDecode.decodePage();
 		m_pageRender.renderPage(true);
+		update();
 	}
 }
 
