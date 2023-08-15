@@ -64,7 +64,7 @@ void LevelOnePage::clearPage()
 		m_fastTextLink[i] = { 0x0ff, 0x3f7f };
 
 /*	m_subPageNumber = 0x0000; */
-	m_cycleValue = 8;
+	m_cycleValue = 20;
 	m_cycleType = CTseconds;
 	m_defaultCharSet = 0;
 	m_defaultNOS = 0;
