@@ -466,8 +466,8 @@ void TeletextPageDecode::decodeRow(int r)
 		if (c == 0 || c == 40 || c == 56) {
 			level1CharSet = m_level1DefaultCharSet;
 
-			m_level1ActivePainter.g0CharSet = m_g0CharacterMap.value(m_defaultG0andG2, 0);
-			m_level1ActivePainter.g2CharSet = m_g2CharacterMap.value(m_defaultG0andG2, 7);
+			m_level1ActivePainter.result.g0Set = m_g0CharacterMap.value(m_defaultG0andG2, 0);
+			m_level1ActivePainter.result.g2Set = m_g2CharacterMap.value(m_defaultG0andG2, 7);
 
 			m_level1ActivePainter.attribute.flash.mode = 0;
 			m_level1ActivePainter.attribute.flash.ratePhase = 0;
@@ -661,12 +661,12 @@ void TeletextPageDecode::decodeRow(int r)
 								break;
 							case 0x28: // Modified G0 and G2 character set designation
 								if (m_level == 3 || triplet.data() == m_defaultG0andG2 || triplet.data() == m_secondG0andG2) {
-									painter->g0CharSet = m_g0CharacterMap.value(triplet.data(), 0);
-									painter->g2CharSet = m_g2CharacterMap.value(triplet.data(), 7);
+									painter->result.g0Set = m_g0CharacterMap.value(triplet.data(), 0);
+									painter->result.g2Set = m_g2CharacterMap.value(triplet.data(), 7);
 								} else if (m_secondG0andG2 == -1) {
 									m_secondG0andG2 = triplet.data();
-									painter->g0CharSet = m_g0CharacterMap.value(triplet.data(), 0);
-									painter->g2CharSet = m_g2CharacterMap.value(triplet.data(), 7);
+									painter->result.g0Set = m_g0CharacterMap.value(triplet.data(), 0);
+									painter->result.g2Set = m_g2CharacterMap.value(triplet.data(), 7);
 								}
 								break;
 							case 0x2c: // Display attributes
@@ -754,9 +754,9 @@ void TeletextPageDecode::decodeRow(int r)
 			if (result.code != 0x00) {
 				m_level1ActivePainter.result.character = result;
 				if (result.set == 0)
-					m_level1ActivePainter.result.character.set = m_level1ActivePainter.g0CharSet;
+					m_level1ActivePainter.result.character.set = m_level1ActivePainter.result.g0Set;
 				else if (result.set == 2)
-					m_level1ActivePainter.result.character.set = m_level1ActivePainter.g2CharSet;
+					m_level1ActivePainter.result.character.set = m_level1ActivePainter.result.g2Set;
 				x26Character = 1;
 			}
 		} else if (m_level >= 2)
@@ -779,10 +779,10 @@ void TeletextPageDecode::decodeRow(int r)
 					painter->result.character = result;
 					switch (result.set) {
 						case 0:
-							painter->result.character.set = painter->g0CharSet;
+							painter->result.character.set = painter->result.g0Set;
 							break;
 						case 2:
-							painter->result.character.set = painter->g2CharSet;
+							painter->result.character.set = painter->result.g2Set;
 							break;
 						case 24:
 							if (painter->attribute.display.underlineSeparated)

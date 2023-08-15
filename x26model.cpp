@@ -368,13 +368,16 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				if (triplet.data() >= 0x20)
 					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, 26*10, 12, 10);
 				break;
-			case 0x29: // G0 character
 			case 0x2f: // G2 character
+				if (triplet.data() >= 0x20)
+					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, m_parentMainWidget->pageDecode()->cellG2CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())*10, 12, 10);
+				break;
+			case 0x29: // G0 character
 			case 0x30 ... 0x3f: // G0 diacritical mark
 				if (triplet.data() >= 0x20)
-					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, m_parentMainWidget->pageDecode()->cellCharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())*10, 12, 10);
+					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())*10, 12, 10);
 				break;
-		};
+		}
 
 	if (role == Qt::EditRole && index.column() == 2)
 		return triplet.modeExt();
@@ -488,12 +491,16 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					return triplet.data() >> 4;
 			}
 			break;
-		case 0x29: // G0 character
 		case 0x2f: // G2 character
+			// Qt::UserRole+1 is character number, returned by default below
+			if (role == Qt::UserRole+2) // Character set
+				return m_parentMainWidget->pageDecode()->cellG2CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn());
+			break;
+		case 0x29: // G0 character
 		case 0x30 ... 0x3f: // G0 diacritical mark
 			// Qt::UserRole+1 is character number, returned by default below
 			if (role == Qt::UserRole+2) // Character set
-				return m_parentMainWidget->pageDecode()->cellCharacterSet(triplet.activePositionRow(), triplet.activePositionColumn());
+				return m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn());
 			break;
 	};
 

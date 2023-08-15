@@ -46,6 +46,8 @@ public:
 	unsigned char cellCharacterCode(int r, int c) const { return m_cell[r][c].character.code; };
 	int cellCharacterSet(int r, int c) const { return m_cell[r][c].character.set; };
 	int cellCharacterDiacritical(int r, int c) const { return m_cell[r][c].character.diacritical; };
+	int cellG0CharacterSet(int r, int c) const { return m_cell[r][c].g0Set; };
+	int cellG2CharacterSet(int r, int c) const { return m_cell[r][c].g2Set; };
 	int cellForegroundCLUT(int r, int c) const { return m_cell[r][c].attribute.foregroundCLUT; };
 	int cellBackgroundCLUT(int r, int c) const { return m_cell[r][c].attribute.backgroundCLUT; };
 	QColor cellForegroundQColor(int, int);
@@ -164,6 +166,8 @@ private:
 		textCharacter character;
 		textAttributes attribute;
 		CharacterFragment fragment=NormalSize;
+		int g0Set=0;
+		int g2Set=7;
 	};
 
 	friend inline bool operator!=(const textCell &lhs, const textCell &rhs)
@@ -178,9 +182,6 @@ private:
 		textCell result;
 		textCell rightHalfCell;
 		textCell bottomHalfCell[72];
-
-		int g0CharSet=0;
-		int g2CharSet=7;
 
 		int styleSpreadRows=0;
 		int setProportionalRows[72], clearProportionalRows[72];
