@@ -419,7 +419,11 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 		}
 	};
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	outStream.setCodec("ISO-8859-1");
+#else
+	outStream.setEncoding(QStringConverter::Latin1);
+#endif
 
 	if (!document.description().isEmpty())
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
@@ -558,7 +562,11 @@ void exportM29File(QSaveFile &file, const TeletextDocument &document)
 		}
 	};
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	outStream.setCodec("ISO-8859-1");
+#else
+	outStream.setEncoding(QStringConverter::Latin1);
+#endif
 
 	if (!document.description().isEmpty())
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
