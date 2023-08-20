@@ -24,7 +24,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
@@ -41,7 +41,7 @@ PageOptionsDockWidget::PageOptionsDockWidget(TeletextWidget *parent): QDockWidge
 	this->setWindowTitle("Page options");
 
 	// Page number
-	m_pageNumberValidator = new QRegExpValidator(QRegExp("[1-8][0-9A-Fa-f][0-9A-Fa-f]"), this);
+	m_pageNumberValidator = new QRegularExpressionValidator(QRegularExpression("[1-8][0-9A-Fa-f][0-9A-Fa-f]"), this);
 
 	QHBoxLayout *pageNumberLayout = new QHBoxLayout;
 	pageNumberLayout->addWidget(new QLabel(tr("Page number")));

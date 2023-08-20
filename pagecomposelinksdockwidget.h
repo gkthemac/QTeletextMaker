@@ -24,7 +24,7 @@
 #include <QComboBox>
 #include <QDockWidget>
 #include <QLineEdit>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 #include <QString>
 
 #include "mainwidget.h"
@@ -46,7 +46,7 @@ private:
 	QComboBox *m_composeLinkFunctionComboBox[4]; // For links 4-7; remember to subtract 4!
 	QLineEdit *m_composeLinkPageNumberLineEdit[8], *m_composeLinkSubPageNumbersLineEdit[8];
 
-	QRegExpValidator *m_pageNumberValidator;
+	QRegularExpressionValidator *m_pageNumberValidator;
 };
 
 #endif

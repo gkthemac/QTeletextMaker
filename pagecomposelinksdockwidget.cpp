@@ -24,7 +24,7 @@
 #include <QLineEdit>
 #include <QMap>
 #include <QPair>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 #include <QString>
 
 #include "pagecomposelinksdockwidget.h"
@@ -61,7 +61,7 @@ PageComposeLinksDockWidget::PageComposeLinksDockWidget(TeletextWidget *parent): 
 	level3p5OnlyLabel->setAlignment(Qt::AlignCenter);
 	x27Layout->addWidget(level3p5OnlyLabel, 6, 0, 1, 5);
 
-	m_pageNumberValidator = new QRegExpValidator(QRegExp("[1-8][0-9A-Fa-f][0-9A-Fa-f]"), this);
+	m_pageNumberValidator = new QRegularExpressionValidator(QRegularExpression("[1-8][0-9A-Fa-f][0-9A-Fa-f]"), this);
 
 	for (int i=0; i<8; i++) {
 		if (i < 4) {

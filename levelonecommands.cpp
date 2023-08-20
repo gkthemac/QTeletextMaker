@@ -22,6 +22,7 @@
 #include <QByteArrayList>
 #include <QClipboard>
 #include <QMimeData>
+#include <QRegularExpression>
 
 #include "levelonecommands.h"
 
@@ -459,7 +460,7 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 		const int rightColumn = m_selectionActive ? m_pasteRightColumn : 39;
 
 		// Parse line-feeds in the clipboard data
-		QStringList plainTextData = mimeData->text().split(QRegExp("\n|\r\n|\r"));
+		QStringList plainTextData = mimeData->text().split(QRegularExpression("\n|\r\n|\r"));
 
 		// "if" statement will be false if clipboard data is a single line of text
 		// that will fit from the cursor position

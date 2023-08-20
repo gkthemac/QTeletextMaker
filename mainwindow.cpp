@@ -28,7 +28,7 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QRadioButton>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QSaveFile>
 #include <QScreen>
 #include <QSettings>
@@ -1133,7 +1133,7 @@ void MainWindow::exportM29()
 	else {
 		exportFileName = QFileInfo(m_curFile).fileName();
 		// Suggest a new filename to avoid clobbering the original file
-		if (QRegExp(("^[Pp]?[1-8][0-9A-Fa-f][0-9A-Fa-f]")).indexIn(exportFileName) != -1) {
+		if (QRegularExpression(("^[Pp]?[1-8][0-9A-Fa-f][0-9A-Fa-f]")).match(exportFileName).hasMatch()) {
 			// Page number forms start of file name, change it to xFF
 			if (exportFileName.at(0) == 'P' || exportFileName.at(0) == 'p') {
 				exportFileName[2] = 'F';

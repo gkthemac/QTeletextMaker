@@ -24,7 +24,7 @@
 #include <QComboBox>
 #include <QDockWidget>
 #include <QLineEdit>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 #include <QSpinBox>
 
 #include "mainwidget.h"
@@ -46,7 +46,7 @@ private:
 	QComboBox *m_defaultRegionCombo, *m_defaultNOSCombo, *m_secondRegionCombo, *m_secondNOSCombo;
 	QLineEdit *m_fastTextEdit[6];
 
-	QRegExpValidator *m_pageNumberValidator;
+	QRegularExpressionValidator *m_pageNumberValidator;
 
 	void addRegionList(QComboBox *);
 	void setFastTextLinkPageNumber(int, const QString &);
