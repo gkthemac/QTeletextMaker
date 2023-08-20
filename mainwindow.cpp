@@ -17,6 +17,7 @@
  * along with QTeletextMaker.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <QActionGroup>
 #include <QApplication>
 #include <QDesktopServices>
 #include <QFileDialog>
