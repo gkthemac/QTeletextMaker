@@ -410,7 +410,7 @@ void TeletextWidget::selectionToClipboard()
 			nativeData[i++] = m_teletextDocument->currentSubPage()->character(r, c);
 
 			if (m_teletextDocument->currentSubPage()->character(r, c) >= 0x20)
-				plainTextData.append(keymapping[m_pageDecode.level1CharSet(r, c)].key(m_teletextDocument->currentSubPage()->character(r, c), m_teletextDocument->currentSubPage()->character(r, c)));
+				plainTextData.append(keymapping[m_pageDecode.level1CharSet(r, c)].key(m_teletextDocument->currentSubPage()->character(r, c), QChar(m_teletextDocument->currentSubPage()->character(r, c))));
 			else
 				plainTextData.append(' ');
 		}

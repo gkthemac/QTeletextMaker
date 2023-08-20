@@ -552,7 +552,7 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 				// that won't overwrite what's on the page
 				if (charToConvert == QChar::Null)
 					convertedChar = -1;
-				else if (charToConvert >= 0x01 && charToConvert <= 0x1f)
+				else if (charToConvert >= QChar(0x01) && charToConvert <= QChar(0x1f))
 					convertedChar = ' ';
 				else if (keymapping[pageCharSet].contains(charToConvert))
 					// Remapped character or non-Latin character converted successfully
