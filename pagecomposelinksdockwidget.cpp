@@ -124,7 +124,7 @@ void PageComposeLinksDockWidget::setComposeLinkSubPageNumbers(int linkNumber, co
 	if (!newSubPagesString.isEmpty()) {
 		// Turn user-entered comma separated subpages and subpage-ranges into bits
 		// First we do the "comma separated"
-		const QStringList items = newSubPagesString.split(QLatin1Char(','), QString::SkipEmptyParts);
+		const QStringList items = newSubPagesString.split(QLatin1Char(','), Qt::SkipEmptyParts);
 		// Now see if there's valid single numbers or ranges between the commas
 		for (const QString &item : items) {
 			if (item.isEmpty())
