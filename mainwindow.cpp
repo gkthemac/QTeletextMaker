@@ -355,7 +355,7 @@ void MainWindow::createActions()
 
 	const QIcon reloadIcon = QIcon::fromTheme("document-revert");
 	QAction *reloadAct = fileMenu->addAction(reloadIcon, tr("Reload"), this, &MainWindow::reload);
-	reloadAct->setShortcuts(QKeySequence::Refresh);
+	reloadAct->setShortcut(QKeySequence(Qt::Key_F5));
 	reloadAct->setStatusTip(tr("Reload the document from disk"));
 
 	fileMenu->addSeparator();
