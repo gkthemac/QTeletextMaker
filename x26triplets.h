@@ -34,7 +34,7 @@ public:
 
 //	X26Triplet &operator=(const X26Triplet &other);
 
-	X26Triplet(int, int, int);
+	X26Triplet(int address, int mode, int data);
 
 	int address() const { return m_address; }
 	int mode() const { return m_mode; }
@@ -44,20 +44,20 @@ public:
 	int addressColumn() const { return (m_address); }
 	bool isRowTriplet() const { return (m_address >= 40); }
 
-	void setAddress(int);
-	void setMode(int);
-	void setData(int);
-	void setAddressRow(int);
-	void setAddressColumn(int);
+	void setAddress(int address);
+	void setMode(int mode);
+	void setData(int data);
+	void setAddressRow(int addressRow);
+	void setAddressColumn(int addressColumn);
 
 	int objectSource() const { return (m_address & 0x18) >> 3; }
 
 	int objectLocalDesignationCode() const { return (((m_address & 0x01) << 3) | (m_data >> 4)); }
 	int objectLocalTripletNumber() const { return m_data & 0x0f; }
 	int objectLocalIndex() const { return objectLocalDesignationCode() * 13 + objectLocalTripletNumber(); }
-	void setObjectLocalDesignationCode(int);
-	void setObjectLocalTripletNumber(int);
-	void setObjectLocalIndex(int);
+	void setObjectLocalDesignationCode(int i);
+	void setObjectLocalTripletNumber(int i);
+	void setObjectLocalIndex(int i);
 
 	int activePositionRow() const { return m_activePositionRow; }
 	int activePositionColumn() const { return m_activePositionColumn; }
@@ -85,10 +85,10 @@ private:
 class X26TripletList
 {
 public:
-	void append(const X26Triplet &);
-	void insert(int, const X26Triplet &);
-	void removeAt(int);
-	void replace(int, const X26Triplet &);
+	void append(const X26Triplet &value);
+	void insert(int i, const X26Triplet &value);
+	void removeAt(int i);
+	void replace(int i, const X26Triplet &value);
 
 	void removeLast() { m_list.removeLast(); }
 

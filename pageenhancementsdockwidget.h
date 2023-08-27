@@ -36,8 +36,8 @@ public:
 	void updateWidgets();
 
 private:
-	void setLeftSidePanelWidth(int);
-	void setRightSidePanelWidth(int);
+	void setLeftSidePanelWidth(int newLeftPanelSize);
+	void setRightSidePanelWidth(int newRightPanelSize);
 
 	TeletextWidget *m_parentMainWidget;
 	QComboBox *m_defaultScreenColourCombo, *m_defaultRowColourCombo, *m_colourTableCombo;

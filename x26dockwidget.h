@@ -46,7 +46,7 @@ public:
 
 	int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-	void setCharacterSet(int);
+	void setCharacterSet(int characterSet);
 
 private:
 	TeletextFontBitmap m_fontBitmap;
@@ -61,24 +61,24 @@ public:
 	X26DockWidget(TeletextWidget *parent);
 
 public slots:
-	void insertTriplet(int, bool);
+	void insertTriplet(int modeExt, bool after);
 	void insertTripletCopy();
 	void deleteTriplet();
 	void customMenuRequested(QPoint pos);
 	void loadX26List();
 	void unloadX26List();
-	void rowSelected(const QModelIndex &, const QModelIndex &);
-	void updateAllRawTripletSpinBoxes(const QModelIndex &);
-	void updateRawTripletDataSpinBox(const QModelIndex &);
-	void updateAllCookedTripletWidgets(const QModelIndex &);
-	void rawTripletAddressSpinBoxChanged(int);
-	void rawTripletModeSpinBoxChanged(int);
-	void rawTripletDataSpinBoxChanged(int);
-	void cookedRowSpinBoxChanged(const int);
-	void cookedColumnSpinBoxChanged(const int);
-	void cookedModeMenuSelected(const int);
-	void updateModelFromCookedWidget(const int, const int);
-	void selectX26ListRow(int);
+	void rowSelected(const QModelIndex &current, const QModelIndex &previous);
+	void updateAllRawTripletSpinBoxes(const QModelIndex &index);
+	void updateRawTripletDataSpinBox(const QModelIndex &index);
+	void updateAllCookedTripletWidgets(const QModelIndex & index);
+	void rawTripletAddressSpinBoxChanged(int value);
+	void rawTripletModeSpinBoxChanged(int value);
+	void rawTripletDataSpinBoxChanged(int value);
+	void cookedRowSpinBoxChanged(const int value);
+	void cookedColumnSpinBoxChanged(const int value);
+	void cookedModeMenuSelected(const int value);
+	void updateModelFromCookedWidget(const int value, const int role);
+	void selectX26ListRow(int row);
 
 protected:
 	void keyPressEvent(QKeyEvent *event) override;

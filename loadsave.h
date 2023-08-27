@@ -30,18 +30,18 @@
 #include "levelonepage.h"
 #include "pagebase.h"
 
-void loadTTI(QFile *, TeletextDocument *);
-void importT42(QFile *, TeletextDocument *);
+void loadTTI(QFile *inFile, TeletextDocument *document);
+void importT42(QFile *inFile, TeletextDocument *document);
 
-int controlBitsToPS(PageBase *);
+int controlBitsToPS(PageBase *subPage);
 
-void saveTTI(QSaveFile &, const TeletextDocument &);
-void exportT42File(QSaveFile &, const TeletextDocument &);
-void exportM29File(QSaveFile &, const TeletextDocument &);
+void saveTTI(QSaveFile &file, const TeletextDocument &document);
+void exportT42File(QSaveFile &file, const TeletextDocument &document);
+void exportM29File(QSaveFile &file, const TeletextDocument &document);
 
-QByteArray rowPacketAlways(PageBase *, int);
+QByteArray rowPacketAlways(PageBase *subPage, int packetNumber);
 
-QString exportHashStringPage(LevelOnePage *);
+QString exportHashStringPage(LevelOnePage *subPage);
 QString exportHashStringPackets(LevelOnePage *subPage);
 
 #endif

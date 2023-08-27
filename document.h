@@ -67,19 +67,19 @@ public:
 	LevelOnePage* subPage(int p) const { return m_subPages[p]; }
 	LevelOnePage* currentSubPage() const { return m_subPages[m_currentSubPageIndex]; }
 	int currentSubPageIndex() const { return m_currentSubPageIndex; }
-	void selectSubPageIndex(int, bool=false);
+	void selectSubPageIndex(int newSubPageIndex, bool refresh=false);
 	void selectSubPageNext();
 	void selectSubPagePrevious();
-	void insertSubPage(int, bool);
-	void deleteSubPage(int);
-	void deleteSubPageToRecycle(int);
-	void unDeleteSubPageFromRecycle(int);
+	void insertSubPage(int beforeSubPageIndex, bool copySubPage);
+	void deleteSubPage(int subPageToDelete);
+	void deleteSubPageToRecycle(int subPageToRecycle);
+	void unDeleteSubPageFromRecycle(int subPage);
 	int pageNumber() const { return m_pageNumber; }
-	void setPageNumber(int);
-	void setPageNumberFromString(QString);
+	void setPageNumber(int pageNumber);
+	void setPageNumberFromString(QString pageNumberString);
 	QString description() const { return m_description; }
-	void setDescription(QString);
-	void setFastTextLinkPageNumberOnAllSubPages(int, int);
+	void setDescription(QString newDescription);
+	void setFastTextLinkPageNumberOnAllSubPages(int linkNumber, int pageNumber);
 	QUndoStack *undoStack() const { return m_undoStack; }
 	ClutModel *clutModel() const { return m_clutModel; }
 	int cursorRow() const { return m_cursorRow; }
@@ -88,7 +88,7 @@ public:
 	void cursorDown(bool shiftKey=false);
 	void cursorLeft(bool shiftKey=false);
 	void cursorRight(bool shiftKey=false);
-	void moveCursor(int, int, bool selectionInProgress=false);
+	void moveCursor(int cursorRow, int cursorColumn, bool selectionInProgress=false);
 	int selectionTopRow() const { return m_selectionCornerRow == -1 ? m_cursorRow : qMin(m_selectionCornerRow, m_cursorRow); }
 	int selectionBottomRow() const { return qMax(m_selectionCornerRow, m_cursorRow); }
 	int selectionLeftColumn() const { return m_selectionCornerColumn == -1 ? m_cursorColumn : qMin(m_selectionCornerColumn, m_cursorColumn); }
@@ -98,22 +98,22 @@ public:
 	bool selectionActive() const { return m_selectionSubPage == currentSubPage(); }
 	int selectionCornerRow() const { return m_selectionCornerRow == -1 ? m_cursorRow : m_selectionCornerRow; }
 	int selectionCornerColumn() const { return m_selectionCornerColumn == -1 ? m_cursorColumn : m_selectionCornerColumn; }
-	void setSelectionCorner(int, int);
-	void setSelection(int, int, int, int);
+	void setSelectionCorner(int row, int column);
+	void setSelection(int topRow, int leftColumn, int bottomRow, int rightColumn);
 	void cancelSelection();
 	int levelRequired() const;
 
 signals:
 	void cursorMoved();
 	void selectionMoved();
-	void colourChanged(int);
-	void contentsChange(int);
+	void colourChanged(int i);
+	void contentsChange(int row);
 	void pageOptionsChanged();
 	void aboutToChangeSubPage();
 	void subPageSelected();
 	void refreshNeeded();
 
-	void tripletCommandHighlight(int);
+	void tripletCommandHighlight(int tripletNumber);
 
 private:
 	QString m_description;

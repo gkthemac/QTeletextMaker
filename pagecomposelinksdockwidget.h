@@ -38,8 +38,8 @@ public:
 	void updateWidgets();
 
 private:
-	void setComposeLinkPageNumber(int, const QString &);
-	void setComposeLinkSubPageNumbers(int, const QString &);
+	void setComposeLinkPageNumber(int linkNumber, const QString &newPageNumberString);
+	void setComposeLinkSubPageNumbers(int linkNumber, const QString &newSubPagesString);
 
 	TeletextWidget *m_parentMainWidget;
 	QCheckBox *m_composeLinkLevelCheckbox[4][2]; // For links 0-3

@@ -37,10 +37,10 @@ public:
 	TeletextPageDecode();
 	~TeletextPageDecode();
 	bool refresh(int r, int c) const { return m_refresh[r][c]; }
-	void setRefresh(int, int, bool);
+	void setRefresh(int r, int c, bool refresh);
 	void decodePage();
 	LevelOnePage *teletextPage() const { return m_levelOnePage; };
-	void setTeletextPage(LevelOnePage *);
+	void setTeletextPage(LevelOnePage *newCurrentPage);
 	void updateSidePanels();
 
 	unsigned char cellCharacterCode(int r, int c) const { return m_cell[r][c].character.code; };
@@ -50,9 +50,9 @@ public:
 	int cellG2CharacterSet(int r, int c) const { return m_cell[r][c].g2Set; };
 	int cellForegroundCLUT(int r, int c) const { return m_cell[r][c].attribute.foregroundCLUT; };
 	int cellBackgroundCLUT(int r, int c) const { return m_cell[r][c].attribute.backgroundCLUT; };
-	QColor cellForegroundQColor(int, int);
-	QColor cellBackgroundQColor(int, int);
-	QColor cellFlashForegroundQColor(int, int);
+	QColor cellForegroundQColor(int r, int c);
+	QColor cellBackgroundQColor(int r, int c);
+	QColor cellFlashForegroundQColor(int r, int c);
 	int cellFlashMode(int r, int c) const { return m_cell[r][c].attribute.flash.mode; };
 	int cellFlashRatePhase(int r, int c) const { return m_cell[r][c].attribute.flash.ratePhase; };
 	int cellFlash2HzPhaseNumber(int r, int c) const { return m_cell[r][c].attribute.flash.phase2HzShown; };
@@ -75,16 +75,16 @@ public:
 	int rightSidePanelColumns() const { return m_rightSidePanelColumns; };
 
 public slots:
-	void setLevel(int);
+	void setLevel(int level);
 
 signals:
-	void fullScreenColourChanged(QColor);
-	void fullRowColourChanged(int, QColor);
+	void fullScreenColourChanged(QColor newColour);
+	void fullRowColourChanged(int r, QColor newColour);
 	void sidePanelsChanged();
 
 protected:
-	inline void setFullScreenColour(int);
-	inline void setFullRowColour(int, int);
+	inline void setFullScreenColour(int newColour);
+	inline void setFullRowColour(int row, int newColour);
 
 	int m_finalFullScreenColour, m_level;
 	QColor m_finalFullScreenQColor;
@@ -219,15 +219,15 @@ private:
 
 		X26TripletList *tripletList() const { return m_tripletList; };
 		void clear();
-		void setTripletList(X26TripletList *);
+		void setTripletList(X26TripletList *tripletList);
 		int startTripletNumber() const { return m_startTripletNumber; };
-		void setStartTripletNumber(int);
+		void setStartTripletNumber(int n);
 		int endTripletNumber() const { return m_endTripletNumber; };
-		void setEndTripletNumber(int);
+		void setEndTripletNumber(int n);
 		int originRow() const { return m_originRow; };
 		int originColumn() const { return m_originColumn; };
-		void setOrigin(int, int);
-		void buildMap(int);
+		void setOrigin(int row, int column);
+		void buildMap(int level);
 
 		QList<QPair<int, int>> charPositions() const { return m_characterMap.uniqueKeys(); };
 		QList<QPair<int, int>> attrPositions() const { return m_attributeMap.uniqueKeys(); };
@@ -253,11 +253,11 @@ private:
 	static textPainter s_blankPainter;
 
 	void decodeRow(int r);
-	QColor cellQColor(int, int, ColourPart);
-	textCell& cellAtCharacterOrigin(int, int);
-	void buildInvocationList(Invocation &, int);
-	textCharacter characterFromTriplets(const QList<X26Triplet>);
-	inline void rotateFlashMovement(flashFunctions &);
+	QColor cellQColor(int r, int c, ColourPart colourPart);
+	textCell& cellAtCharacterOrigin(int r, int c);
+	void buildInvocationList(Invocation &invocation, int objectType);
+	textCharacter characterFromTriplets(const QList<X26Triplet> triplets);
+	inline void rotateFlashMovement(flashFunctions &flash);
 
 	bool m_refresh[25][72];
 	textCell m_cell[25][72];

@@ -48,18 +48,18 @@ public:
 
 	QPixmap* pagePixmap(int i) const { return m_pagePixmap[i]; };
 	bool mix() const { return m_mix; };
-	void setDecoder(TeletextPageDecode *);
+	void setDecoder(TeletextPageDecode *decoder);
 	void renderPage(bool force=false);
 	bool showControlCodes() const { return m_showControlCodes; };
 
 public slots:
-	void colourChanged(int);
-	void setReveal(bool);
-	void setMix(bool);
-	void setShowControlCodes(bool);
+	void colourChanged(int index);
+	void setReveal(bool reveal);
+	void setMix(bool mix);
+	void setShowControlCodes(bool showControlCodes);
 
 signals:
-	void flashChanged(int);
+	void flashChanged(int newFlashHz);
 
 protected:
 	TeletextFontBitmap m_fontBitmap;

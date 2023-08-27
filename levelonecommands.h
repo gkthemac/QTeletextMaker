@@ -28,7 +28,7 @@
 class LevelOneCommand : public QUndoCommand
 {
 public:
-	LevelOneCommand(TeletextDocument *, QUndoCommand *parent = 0);
+	LevelOneCommand(TeletextDocument *teletextDocument, QUndoCommand *parent = 0);
 
 protected:
 	TeletextDocument *m_teletextDocument;
@@ -41,11 +41,11 @@ class TypeCharacterCommand : public LevelOneCommand
 public:
 	enum { Id = 101 };
 
-	TypeCharacterCommand(TeletextDocument *, unsigned char, bool, QUndoCommand *parent = 0);
+	TypeCharacterCommand(TeletextDocument *teletextDocument, unsigned char newCharacter, bool insertMode, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
-	bool mergeWith(const QUndoCommand *) override;
+	bool mergeWith(const QUndoCommand *command) override;
 	int id() const override { return Id; }
 
 private:
@@ -59,11 +59,11 @@ class ToggleMosaicBitCommand : public LevelOneCommand
 public:
 	enum { Id = 102 };
 
-	ToggleMosaicBitCommand(TeletextDocument *, unsigned char, QUndoCommand *parent = 0);
+	ToggleMosaicBitCommand(TeletextDocument *teletextDocument, unsigned char bitToToggle, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
-	bool mergeWith(const QUndoCommand *) override;
+	bool mergeWith(const QUndoCommand *command) override;
 	int id() const override { return Id; }
 
 private:
@@ -75,11 +75,11 @@ class BackspaceKeyCommand : public LevelOneCommand
 public:
 	enum { Id = 103 };
 
-	BackspaceKeyCommand(TeletextDocument *, bool insertMode, QUndoCommand *parent = 0);
+	BackspaceKeyCommand(TeletextDocument *teletextDocument, bool insertMode, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
-	bool mergeWith(const QUndoCommand *) override;
+	bool mergeWith(const QUndoCommand *command) override;
 	int id() const override { return Id; }
 
 private:
@@ -93,11 +93,11 @@ class DeleteKeyCommand : public LevelOneCommand
 public:
 	enum { Id = 104 };
 
-	DeleteKeyCommand(TeletextDocument *, QUndoCommand *parent = 0);
+	DeleteKeyCommand(TeletextDocument *teletextDocument, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
-	bool mergeWith(const QUndoCommand *) override;
+	bool mergeWith(const QUndoCommand *command) override;
 	int id() const override { return Id; }
 
 private:
@@ -107,7 +107,7 @@ private:
 class InsertSubPageCommand : public LevelOneCommand
 {
 public:
-	InsertSubPageCommand(TeletextDocument *, bool, bool, QUndoCommand *parent = 0);
+	InsertSubPageCommand(TeletextDocument *teletextDocument, bool afterCurrentSubPage, bool copySubPage, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -120,7 +120,7 @@ private:
 class DeleteSubPageCommand : public LevelOneCommand
 {
 public:
-	DeleteSubPageCommand(TeletextDocument *, QUndoCommand *parent = 0);
+	DeleteSubPageCommand(TeletextDocument *teletextDocument, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -129,7 +129,7 @@ public:
 class InsertRowCommand : public LevelOneCommand
 {
 public:
-	InsertRowCommand(TeletextDocument *, bool, QUndoCommand *parent = 0);
+	InsertRowCommand(TeletextDocument *teletextDocument, bool copyRow, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -142,7 +142,7 @@ private:
 class DeleteRowCommand : public LevelOneCommand
 {
 public:
-	DeleteRowCommand(TeletextDocument *, QUndoCommand *parent = 0);
+	DeleteRowCommand(TeletextDocument *teletextDocument, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -155,7 +155,7 @@ private:
 class CutCommand : public LevelOneCommand
 {
 public:
-	CutCommand(TeletextDocument *, QUndoCommand *parent = 0);
+	CutCommand(TeletextDocument *teletextDocument, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -169,7 +169,7 @@ private:
 class PasteCommand : public LevelOneCommand
 {
 public:
-	PasteCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
+	PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -188,11 +188,11 @@ class SetFullScreenColourCommand : public LevelOneCommand
 public:
 	enum { Id = 105 };
 
-	SetFullScreenColourCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
+	SetFullScreenColourCommand(TeletextDocument *teletextDocument, int newColour, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
-	bool mergeWith(const QUndoCommand *) override;
+	bool mergeWith(const QUndoCommand *command) override;
 	int id() const override { return Id; }
 
 private:
@@ -204,11 +204,11 @@ class SetFullRowColourCommand : public LevelOneCommand
 public:
 	enum { Id = 106 };
 
-	SetFullRowColourCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
+	SetFullRowColourCommand(TeletextDocument *teletextDocument, int newColour, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
-	bool mergeWith(const QUndoCommand *) override;
+	bool mergeWith(const QUndoCommand *command) override;
 	int id() const override { return Id; }
 
 private:
@@ -220,11 +220,11 @@ class SetCLUTRemapCommand : public LevelOneCommand
 public:
 	enum { Id = 107 };
 
-	SetCLUTRemapCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
+	SetCLUTRemapCommand(TeletextDocument *teletextDocument, int newMap, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
-	bool mergeWith(const QUndoCommand *) override;
+	bool mergeWith(const QUndoCommand *command) override;
 	int id() const override { return Id; }
 
 private:
@@ -236,11 +236,11 @@ class SetBlackBackgroundSubstCommand : public LevelOneCommand
 public:
 	enum { Id = 108 };
 
-	SetBlackBackgroundSubstCommand(TeletextDocument *, bool, QUndoCommand *parent = 0);
+	SetBlackBackgroundSubstCommand(TeletextDocument *teletextDocument, bool newSub, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
-	bool mergeWith(const QUndoCommand *) override;
+	bool mergeWith(const QUndoCommand *command) override;
 	int id() const override { return Id; }
 
 private:
@@ -250,7 +250,7 @@ private:
 class SetColourCommand : public LevelOneCommand
 {
 public:
-	SetColourCommand(TeletextDocument *, int, int, QUndoCommand *parent = 0);
+	SetColourCommand(TeletextDocument *teletextDocument, int colourIndex, int newColour, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -262,7 +262,7 @@ private:
 class ResetCLUTCommand : public LevelOneCommand
 {
 public:
-	ResetCLUTCommand(TeletextDocument *, int, QUndoCommand *parent = 0);
+	ResetCLUTCommand(TeletextDocument *teletextDocument, int colourTable, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;

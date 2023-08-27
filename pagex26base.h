@@ -35,8 +35,8 @@ public:
 	virtual int maxEnhancements() const =0;
 
 protected:
-	QByteArray packetFromEnhancementList(int) const;
-	void setEnhancementListFromPacket(int, QByteArray);
+	QByteArray packetFromEnhancementList(int packetNumber) const;
+	void setEnhancementListFromPacket(int packetNumber, QByteArray packetContents);
 	bool packetFromEnhancementListNeeded(int n) const { return ((m_enhancements.size()+12) / 13) > n; };
 
 	X26TripletList m_enhancements;

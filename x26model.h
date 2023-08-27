@@ -30,7 +30,7 @@ class X26Model : public QAbstractListModel
 
 public:
 	X26Model(TeletextWidget *parent);
-	void setX26ListLoaded(bool);
+	void setX26ListLoaded(bool newListLoaded);
 	int rowCount(const QModelIndex &parent = QModelIndex()) const override ;
 	int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;

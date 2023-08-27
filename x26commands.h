@@ -29,7 +29,7 @@
 class InsertTripletCommand : public QUndoCommand
 {
 public:
-	InsertTripletCommand(TeletextDocument *, X26Model *, int, int, const X26Triplet, QUndoCommand *parent = 0);
+	InsertTripletCommand(TeletextDocument *teletextDocument, X26Model *x26Model, int row, int count, const X26Triplet newTriplet, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -45,7 +45,7 @@ private:
 class DeleteTripletCommand : public QUndoCommand
 {
 public:
-	DeleteTripletCommand(TeletextDocument *, X26Model *, int, int, QUndoCommand *parent = 0);
+	DeleteTripletCommand(TeletextDocument *teletextDocument, X26Model *x26Model, int row, int count, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;
@@ -63,7 +63,7 @@ public:
 	enum { Id = 201 };
 	enum EditTripletEnum { ETaddress, ETmode, ETdata };
 
-	EditTripletCommand(TeletextDocument *, X26Model *, int, int, int, int, int, QUndoCommand *parent = 0);
+	EditTripletCommand(TeletextDocument *teletextDocument, X26Model *x26Model, int row, int tripletPart, int bitsToKeep, int newValue, int role, QUndoCommand *parent = 0);
 
 	void redo() override;
 	void undo() override;

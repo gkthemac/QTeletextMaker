@@ -35,17 +35,17 @@ public:
 
 	virtual bool isEmpty() const;
 
-	virtual QByteArray packet(int) const;
-	virtual QByteArray packet(int, int) const;
+	virtual QByteArray packet(int i) const;
+	virtual QByteArray packet(int i, int j) const;
 	virtual bool packetExists(int i) const { return m_displayPackets[i] != nullptr; }
 	virtual bool packetExists(int i, int j) const { return m_designationPackets[i-26][j] != nullptr; }
-	virtual bool setPacket(int, QByteArray);
-	virtual bool setPacket(int, int, QByteArray);
+	virtual bool setPacket(int i, QByteArray packetContents);
+	virtual bool setPacket(int i, int j, QByteArray packetContents);
 //	bool deletePacket(int);
 //	bool deletePacket(int, int);
 
 	virtual bool controlBit(int bitNumber) const { return m_controlBits[bitNumber]; }
-	virtual bool setControlBit(int, bool);
+	virtual bool setControlBit(int bitNumber, bool active);
 
 private:
 	bool m_controlBits[11];

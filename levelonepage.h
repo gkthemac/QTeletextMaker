@@ -36,19 +36,19 @@ public:
 	enum CycleTypeEnum { CTcycles, CTseconds };
 
 	LevelOnePage();
-	LevelOnePage(const PageBase &);
+	LevelOnePage(const PageBase &other);
 
 	bool isEmpty() const override;
 
-	QByteArray packet(int) const override;
-	QByteArray packet(int, int) const override;
-	bool packetExists(int) const override;
-	bool packetExists(int, int) const override;
-	bool setPacket(int, QByteArray) override;
-	bool setPacket(int, int, QByteArray) override;
+	QByteArray packet(int packetNumber) const override;
+	QByteArray packet(int packetNumber, int designationCode) const override;
+	bool packetExists(int packetNumber) const override;
+	bool packetExists(int packetNumber, int designationCode) const override;
+	bool setPacket(int packetNumber, QByteArray packetContents) override;
+	bool setPacket(int packetNumber, int designationCode, QByteArray packetContents) override;
 
 	bool controlBit(int bitNumber) const override;
-	bool setControlBit(int, bool) override;
+	bool setControlBit(int bitNumber, bool active) override;
 
 	void clearPage();
 
@@ -56,53 +56,53 @@ public:
 
 /*	void setSubPageNumber(int); */
 	int cycleValue() const { return m_cycleValue; };
-	void setCycleValue(int);
+	void setCycleValue(int newValue);
 	CycleTypeEnum cycleType() const { return m_cycleType; };
-	void setCycleType(CycleTypeEnum);
+	void setCycleType(CycleTypeEnum newType);
 	int defaultCharSet() const { return m_defaultCharSet; }
-	void setDefaultCharSet(int);
+	void setDefaultCharSet(int newDefaultCharSet);
 	int defaultNOS() const { return m_defaultNOS; }
-	void setDefaultNOS(int);
+	void setDefaultNOS(int defaultNOS);
 	int secondCharSet() const { return m_secondCharSet; }
-	void setSecondCharSet(int);
+	void setSecondCharSet(int newSecondCharSet);
 	int secondNOS() const { return m_secondNOS; }
-	void setSecondNOS(int);
+	void setSecondNOS(int newSecondNOS);
 	unsigned char character(int row, int column) const { return m_level1Page[row][column]; }
-	void setCharacter(int, int, unsigned char);
+	void setCharacter(int row, int column, unsigned char newCharacter);
 	int defaultScreenColour() const { return m_defaultScreenColour; }
-	void setDefaultScreenColour(int);
+	void setDefaultScreenColour(int newDefaultScreenColour);
 	int defaultRowColour() const { return m_defaultRowColour; }
-	void setDefaultRowColour(int);
+	void setDefaultRowColour(int newDefaultRowColour);
 	int colourTableRemap() const { return m_colourTableRemap; }
-	void setColourTableRemap(int);
+	void setColourTableRemap(int newColourTableRemap);
 	bool blackBackgroundSubst() const { return m_blackBackgroundSubst; }
-	void setBlackBackgroundSubst(bool);
+	void setBlackBackgroundSubst(bool newBlackBackgroundSubst);
 	int CLUT(int index, int renderLevel=3) const;
-	void setCLUT(int, int);
+	void setCLUT(int index, int newColour);
 	QColor CLUTtoQColor(int index, int renderlevel=3) const;
-	bool isPaletteDefault(int) const;
-	bool isPaletteDefault(int, int) const;
+	bool isPaletteDefault(int colour) const;
+	bool isPaletteDefault(int fromColour, int toColour) const;
 	int levelRequired() const;
 	bool leftSidePanelDisplayed() const { return m_leftSidePanelDisplayed; }
-	void setLeftSidePanelDisplayed(bool);
+	void setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed);
 	bool rightSidePanelDisplayed() const { return m_rightSidePanelDisplayed; }
-	void setRightSidePanelDisplayed(bool);
+	void setRightSidePanelDisplayed(bool newRightSidePanelDisplayed);
 	int sidePanelColumns() const { return m_sidePanelColumns; }
-	void setSidePanelColumns(int);
+	void setSidePanelColumns(int newSidePanelColumns);
 	bool sidePanelStatusL25() const { return m_sidePanelStatusL25; }
-	void setSidePanelStatusL25(bool);
+	void setSidePanelStatusL25(bool newSidePanelStatusL25);
 	int fastTextLinkPageNumber(int linkNumber) const { return m_fastTextLink[linkNumber].pageNumber; }
-	void setFastTextLinkPageNumber(int, int);
+	void setFastTextLinkPageNumber(int linkNumber, int pageNumber);
 	int composeLinkFunction(int linkNumber) const { return m_composeLink[linkNumber].function; }
-	void setComposeLinkFunction(int, int);
+	void setComposeLinkFunction(int linkNumber, int newFunction);
 	bool composeLinkLevel2p5(int linkNumber) const { return m_composeLink[linkNumber].level2p5; }
-	void setComposeLinkLevel2p5(int, bool);
+	void setComposeLinkLevel2p5(int linkNumber, bool newRequired);
 	bool composeLinkLevel3p5(int linkNumber) const { return m_composeLink[linkNumber].level3p5; }
-	void setComposeLinkLevel3p5(int, bool);
+	void setComposeLinkLevel3p5(int linkNumber, bool newRequired);
 	int composeLinkPageNumber(int linkNumber) const { return m_composeLink[linkNumber].pageNumber; }
-	void setComposeLinkPageNumber(int, int);
+	void setComposeLinkPageNumber(int linkNumber, int newPageNumber);
 	int composeLinkSubPageCodes(int linkNumber) const { return m_composeLink[linkNumber].subPageCodes; }
-	void setComposeLinkSubPageCodes(int, int);
+	void setComposeLinkSubPageCodes(int linkNumber, int newSubPageCodes);
 
 private:
 	unsigned char m_level1Page[25][40];

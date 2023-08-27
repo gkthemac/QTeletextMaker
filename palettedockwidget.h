@@ -35,19 +35,19 @@ public:
 	void updateAllColourButtons();
 
 public slots:
-	void updateColourButton(int);
-	void setLevel3p5Accepted(bool);
+	void updateColourButton(int colourIndex);
+	void setLevel3p5Accepted(bool b);
 
 protected:
-	void showEvent(QShowEvent *);
+	void showEvent(QShowEvent *event);
 
 private slots:
-	void selectColour(int);
-	void setLevel3p5Seen(bool);
+	void selectColour(int colourIndex);
+	void setLevel3p5Seen(bool b);
 	void updateLevel3p5Cursor();
 
 private:
-	void resetCLUT(int);
+	void resetCLUT(int colourTable);
 
 	QPushButton *m_colourButton[32], *m_resetButton[4];
 	QCheckBox *m_showHexValuesCheckBox;

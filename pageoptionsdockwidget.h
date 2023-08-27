@@ -48,8 +48,8 @@ private:
 
 	QRegularExpressionValidator *m_pageNumberValidator;
 
-	void addRegionList(QComboBox *);
-	void setFastTextLinkPageNumber(int, const QString &);
+	void addRegionList(QComboBox *regionCombo);
+	void setFastTextLinkPageNumber(int linkNumber, const QString &pageNumberString);
 	void setDefaultRegion();
 	void setDefaultNOS();
 	void setSecondRegion();

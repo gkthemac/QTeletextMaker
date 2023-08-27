@@ -61,7 +61,7 @@ private slots:
 	bool saveAs();
 	void reload();
 	void exportAuto();
-	void exportT42(bool);
+	void exportT42(bool fromAuto);
 	void exportZXNet();
 	void exportEditTF();
 	void exportPNG();
@@ -73,15 +73,15 @@ private slots:
 	void updatePageWidgets();
 	void updateCursorPosition();
 
-	void insertRow(bool);
+	void insertRow(bool copyRow);
 	void deleteRow();
-	void insertSubPage(bool, bool);
+	void insertSubPage(bool afterCurrentSubPage, bool copyCurrentSubPage);
 	void deleteSubPage();
 
 	void setSceneDimensions();
-	void setBorder(int);
-	void setAspectRatio(int);
-	void setSmoothTransform(bool);
+	void setBorder(int newViewBorder);
+	void setAspectRatio(int newViewAspectRatio);
+	void setSmoothTransform(bool smoothTransform);
 	void zoomIn();
 	void zoomOut();
 	void zoomReset();

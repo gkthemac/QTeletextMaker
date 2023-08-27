@@ -43,15 +43,15 @@ class TeletextWidget : public QFrame
 public:
 	TeletextWidget(QFrame *parent = 0);
 	~TeletextWidget();
-	void setCharacter(unsigned char);
-	void toggleCharacterBit(unsigned char);
+	void setCharacter(unsigned char newCharacter);
+	void toggleCharacterBit(unsigned char bitToToggle);
 	bool insertMode() const { return m_insertMode; };
-	void setInsertMode(bool);
+	void setInsertMode(bool insertMode);
 	bool showControlCodes() const { return m_pageRender.showControlCodes(); };
 
 	QSize sizeHint() { return QSize(480+(pageDecode()->leftSidePanelColumns()+pageDecode()->rightSidePanelColumns())*12, 250); }
 
-	void inputMethodEvent(QInputMethodEvent *);
+	void inputMethodEvent(QInputMethodEvent *event);
 
 	TeletextDocument* document() const { return m_teletextDocument; }
 	TeletextPageDecode *pageDecode() { return &m_pageDecode; }
@@ -64,18 +64,18 @@ signals:
 public slots:
 	void subPageSelected();
 	void refreshPage();
-	void setReveal(bool);
-	void setMix(bool);
-	void setShowControlCodes(bool);
-	void updateFlashTimer(int);
-	void pauseFlash(bool);
-	void refreshRow(int);
+	void setReveal(bool reveal);
+	void setMix(bool mix);
+	void setShowControlCodes(bool showControlCodes);
+	void updateFlashTimer(int newFlashTimer);
+	void pauseFlash(bool pauseNow);
+	void refreshRow(int rowChanged);
 
-	void setControlBit(int, bool);
-	void setDefaultCharSet(int);
-	void setDefaultNOS(int);
-	void setSidePanelWidths(int, int);
-	void setSidePanelAtL35Only(bool);
+	void setControlBit(int bitNumber, bool active);
+	void setDefaultCharSet(int newDefaultCharSet);
+	void setDefaultNOS(int newDefaultNOS);
+	void setSidePanelWidths(int newLeftSidePanelColumns, int newRightSidePanelColumns);
+	void setSidePanelAtL35Only(bool newSidePanelAtL35Only);
 
 	void cut();
 	void copy();
@@ -105,7 +105,7 @@ private:
 	void timerEvent(QTimerEvent *event) override;
 	void selectionToClipboard();
 
-	QPair<int, int> mouseToRowAndColumn(const QPoint &);
+	QPair<int, int> mouseToRowAndColumn(const QPoint &mousePosition);
 };
 
 class LevelOneScene : public QGraphicsScene
@@ -113,27 +113,27 @@ class LevelOneScene : public QGraphicsScene
 	Q_OBJECT
 
 public:
-	LevelOneScene(QWidget *, QObject *parent = nullptr);
-	void setBorderDimensions(int, int, int, int, int);
+	LevelOneScene(QWidget *levelOneWidget, QObject *parent = nullptr);
+	void setBorderDimensions(int sceneWidth, int sceneHeight, int widgetWidth, int leftSidePanelColumns, int rightSidePanelColumns);
 	QGraphicsRectItem *cursorRectItem() const { return m_cursorRectItem; }
 
 public slots:
 	void updateCursor();
 	void updateSelection();
-	void setMix(bool);
-	void toggleGrid(bool);
-	void hideGUIElements(bool);
-	void setFullScreenColour(const QColor &);
-	void setFullRowColour(int, const QColor &);
+	void setMix(bool mix);
+	void toggleGrid(bool gridOn);
+	void hideGUIElements(bool hidden);
+	void setFullScreenColour(const QColor &newColor);
+	void setFullRowColour(int row, const QColor &newColor);
 
 signals:
 	void mouseZoomIn();
 	void mouseZoomOut();
 
 protected:
-	bool eventFilter(QObject *, QEvent *);
-	void keyPressEvent(QKeyEvent *);
-	void keyReleaseEvent(QKeyEvent *);
+	bool eventFilter(QObject *object, QEvent *event);
+	void keyPressEvent(QKeyEvent *event);
+	void keyReleaseEvent(QKeyEvent *keyEvent);
 
 private:
 	QGraphicsRectItem *m_fullScreenTopRectItem, *m_fullScreenBottomRectItem;
