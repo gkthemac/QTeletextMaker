@@ -848,8 +848,17 @@ void TeletextPageDecode::decodeRow(int r)
 							painter->bottomHalfCell[c].fragment = DoubleSizeBottomLeftQuarter;
 							painter->rightHalfCell = painter->result;
 							painter->rightHalfCell.fragment = DoubleSizeTopRightQuarter;
-							painter->bottomHalfCell[c+1] = painter->result;
-							painter->bottomHalfCell[c+1].fragment = DoubleSizeBottomRightQuarter;
+							// The right half of this "if" statement (without the t != 2) is meant
+							// to a fix a bug where the bottom half of double-size characters in
+							// Passive Objects didn't appear.
+							// But the fix also caused the bottom right quarter of double-size
+							// characters in Active Objects to go missing when they overlapped
+							// the bottom half of a Level 1 double-height row.
+							// Hence the t != 2
+							if (t != 2 || painter->bottomHalfCell[c+1].character.code == 0x00) {
+								painter->bottomHalfCell[c+1] = painter->result;
+								painter->bottomHalfCell[c+1].fragment = DoubleSizeBottomRightQuarter;
+							}
 						} else {
 							// Double height
 							painter->result.fragment = DoubleHeightTopHalf;
