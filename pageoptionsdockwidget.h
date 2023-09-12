@@ -40,6 +40,7 @@ public:
 private:
 	TeletextWidget *m_parentMainWidget;
 	QLineEdit *m_pageNumberEdit, *m_pageDescriptionEdit;
+	QCheckBox *m_cycleOnCheckBox;
 	QSpinBox *m_cycleValueSpinBox;
 	QComboBox *m_cycleTypeCombo;
 	QCheckBox *m_controlBitsAct[8];
@@ -56,6 +57,9 @@ private:
 	void setSecondNOS();
 	void updateDefaultNOSOptions();
 	void updateSecondNOSOptions();
+
+private slots:
+	void setCycleOn(bool active);
 };
 
 struct languageComboBoxItem {

@@ -64,6 +64,7 @@ void LevelOnePage::clearPage()
 		m_fastTextLink[i] = { 0x0ff, 0x3f7f };
 
 /*	m_subPageNumber = 0x0000; */
+	m_cycleOn = false;
 	m_cycleValue = 20;
 	m_cycleType = CTseconds;
 	m_defaultCharSet = 0;
@@ -341,6 +342,7 @@ bool LevelOnePage::setControlBit(int bitNumber, bool active)
 }
 
 /* void LevelOnePage::setSubPageNumber(int newSubPageNumber) { m_subPageNumber = newSubPageNumber; } */
+void LevelOnePage::setCycleOn(int cycleOn) { m_cycleOn = cycleOn; };
 void LevelOnePage::setCycleValue(int newValue) { m_cycleValue = newValue; };
 void LevelOnePage::setCycleType(CycleTypeEnum newType) { m_cycleType = newType; }
 void LevelOnePage::setDefaultCharSet(int newDefaultCharSet) { m_defaultCharSet = newDefaultCharSet; }
