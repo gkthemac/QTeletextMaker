@@ -107,11 +107,10 @@ signals:
 	void cursorMoved();
 	void selectionMoved();
 	void colourChanged(int i);
-	void contentsChange(int row);
 	void pageOptionsChanged();
 	void aboutToChangeSubPage();
 	void subPageSelected();
-	void refreshNeeded();
+	void contentsChanged();
 
 	void tripletCommandHighlight(int tripletNumber);
 

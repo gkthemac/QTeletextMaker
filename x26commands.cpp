@@ -68,7 +68,7 @@ void InsertTripletCommand::redo()
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
 	else
-		m_teletextDocument->emit refreshNeeded();
+		m_teletextDocument->emit contentsChanged();
 
 	if (m_firstDo)
 		m_firstDo = false;
@@ -107,7 +107,7 @@ void InsertTripletCommand::undo()
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
 	else
-		m_teletextDocument->emit refreshNeeded();
+		m_teletextDocument->emit contentsChanged();
 }
 
 
@@ -155,7 +155,7 @@ void DeleteTripletCommand::redo()
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
 	else
-		m_teletextDocument->emit refreshNeeded();
+		m_teletextDocument->emit contentsChanged();
 }
 
 void DeleteTripletCommand::undo()
@@ -189,7 +189,7 @@ void DeleteTripletCommand::undo()
 	if (changingSubPage)
 		m_teletextDocument->emit subPageSelected();
 	else
-		m_teletextDocument->emit refreshNeeded();
+		m_teletextDocument->emit contentsChanged();
 
 	m_teletextDocument->emit tripletCommandHighlight(m_row);
 }
@@ -225,7 +225,7 @@ void EditTripletCommand::redo()
 
 	m_teletextDocument->currentSubPage()->enhancements()->replace(m_row, m_newTriplet);
 	m_x26Model->emit dataChanged(m_x26Model->createIndex(m_row, 0), m_x26Model->createIndex(m_row, 3), {m_role});
-	m_teletextDocument->emit refreshNeeded();
+	m_teletextDocument->emit contentsChanged();
 
 	if (m_firstDo)
 		m_firstDo = false;
@@ -240,7 +240,7 @@ void EditTripletCommand::undo()
 
 	m_teletextDocument->currentSubPage()->enhancements()->replace(m_row, m_oldTriplet);
 	m_x26Model->emit dataChanged(m_x26Model->createIndex(m_row, 0), m_x26Model->createIndex(m_row, 3), {m_role});
-	m_teletextDocument->emit refreshNeeded();
+	m_teletextDocument->emit contentsChanged();
 	m_teletextDocument->emit tripletCommandHighlight(m_row);
 }
 

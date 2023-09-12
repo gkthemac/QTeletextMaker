@@ -72,7 +72,7 @@ void TypeCharacterCommand::redo()
 
 	m_teletextDocument->moveCursor(m_row, m_columnEnd);
 	m_teletextDocument->cursorRight();
-	emit m_teletextDocument->contentsChange(m_row);
+	emit m_teletextDocument->contentsChanged();
 }
 
 void TypeCharacterCommand::undo()
@@ -83,7 +83,7 @@ void TypeCharacterCommand::undo()
 		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_oldRowContents[c]);
 
 	m_teletextDocument->moveCursor(m_row, m_columnStart);
-	emit m_teletextDocument->contentsChange(m_row);
+	emit m_teletextDocument->contentsChanged();
 }
 
 bool TypeCharacterCommand::mergeWith(const QUndoCommand *command)
@@ -122,7 +122,7 @@ void ToggleMosaicBitCommand::redo()
 	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_newCharacter);
 
 	m_teletextDocument->moveCursor(m_row, m_column);
-	emit m_teletextDocument->contentsChange(m_row);
+	emit m_teletextDocument->contentsChanged();
 }
 
 void ToggleMosaicBitCommand::undo()
@@ -131,7 +131,7 @@ void ToggleMosaicBitCommand::undo()
 	m_teletextDocument->currentSubPage()->setCharacter(m_row, m_column, m_oldCharacter);
 
 	m_teletextDocument->moveCursor(m_row, m_column);
-	emit m_teletextDocument->contentsChange(m_row);
+	emit m_teletextDocument->contentsChanged();
 }
 
 bool ToggleMosaicBitCommand::mergeWith(const QUndoCommand *command)
@@ -183,7 +183,7 @@ void BackspaceKeyCommand::redo()
 		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_newRowContents[c]);
 
 	m_teletextDocument->moveCursor(m_row, m_columnEnd);
-	emit m_teletextDocument->contentsChange(m_row);
+	emit m_teletextDocument->contentsChanged();
 }
 
 void BackspaceKeyCommand::undo()
@@ -195,7 +195,7 @@ void BackspaceKeyCommand::undo()
 
 	m_teletextDocument->moveCursor(m_row, m_columnStart);
 	m_teletextDocument->cursorRight();
-	emit m_teletextDocument->contentsChange(m_row);
+	emit m_teletextDocument->contentsChanged();
 }
 
 bool BackspaceKeyCommand::mergeWith(const QUndoCommand *command)
@@ -237,7 +237,7 @@ void DeleteKeyCommand::redo()
 		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_newRowContents[c]);
 
 	m_teletextDocument->moveCursor(m_row, m_column);
-	emit m_teletextDocument->contentsChange(m_row);
+	emit m_teletextDocument->contentsChanged();
 }
 
 void DeleteKeyCommand::undo()
@@ -248,7 +248,7 @@ void DeleteKeyCommand::undo()
 		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_oldRowContents[c]);
 
 	m_teletextDocument->moveCursor(m_row, m_column);
-	emit m_teletextDocument->contentsChange(m_row);
+	emit m_teletextDocument->contentsChanged();
 }
 
 bool DeleteKeyCommand::mergeWith(const QUndoCommand *command)
@@ -291,7 +291,7 @@ void InsertRowCommand::redo()
 		for (int c=0; c<40; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(m_row, c, ' ');
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 }
 
 void InsertRowCommand::undo()
@@ -306,7 +306,7 @@ void InsertRowCommand::undo()
 	for (int c=0; c<40; c++)
 		m_teletextDocument->currentSubPage()->setCharacter(23, c, m_deletedBottomRow[c]);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 }
 
 
@@ -331,7 +331,7 @@ void DeleteRowCommand::redo()
 		for (int c=0; c<40; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(blankingRow, c, ' ');
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 }
 
 void DeleteRowCommand::undo()
@@ -346,7 +346,7 @@ void DeleteRowCommand::undo()
 	for (int c=0; c<40; c++)
 		m_teletextDocument->currentSubPage()->setCharacter(m_row, c, m_deletedRow[c]);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 }
 
 
@@ -381,7 +381,7 @@ void CutCommand::redo()
 	for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++) {
 		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(r, c, 0x20);
-		emit m_teletextDocument->contentsChange(r);
+		emit m_teletextDocument->contentsChanged();
 	}
 }
 
@@ -397,7 +397,7 @@ void CutCommand::undo()
 		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(r, c, m_deletedCharacters[arrayR].at(arrayC++));
 
-		emit m_teletextDocument->contentsChange(r);
+		emit m_teletextDocument->contentsChanged();
 		arrayR++;
 	}
 
@@ -636,7 +636,7 @@ void PasteCommand::redo()
 			}
 
 		if (r < 25)
-			emit m_teletextDocument->contentsChange(r);
+			emit m_teletextDocument->contentsChanged();
 
 		arrayR++;
 		// If paste area is taller than clipboard data, repeat the pattern
@@ -679,7 +679,7 @@ void PasteCommand::undo()
 			}
 
 		if (r < 25)
-			emit m_teletextDocument->contentsChange(r);
+			emit m_teletextDocument->contentsChanged();
 
 		arrayR++;
 	}
@@ -746,7 +746,7 @@ void SetFullScreenColourCommand::redo()
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setDefaultScreenColour(m_newColour);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 	emit m_teletextDocument->pageOptionsChanged();
 }
 
@@ -755,7 +755,7 @@ void SetFullScreenColourCommand::undo()
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setDefaultScreenColour(m_oldColour);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 	emit m_teletextDocument->pageOptionsChanged();
 }
 
@@ -785,7 +785,7 @@ void SetFullRowColourCommand::redo()
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setDefaultRowColour(m_newColour);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 	emit m_teletextDocument->pageOptionsChanged();
 }
 
@@ -794,7 +794,7 @@ void SetFullRowColourCommand::undo()
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setDefaultRowColour(m_oldColour);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 	emit m_teletextDocument->pageOptionsChanged();
 }
 
@@ -824,7 +824,7 @@ void SetCLUTRemapCommand::redo()
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setColourTableRemap(m_newMap);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 	emit m_teletextDocument->pageOptionsChanged();
 }
 
@@ -833,7 +833,7 @@ void SetCLUTRemapCommand::undo()
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setColourTableRemap(m_oldMap);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 	emit m_teletextDocument->pageOptionsChanged();
 }
 
@@ -863,7 +863,7 @@ void SetBlackBackgroundSubstCommand::redo()
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setBlackBackgroundSubst(m_newSub);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 	emit m_teletextDocument->pageOptionsChanged();
 }
 
@@ -872,7 +872,7 @@ void SetBlackBackgroundSubstCommand::undo()
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 	m_teletextDocument->currentSubPage()->setBlackBackgroundSubst(m_oldSub);
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 	emit m_teletextDocument->pageOptionsChanged();
 }
 
@@ -904,7 +904,7 @@ void SetColourCommand::redo()
 	m_teletextDocument->currentSubPage()->setCLUT(m_colourIndex, m_newColour);
 
 	emit m_teletextDocument->colourChanged(m_colourIndex);
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 }
 
 void SetColourCommand::undo()
@@ -913,7 +913,7 @@ void SetColourCommand::undo()
 	m_teletextDocument->currentSubPage()->setCLUT(m_colourIndex, m_oldColour);
 
 	emit m_teletextDocument->colourChanged(m_colourIndex);
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 }
 
 
@@ -934,7 +934,7 @@ void ResetCLUTCommand::redo()
 		emit m_teletextDocument->colourChanged(i);
 	}
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 }
 
 void ResetCLUTCommand::undo()
@@ -945,5 +945,5 @@ void ResetCLUTCommand::undo()
 		emit m_teletextDocument->colourChanged(i);
 	}
 
-	emit m_teletextDocument->refreshNeeded();
+	emit m_teletextDocument->contentsChanged();
 }

@@ -62,8 +62,7 @@ TeletextWidget::TeletextWidget(QFrame *parent) : QFrame(parent)
 	connect(&m_pageRender, &TeletextPageRender::flashChanged, this, &TeletextWidget::updateFlashTimer);
 	connect(&m_pageDecode, &TeletextPageDecode::sidePanelsChanged, this, &TeletextWidget::changeSize);
 	connect(m_teletextDocument, &TeletextDocument::subPageSelected, this, &TeletextWidget::subPageSelected);
-	connect(m_teletextDocument, &TeletextDocument::contentsChange, this, &TeletextWidget::refreshRow);
-	connect(m_teletextDocument, &TeletextDocument::refreshNeeded, this, &TeletextWidget::refreshPage);
+	connect(m_teletextDocument, &TeletextDocument::contentsChanged, this, &TeletextWidget::refreshPage);
 	connect(m_teletextDocument, &TeletextDocument::colourChanged, &m_pageRender, &TeletextPageRender::colourChanged);
 }
 
@@ -91,15 +90,6 @@ void TeletextWidget::subPageSelected()
 	m_pageDecode.setTeletextPage(m_levelOnePage);
 	m_pageDecode.decodePage();
 	m_pageRender.renderPage(true);
-	update();
-}
-
-void TeletextWidget::refreshRow(int rowChanged)
-{
-	Q_UNUSED(rowChanged);
-
-	// TODO trace signals where this is called so we can remove this
-	m_pageDecode.decodePage();
 	update();
 }
 

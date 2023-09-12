@@ -69,7 +69,6 @@ public slots:
 	void setShowControlCodes(bool showControlCodes);
 	void updateFlashTimer(int newFlashTimer);
 	void pauseFlash(bool pauseNow);
-	void refreshRow(int rowChanged);
 
 	void setControlBit(int bitNumber, bool active);
 	void setDefaultCharSet(int newDefaultCharSet);
