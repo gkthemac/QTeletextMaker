@@ -433,9 +433,12 @@ int LevelOnePage::levelRequired() const
 				case 0x1f: // Termination
 				case 0x22: // G3 character @ Level 1.5
 				case 0x2f: // G2 character
-				case 0x30 ... 0x3f: // G0 character with diacritical
 					levelSeen = 1;
 					break;
+				default:
+					if (m_enhancements.at(i).modeExt() >= 0x30 && m_enhancements.at(i).modeExt() <= 0x3f)
+						// G0 character with diacritical
+						levelSeen = 1;
 			}
 
 		if (levelSeen < 2)
@@ -443,14 +446,23 @@ int LevelOnePage::levelRequired() const
 				// Check for Level 2.5 triplets
 				case 0x00: // Full screen colour
 				case 0x01: // Full row colour
-				case 0x10 ... 0x13: // Origin Modifer and Object Invocation
-				case 0x15 ... 0x17: // Object Definition
+				case 0x10: // Origin Modifier
+				case 0x11: // Invoke Active Object
+				case 0x12: // Invoke Adaptive Object
+				case 0x13: // Invoke Passive Object
+				case 0x15: // Define Active Object
+				case 0x16: // Define Adaptive Object
+				case 0x17: // Define Passive Object
 				case 0x18: // DRCS Mode
 				case 0x20: // Foreground colour
 				case 0x21: // G1 character
 				case 0x23: // Background colour
-				case 0x27 ... 0x29: // Flash functions, G0 and G2 charset designation, G0 character @ Level 2.5
-				case 0x2b ... 0x2d: // G3 character @ Level 2.5, display attributes, DRCS character
+				case 0x27: // Flash functions
+				case 0x28: // G0 and G2 charset designation
+				case 0x29: // G0 character @ Level 2.5
+				case 0x2b: // G3 character @ Level 2.5
+				case 0x2c: // Display attributes
+				case 0x2d: // DRCS character
 					levelSeen = 2;
 					break;
 			}
@@ -458,7 +470,9 @@ int LevelOnePage::levelRequired() const
 		if (levelSeen == 2)
 			switch (m_enhancements.at(i).modeExt()) {
 				// Check for triplets with "required at Level 3.5 only" parameters
-				case 0x15 ... 0x17: // Object Definition
+				case 0x15: // Define Active Object
+				case 0x16: // Define Adaptive Object
+				case 0x17: // Define Passive Object
 					if ((m_enhancements.at(i).address() & 0x18) == 0x10)
 						return 3;
 					break;

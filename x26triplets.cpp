@@ -124,7 +124,9 @@ void X26TripletList::updateInternalData()
 					    m_list.at(i+1).modeExt() > 0x13)
 						triplet->m_error = X26Triplet::OriginModifierAlone;
 					break;
-				case 0x11 ... 0x13: // Invoke Object
+				case 0x11: // Invoke Active Object
+				case 0x12: // Invoke Adaptive Object
+				case 0x13: // Invoke Passive Object
 					if (triplet->objectSource() == X26Triplet::LocalObject) {
 						if (triplet->objectLocalTripletNumber() > 12 ||
 							triplet->objectLocalIndex() > (m_list.size()-1) ||
@@ -135,7 +137,9 @@ void X26TripletList::updateInternalData()
 							triplet->m_error = X26Triplet::InvokeTypeMismatch;
 					}
 					break;
-				case 0x15 ... 0x17: // Define Object
+				case 0x15: // Define Active Object
+				case 0x16: // Define Adaptive Object
+				case 0x17: // Define Passive Object
 					activePosition.reset();
 					// Make sure data field holds correct place of triplet
 					// otherwise the object won't appear
@@ -145,7 +149,12 @@ void X26TripletList::updateInternalData()
 					if ((triplet->m_data & 0x30) == 0x00)
 						triplet->m_reservedData = true;
 				case 0x1f: // Termination marker
-				case 0x08 ... 0x0d: // PDC
+				case 0x08: // PDC country of origin & programme source
+				case 0x09: // PDC month & day
+				case 0x0a: // PDC cursor row & announced start hour
+				case 0x0b: // PDC cursor row & announced finish hour
+				case 0x0c: // PDC cursor row & local time offset
+				case 0x0d: // PDC series ID & series code
 					break;
 				default:
 					triplet->m_reservedMode = true;
@@ -158,16 +167,8 @@ void X26TripletList::updateInternalData()
 		else
 			switch (triplet->modeExt()) {
 				case 0x20: // Foreground colour
-				case 0x23: // Foreground colour
+				case 0x23: // Background colour
 					if (triplet->m_data & 0x60)
-						triplet->m_reservedData = true;
-					break;
-				case 0x21: // G1 mosaic character
-				case 0x22: // G3 mosaic character at level 1.5
-				case 0x29: // G0 character
-				case 0x2b: // G3 mosaic character at level >=2.5
-				case 0x2f ... 0x3f: // G2 character or G0 diacritical mark
-					if (triplet->m_data < 0x20)
 						triplet->m_reservedData = true;
 					break;
 				case 0x27: // Additional flash functions
@@ -193,6 +194,19 @@ void X26TripletList::updateInternalData()
 					if ((triplet->m_data & 0x3f) >= 48)
 						// Should really be an error?
 						triplet->m_reservedData = true;
+					break;
+				case 0x21: // G1 mosaic character
+				case 0x22: // G3 mosaic character at level 1.5
+				case 0x29: // G0 character
+				case 0x2b: // G3 mosaic character at level >=2.5
+				case 0x2f: // G2 character
+					if (triplet->m_data < 0x20)
+						triplet->m_reservedData = true;
+					break;
+				default:
+					if (triplet->modeExt() >= 0x30 && triplet->modeExt() <= 0x3f && triplet->m_data < 0x20)
+						// G0 diacritical mark
+						triplet->m_reservedData = true;
 			}
 
 		triplet->m_activePositionRow = activePosition.row();
@@ -217,15 +231,18 @@ void X26TripletList::updateInternalData()
 					activePosition.setColumn(8);
 				break;
 			case 0x22: // G3 mosaic character at level 1.5
-			case 0x2f ... 0x3f: // G2 character or G0 diacritical mark
+			case 0x2f: // G2 character
 				activePosition.setColumn(triplet->addressColumn());
 				break;
+			default:
+				if (triplet->modeExt() >= 0x30 && triplet->modeExt() <= 0x3f)
+					// G0 diacritical mark
+					activePosition.setColumn(triplet->addressColumn());
 		}
 
 		triplet->m_activePositionRow1p5 = activePosition.row();
 		triplet->m_activePositionColumn1p5 = activePosition.column();
 	}
-
 }
 
 void X26TripletList::append(const X26Triplet &value)

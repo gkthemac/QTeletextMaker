@@ -98,26 +98,6 @@ void TeletextPageDecode::Invocation::buildMap(int level)
 			continue;
 
 		switch (triplet.modeExt()) {
-			case 0x21: // G1 character
-			case 0x22: // G3 character at Level 1.5
-			case 0x29: // G0 character
-			case 0x2b: // G3 character at Level 2.5
-			case 0x2f: // G2 character
-			case 0x30 ... 0x3f: // G0 character with diacritical
-				m_characterMap.insert(qMakePair(targetRow, targetColumn), triplet);
-				// Store rightmost column in this row for Adaptive Object attribute tracking
-				// QMap stores one value per key, QMap::insert will replace the value if the key already exists
-				m_rightMostColumn.insert(targetRow, targetColumn);
-				break;
-			case 0x20: // Foreground colour
-			case 0x23: // Background colour
-			case 0x27: // Additional flash functions
-			case 0x28: // Modified G0 and G2 character set designation
-			case 0x2c: // Display attributes
-			case 0x2e: // Font style
-				m_attributeMap.insert(qMakePair(targetRow, targetColumn), triplet);
-				m_rightMostColumn.insert(targetRow, targetColumn);
-				break;
 			case 0x00: // Full screen colour
 				if ((triplet.data() & 0x60) != 0x00)
 					break;
@@ -133,6 +113,31 @@ void TeletextPageDecode::Invocation::buildMap(int level)
 				if (targetRow == 0)
 					m_fullRowCLUTMap.insert(targetRow, triplet);
 				break;
+			case 0x20: // Foreground colour
+			case 0x23: // Background colour
+			case 0x27: // Additional flash functions
+			case 0x28: // Modified G0 and G2 character set designation
+			case 0x2c: // Display attributes
+			case 0x2e: // Font style
+				m_attributeMap.insert(qMakePair(targetRow, targetColumn), triplet);
+				// Store rightmost column in this row for Adaptive Object attribute tracking
+				// QMap stores one value per key, QMap::insert will replace the value if the key already exists
+				m_rightMostColumn.insert(targetRow, targetColumn);
+				break;
+			case 0x21: // G1 character
+			case 0x22: // G3 character at Level 1.5
+			case 0x29: // G0 character
+			case 0x2b: // G3 character at Level 2.5
+			case 0x2f: // G2 character
+				m_characterMap.insert(qMakePair(targetRow, targetColumn), triplet);
+				m_rightMostColumn.insert(targetRow, targetColumn);
+				break;
+			default:
+				if (triplet.modeExt() >= 0x30 && triplet.modeExt() <= 0x3f) {
+					// G0 character with diacritical
+					m_characterMap.insert(qMakePair(targetRow, targetColumn), triplet);
+					m_rightMostColumn.insert(targetRow, targetColumn);
+				}
 		}
 	}
 }
@@ -322,9 +327,10 @@ TeletextPageDecode::textCharacter TeletextPageDecode::characterFromTriplets(cons
 			case 0x2f: // G2 character
 				result = { charCode, 2, 0 };
 				break;
-			case 0x30 ... 0x3f: // G0 character with diacritical
-				result = { charCode, 0, triplet.mode() & 0xf };
-				break;
+			default:
+				if (triplet.modeExt() >= 0x30 && triplet.modeExt() <= 0x3f)
+					// G0 character with diacritical
+					result = { charCode, 0, triplet.mode() & 0xf };
 		}
 
 		if (m_level == 1)
@@ -945,7 +951,14 @@ void TeletextPageDecode::decodeRow(int r)
 		// Level 1 set-after spacing attributes
 		if (c < 40 && m_rowHeight[r] != BottomHalf)
 			switch (m_levelOnePage->character(r, c)) {
-				case 0x00 ... 0x07: // Alphanumeric and foreground colour
+				case 0x00:
+				case 0x01:
+				case 0x02:
+				case 0x03:
+				case 0x04:
+				case 0x05:
+				case 0x06:
+				case 0x07: // Alphanumeric and foreground colour
 					level1Mosaics = false;
 					level1ForegroundCLUT = m_levelOnePage->character(r, c);
 					if (m_level >= 2)
@@ -957,7 +970,14 @@ void TeletextPageDecode::decodeRow(int r)
 					level1HoldMosaicCharacter = 0x20;
 					level1HoldMosaicSeparated = false;
 					break;
-				case 0x10 ... 0x17: // Mosaic and foreground colour
+				case 0x10:
+				case 0x11:
+				case 0x12:
+				case 0x13:
+				case 0x14:
+				case 0x15:
+				case 0x16:
+				case 0x17: // Mosaic and foreground colour
 					level1Mosaics = true;
 					level1ForegroundCLUT = m_levelOnePage->character(r, c) & 0x07;
 					if (m_level >= 2)

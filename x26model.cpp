@@ -134,7 +134,9 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 			case 0x10: // Origin Modifier
 				// For Set Active Position and Origin Modifier, data is the column, so return blank
 				return QVariant();
-			case 0x11 ... 0x13: // Invoke object
+			case 0x11: // Invoke Active Object
+			case 0x12: // Invoke Adaptive Object
+			case 0x13: // Invoke Passive Object
 				switch (triplet.address() & 0x18) {
 					case 0x08:
 						return QString("Local: d%1 t%2").arg((triplet.data() >> 4) | ((triplet.address() & 0x01) << 3)).arg(triplet.data() & 0x0f);
@@ -152,7 +154,9 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				else
 					result.append("1-9");
 				return result;
-			case 0x15 ... 0x17: // Define object
+			case 0x15: // Define Active Object
+			case 0x16: // Define Adaptive Object
+			case 0x17: // Define Passive Object
 				switch (triplet.address() & 0x18) {
 					case 0x08:
 						return "Local: L2.5 only";
@@ -212,7 +216,12 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 						break;
 				}
 				break;
-			case 0x08 ... 0x0d: // PDC
+			case 0x08: // PDC country of origin & programme source
+			case 0x09: // PDC month & day
+			case 0x0a: // PDC cursor row & announced start hour
+			case 0x0b: // PDC cursor row & announced finish hour
+			case 0x0c: // PDC cursor row & local time offset
+			case 0x0d: // PDC series ID & series code
 				return QString("0x%1").arg(triplet.data(), 2, 16, QChar('0'));
 			case 0x20: // Foreground colour
 			case 0x23: // Background colour
@@ -223,7 +232,7 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 			case 0x22: // G3 mosaic character at level 1.5
 			case 0x29: // G0 character
 			case 0x2b: // G3 mosaic character at level >=2.5
-			case 0x2f ... 0x3f: // G2 character or G0 diacritical mark
+			case 0x2f: // G2 character
 				if (triplet.data() >= 0x20)
 					return QString("0x%1").arg(triplet.data(), 2, 16);
 				break;
@@ -339,8 +348,13 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				return result;
 			case 0x26: // PDC
 				return QString("0x%1").arg(triplet.data(), 2, 16, QChar('0'));
-			default: // Reserved
-				return QString("Reserved 0x%1").arg(triplet.data(), 2, 16, QChar('0'));
+			default:
+				if (triplet.modeExt() >= 0x30 && triplet.modeExt() <= 0x3f && triplet.data() >= 0x20)
+					// G0 with diacritical
+					return QString("0x%1").arg(triplet.data(), 2, 16);
+				else
+					// Reserved
+					return QString("Reserved 0x%1").arg(triplet.data(), 2, 16, QChar('0'));
 		}
 		// Reserved mode or data
 		return QString("Reserved 0x%1").arg(triplet.data(), 2, 16, QChar('0'));
@@ -372,11 +386,11 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				if (triplet.data() >= 0x20)
 					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, m_parentMainWidget->pageDecode()->cellG2CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())*10, 12, 10);
 				break;
-			case 0x29: // G0 character
-			case 0x30 ... 0x3f: // G0 diacritical mark
-				if (triplet.data() >= 0x20)
-					return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())*10, 12, 10);
-				break;
+			default:
+				if (triplet.modeExt() == 0x29 || (triplet.modeExt() >= 0x30 && triplet.modeExt() <= 0x3f))
+					// G0 character or G0 diacritical mark
+					if (triplet.data() >= 0x20)
+						return m_fontBitmap.rawBitmap()->copy((triplet.data()-32)*12, m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())*10, 12, 10);
 		}
 
 	if (role == Qt::EditRole && index.column() == 2)
@@ -397,7 +411,9 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 			if (role == Qt::UserRole+1) // Colour index
 				return triplet.data() & 0x1f;
 			break;
-		case 0x11 ... 0x13: // Invoke object
+		case 0x11: // Invoke Active Object
+		case 0x12: // Invoke Adaptive Object
+		case 0x13: // Invoke Passive Object
 			switch (role) {
 				case Qt::UserRole+1: // Object source: Local, POP or GPOP
 					return ((triplet.address() & 0x18) >> 3) - 1;
@@ -421,7 +437,9 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					return (triplet.data() & 0x10) >> 4;
 			}
 			break;
-		case 0x15 ... 0x17: // Define object
+		case 0x15: // Define Active Object
+		case 0x16: // Define Adaptive Object
+		case 0x17: // Define Passive Object
 			switch (role) {
 				case Qt::UserRole+1: // Required at which levels
 					return ((triplet.address() & 0x18) >> 3) - 1;
@@ -496,12 +514,12 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 			if (role == Qt::UserRole+2) // Character set
 				return m_parentMainWidget->pageDecode()->cellG2CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn());
 			break;
-		case 0x29: // G0 character
-		case 0x30 ... 0x3f: // G0 diacritical mark
-			// Qt::UserRole+1 is character number, returned by default below
-			if (role == Qt::UserRole+2) // Character set
-				return m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn());
-			break;
+		default:
+			if (triplet.modeExt() == 0x29 || (triplet.modeExt() >= 0x30 && triplet.modeExt() <= 0x3f))
+				// G0 character or G0 diacritical mark
+				// Qt::UserRole+1 is character number, returned by default below
+				if (role == Qt::UserRole+2) // Character set
+					return m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn());
 	};
 
 	// For characters and other triplet modes, return the complete data value
@@ -635,15 +653,6 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 						if (triplet.data() & 0x78)
 							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x07, 0x00, role));
 						break;
-					case 0x21: // G1 mosaic character
-					case 0x22: // G3 mosaic character at level 1.5
-					case 0x29: // G0 character
-					case 0x2b: // G3 mosaic character at level >=2.5
-					case 0x2f ... 0x3f: // G2 character or G0 diacritical mark
-						// Data range 0x20-0x7f
-						if (triplet.data() < 0x20)
-							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0x20, role));
-						break;
 					case 0x27: // Additional flash functions
 						// D6 and D5 must be clear, D4 and D3 set is reserved phase
 						if (triplet.data() >= 0x18)
@@ -660,6 +669,20 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 						if ((triplet.data() & 0x3f) >= 48)
 							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x40, 0x77, role));
 						break;
+					case 0x21: // G1 mosaic character
+					case 0x22: // G3 mosaic character at level 1.5
+					case 0x29: // G0 character
+					case 0x2b: // G3 mosaic character at level >=2.5
+					case 0x2f: // G2 character
+						// Data range 0x20-0x7f
+						if (triplet.data() < 0x20)
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0x20, role));
+						break;
+					default:
+						if (intValue >= 0x30 && intValue <= 0x3f && triplet.data() < 0x20)
+						// G0 diacritical mark
+						// Data range 0x20-0x7f
+							m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0x20, role));
 				}
 				return true;
 		}
@@ -681,7 +704,9 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 					break;
 			}
 			break;
-		case 0x11 ... 0x13: // Invoke object
+		case 0x11: // Invoke Active Object
+		case 0x12: // Invoke Adaptive Object
+		case 0x13: // Invoke Passive Object
 			switch (role) {
 				case Qt::UserRole+1: // Object source: Local, POP or GPOP
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x27, (intValue+1) << 3, role));
@@ -711,7 +736,9 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 					return true;
 			}
 			break;
-		case 0x15 ... 0x17: // Define object
+		case 0x15: // Define Active Object
+		case 0x16: // Define Adaptive Object
+		case 0x17: // Define Passive Object
 			switch (role) {
 				case Qt::UserRole+1: // Required at which levels
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x27, (intValue+1) << 3, role));

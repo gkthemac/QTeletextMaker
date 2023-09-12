@@ -748,7 +748,23 @@ void X26DockWidget::updateAllCookedTripletWidgets(const QModelIndex &index)
 		case 0x22: // G3 character at Level 1.5
 		case 0x29: // G0 character
 		case 0x2b: // G3 character at Level 2.5
-		case 0x2f ... 0x3f: // G2 character, G0 character with diacritical
+		case 0x2f: // G2 character
+		case 0x30:
+		case 0x31:
+		case 0x32:
+		case 0x33:
+		case 0x34:
+		case 0x35:
+		case 0x36:
+		case 0x37:
+		case 0x38:
+		case 0x39:
+		case 0x3a:
+		case 0x3b:
+		case 0x3c:
+		case 0x3d:
+		case 0x3e:
+		case 0x3f: // G0 character with diacritical
 			m_characterCodeComboBox->blockSignals(true);
 			if (modeExt == 0x21)
 				m_characterListModel.setCharacterSet(24);
@@ -788,8 +804,12 @@ void X26DockWidget::updateAllCookedTripletWidgets(const QModelIndex &index)
 			m_displayAttributeUnderlineCheckBox->blockSignals(false);
 			m_tripletParameterStackedLayout->setCurrentIndex(4);
 			break;
-		case 0x11 ... 0x13: // Invoke object
-		case 0x15 ... 0x17: // Define object
+		case 0x11: // Invoke Active Object
+		case 0x12: // Invoke Adaptive Object
+		case 0x13: // Invoke Passive Object
+		case 0x15: // Define Active Object
+		case 0x16: // Define Adaptive Object
+		case 0x17: // Define Passive Object
 			if (index.model()->data(index.model()->index(index.row(), 1), Qt::UserRole).toInt() & 0x04) {
 				// Define object
 				m_objectSourceComboBox->setVisible(false);
