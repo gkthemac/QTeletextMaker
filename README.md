@@ -45,7 +45,7 @@ Most triplet modes will present varying widgets below which can be used to alter
 
 By checking "raw values" it is also possible to view and edit the raw Address, Mode and Data numbers of the triplets. When editing triplets this way, remember that address values 0-39 select a column triplet which has one set of modes and address values 40-63 select a row triplet which has a different set of modes.
 
-The full behaviour of X/26 enhancement triplets can be found in section 12.3 of the [Enhanced Teletext specification ETS 300 706](https://web.archive.org/web/20160326062859/https://www.phecap.nl/download/enhenced-teletext-specs.pdf).
+The full behaviour of X/26 enhancement triplets can be found in section 12.3 of the [Enhanced Teletext specification ETS 300 706](https://www.etsi.org/deliver/etsi_en/300700_300799/300706/01.02.01_60/en_300706v010201p.pdf).
 
 ### Setting the Active Position
 The Active Position, whether set explicitly by a "Set Active Position" triplet or by a row or column triplet, can only be moved in screen address order i.e. from left to right within a row and then from top to bottom across rows. In other words:
