@@ -202,7 +202,10 @@ void PageOptionsDockWidget::updateWidgets()
 	m_defaultNOSCombo->setCurrentIndex(m_defaultNOSCombo->findData((m_parentMainWidget->document()->currentSubPage()->defaultCharSet() << 3) | m_parentMainWidget->document()->currentSubPage()->defaultNOS()));
 	m_defaultNOSCombo->blockSignals(false);
 	m_secondRegionCombo->blockSignals(true);
-	m_secondRegionCombo->setCurrentText(QString::number(m_parentMainWidget->document()->currentSubPage()->secondCharSet()));
+	if (m_parentMainWidget->document()->currentSubPage()->secondCharSet() == 15)
+		m_secondRegionCombo->setCurrentIndex(0);
+	else
+		m_secondRegionCombo->setCurrentText(QString::number(m_parentMainWidget->document()->currentSubPage()->secondCharSet()));
 	m_secondRegionCombo->blockSignals(false);
 	m_secondNOSCombo->blockSignals(true);
 	updateSecondNOSOptions();
