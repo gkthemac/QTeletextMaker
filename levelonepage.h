@@ -55,8 +55,6 @@ public:
 	int maxEnhancements() const { return 208; };
 
 /*	void setSubPageNumber(int); */
-	int cycleOn() const { return m_cycleOn; };
-	void setCycleOn(int cycleOn);
 	int cycleValue() const { return m_cycleValue; };
 	void setCycleValue(int newValue);
 	CycleTypeEnum cycleType() const { return m_cycleType; };
@@ -109,7 +107,6 @@ public:
 private:
 	unsigned char m_level1Page[25][40];
 /*	int m_subPageNumber; */
-	bool m_cycleOn;
 	int m_cycleValue;
 	CycleTypeEnum m_cycleType;
 	int m_defaultCharSet, m_defaultNOS, m_secondCharSet, m_secondNOS;

@@ -82,9 +82,7 @@ PageOptionsDockWidget::PageOptionsDockWidget(TeletextWidget *parent): QDockWidge
 
 	// Cycle
 	QHBoxLayout *pageCycleLayout = new QHBoxLayout;
-	m_cycleOnCheckBox = new QCheckBox(tr("Page cycle"));
-	pageCycleLayout->addWidget(m_cycleOnCheckBox);
-	connect(m_cycleOnCheckBox, &QCheckBox::stateChanged, this, &PageOptionsDockWidget::setCycleOn );
+	pageCycleLayout->addWidget(new QLabel(tr("Page cycle")));
 	m_cycleValueSpinBox = new QSpinBox;
 	m_cycleValueSpinBox->setRange(1, 99);
 	m_cycleValueSpinBox->setWrapping(true);
@@ -175,19 +173,11 @@ void PageOptionsDockWidget::updateWidgets()
 		m_fastTextEdit[i]->setText(QString::number(absoluteLinkPageNumber, 16).toUpper());
 		m_fastTextEdit[i]->blockSignals(false);
 	}
-
-	const bool cycleOn = m_parentMainWidget->document()->currentSubPage()->cycleOn();
-
-	m_cycleOnCheckBox->blockSignals(true);
-	m_cycleOnCheckBox->setChecked(cycleOn);
-	m_cycleOnCheckBox->blockSignals(false);
 	m_cycleValueSpinBox->blockSignals(true);
 	m_cycleValueSpinBox->setValue(m_parentMainWidget->document()->currentSubPage()->cycleValue());
-	m_cycleValueSpinBox->setEnabled(cycleOn);
 	m_cycleValueSpinBox->blockSignals(false);
 	m_cycleTypeCombo->blockSignals(true);
 	m_cycleTypeCombo->setCurrentIndex(m_parentMainWidget->document()->currentSubPage()->cycleType() == LevelOnePage::CTseconds);
-	m_cycleTypeCombo->setEnabled(cycleOn);
 	m_cycleTypeCombo->blockSignals(false);
 	for (int i=0; i<=7; i++) {
 		m_controlBitsAct[i]->blockSignals(true);
@@ -228,13 +218,6 @@ void PageOptionsDockWidget::setFastTextLinkPageNumber(int linkNumber, const QStr
 	// TODO bring in option to allow different FastText links per subpage
 //	m_parentMainWidget->document()->currentSubPage()->setFastTextLinkPageNumber(linkNumber, pageNumberRead);
 	m_parentMainWidget->document()->setFastTextLinkPageNumberOnAllSubPages(linkNumber, pageNumberRead);
-}
-
-void PageOptionsDockWidget::setCycleOn(bool active)
-{
-	m_cycleValueSpinBox->setEnabled(active);
-	m_cycleTypeCombo->setEnabled(active);
-	m_parentMainWidget->document()->currentSubPage()->setCycleOn(active);
 }
 
 void PageOptionsDockWidget::updateDefaultNOSOptions()

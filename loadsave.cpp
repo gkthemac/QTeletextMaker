@@ -35,6 +35,9 @@ void loadTTI(QFile *inFile, TeletextDocument *document)
 {
 	QByteArray inLine;
 	bool firstSubPageAlreadyFound = false;
+	int cycleCommandsFound = 0;
+	int mostRecentCycleValue = -1;
+	LevelOnePage::CycleTypeEnum mostRecentCycleType;
 
 	LevelOnePage* loadingPage = document->subPage(0);
 
@@ -76,9 +79,12 @@ void loadTTI(QFile *inFile, TeletextDocument *document)
 			bool cycleValueOk;
 			int cycleValueRead = inLine.mid(3, inLine.size()-5).toInt(&cycleValueOk);
 			if (cycleValueOk) {
-				loadingPage->setCycleOn(true);
+				cycleCommandsFound++;
+				// House-keep CT command values, in case it's the only one within multiple subpages
+				mostRecentCycleValue = cycleValueRead;
 				loadingPage->setCycleValue(cycleValueRead);
-				loadingPage->setCycleType(inLine.endsWith("C") ? LevelOnePage::CTcycles : LevelOnePage::CTseconds);
+				mostRecentCycleType = inLine.endsWith("C") ? LevelOnePage::CTcycles : LevelOnePage::CTseconds;
+				loadingPage->setCycleType(mostRecentCycleType);
 			}
 		}
 		if (inLine.startsWith("FL,")) {
@@ -153,6 +159,13 @@ void loadTTI(QFile *inFile, TeletextDocument *document)
 			}
 		}
 	}
+	// If there's more than one subpage but only one valid CT command was found, apply it to all subpages
+	// I don't know if this is correct
+	if (cycleCommandsFound == 1 && document->numberOfSubPages()>1)
+		for (int i=0; i<document->numberOfSubPages(); i++) {
+			document->subPage(i)->setCycleValue(mostRecentCycleValue);
+			document->subPage(i)->setCycleType(mostRecentCycleType);
+		}
 }
 
 void importT42(QFile *inFile, TeletextDocument *document)
@@ -454,26 +467,19 @@ void saveTTI(QSaveFile &file, const TeletextDocument &document)
 		outStream << endl;
 #endif
 
-		// Cycle time - assume that only Level One Pages have configurable cycle times
-		if (document.pageFunction() == TeletextDocument::PFLevelOnePage && document.subPage(p)->cycleOn()) {
+		// Cycle time
+		if (document.pageFunction() == TeletextDocument::PFLevelOnePage)
+			// Assume that only Level One Pages have configurable cycle times
 			outStream << QString("CT,%1,%2").arg(document.subPage(p)->cycleValue()).arg(document.subPage(p)->cycleType()==LevelOnePage::CTcycles ? 'C' : 'T');
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-			outStream << Qt::endl;
-#else
-			outStream << endl;
-#endif
-		}
-
-		// Not a Level One Page: X/28/0 specifies page function and coding but the PF command
-		// should make it obvious to a human that this isn't a Level One Page
-		if (document.pageFunction() != TeletextDocument::PFLevelOnePage) {
+		else
+			// X/28/0 specifies page function and coding but the PF command
+			// should make it obvious to a human that this isn't a Level One Page
 			outStream << QString("PF,%1,%2").arg(document.pageFunction()).arg(document.packetCoding());
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-			outStream << Qt::endl;
+		outStream << Qt::endl;
 #else
-			outStream << endl;
+		outStream << endl;
 #endif
-		}
 
 		// FastText links
 		bool writeFLCommand = false;
