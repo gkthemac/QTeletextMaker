@@ -381,8 +381,9 @@ void CutCommand::redo()
 	for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++) {
 		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(r, c, 0x20);
-		emit m_teletextDocument->contentsChanged();
 	}
+
+	emit m_teletextDocument->contentsChanged();
 }
 
 void CutCommand::undo()
@@ -397,9 +398,10 @@ void CutCommand::undo()
 		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
 			m_teletextDocument->currentSubPage()->setCharacter(r, c, m_deletedCharacters[arrayR].at(arrayC++));
 
-		emit m_teletextDocument->contentsChanged();
 		arrayR++;
 	}
+
+	emit m_teletextDocument->contentsChanged();
 
 	m_teletextDocument->setSelectionCorner(m_selectionCornerRow, m_selectionCornerColumn);
 	m_teletextDocument->moveCursor(m_row, m_column, true);
@@ -635,9 +637,6 @@ void PasteCommand::redo()
 				}
 			}
 
-		if (r < 25)
-			emit m_teletextDocument->contentsChanged();
-
 		arrayR++;
 		// If paste area is taller than clipboard data, repeat the pattern
 		// if it wasn't plain text
@@ -648,6 +647,8 @@ void PasteCommand::redo()
 				break;
 		}
 	}
+
+	emit m_teletextDocument->contentsChanged();
 
 	if (m_selectionActive) {
 		m_teletextDocument->setSelectionCorner(m_selectionCornerRow, m_selectionCornerColumn);
@@ -678,11 +679,10 @@ void PasteCommand::undo()
 				arrayC++;
 			}
 
-		if (r < 25)
-			emit m_teletextDocument->contentsChanged();
-
 		arrayR++;
 	}
+
+	emit m_teletextDocument->contentsChanged();
 
 	if (!m_selectionActive)
 		m_teletextDocument->moveCursor(m_row, m_column);
