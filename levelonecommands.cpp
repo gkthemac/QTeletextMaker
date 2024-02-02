@@ -38,6 +38,49 @@ LevelOneCommand::LevelOneCommand(TeletextDocument *teletextDocument, QUndoComman
 	m_firstDo = true;
 }
 
+
+StoreOldCharactersCommand::StoreOldCharactersCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+{
+}
+
+void StoreOldCharactersCommand::storeOldCharacters(int topRow, int leftColumn, int bottomRow, int rightColumn)
+{
+	for (int r=topRow; r<=bottomRow; r++) {
+		QByteArray rowArray;
+
+		for (int c=leftColumn; c<=rightColumn; c++)
+			// Guard against size of pasted block going beyond last line or column
+			if (r < 25 && c < 40)
+				rowArray.append(m_teletextDocument->currentSubPage()->character(r, c));
+			else
+				// Gone beyond last line or column - store a filler character which we won't see
+				// Not sure if this is really necessary as out-of-bounds access might not occur?
+				rowArray.append(0x7f);
+
+		m_oldCharacters.append(rowArray);
+	}
+}
+
+void StoreOldCharactersCommand::retrieveOldCharacters(int topRow, int leftColumn, int bottomRow, int rightColumn)
+{
+	int arrayR = 0;
+	int arrayC;
+
+	for (int r=topRow; r<=bottomRow; r++) {
+		arrayC = 0;
+		for (int c=leftColumn; c<=rightColumn; c++)
+			// Guard against size of pasted block going beyond last line or column
+			if (r < 25 && c < 40) {
+				m_teletextDocument->currentSubPage()->setCharacter(r, c, m_oldCharacters[arrayR].at(arrayC));
+
+				arrayC++;
+			}
+
+		arrayR++;
+	}
+}
+
+
 TypeCharacterCommand::TypeCharacterCommand(TeletextDocument *teletextDocument, unsigned char newCharacter, bool insertMode, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
 	m_columnStart = m_columnEnd = m_column;
@@ -351,7 +394,7 @@ void DeleteRowCommand::undo()
 
 
 #ifndef QT_NO_CLIPBOARD
-CutCommand::CutCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+CutCommand::CutCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : StoreOldCharactersCommand(teletextDocument, parent)
 {
 	m_selectionTopRow = m_teletextDocument->selectionTopRow();
 	m_selectionBottomRow = m_teletextDocument->selectionBottomRow();
@@ -361,15 +404,7 @@ CutCommand::CutCommand(TeletextDocument *teletextDocument, QUndoCommand *parent)
 	m_selectionCornerRow = m_teletextDocument->selectionCornerRow();
 	m_selectionCornerColumn = m_teletextDocument->selectionCornerColumn();
 
-	// Store copy of the characters that we're about to blank
-	for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++) {
-		QByteArray rowArray;
-
-		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
-			rowArray.append(m_teletextDocument->currentSubPage()->character(r, c));
-
-		m_deletedCharacters.append(rowArray);
-	}
+	storeOldCharacters(m_selectionTopRow, m_selectionLeftColumn, m_selectionBottomRow, m_selectionRightColumn);
 
 	setText(QObject::tr("cut"));
 }
@@ -390,16 +425,7 @@ void CutCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 
-	int arrayR = 0;
-	int arrayC;
-
-	for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++) {
-		arrayC = 0;
-		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
-			m_teletextDocument->currentSubPage()->setCharacter(r, c, m_deletedCharacters[arrayR].at(arrayC++));
-
-		arrayR++;
-	}
+	retrieveOldCharacters(m_selectionTopRow, m_selectionLeftColumn, m_selectionBottomRow, m_selectionRightColumn);
 
 	emit m_teletextDocument->contentsChanged();
 
@@ -408,7 +434,7 @@ void CutCommand::undo()
 }
 
 
-PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, QUndoCommand *parent) : StoreOldCharactersCommand(teletextDocument, parent)
 {
 	const QClipboard *clipboard = QApplication::clipboard();
 	const QMimeData *mimeData = clipboard->mimeData();
@@ -586,21 +612,7 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 	if (m_clipboardDataWidth == 0 || m_clipboardDataHeight == 0)
 		return;
 
-	// Store copy of the characters that we're about to overwrite
-	for (int r=m_pasteTopRow; r<=m_pasteBottomRow; r++) {
-		QByteArray rowArray;
-
-		for (int c=m_pasteLeftColumn; c<=m_pasteRightColumn; c++)
-			// Guard against size of pasted block going beyond last line or column
-			if (r < 25 && c < 40)
-				rowArray.append(m_teletextDocument->currentSubPage()->character(r, c));
-			else
-				// Gone beyond last line or column - store a filler character which we won't see
-				// Not sure if this is really necessary as out-of-bounds access might not occur?
-				rowArray.append(0x7f);
-
-		m_deletedCharacters.append(rowArray);
-	}
+	storeOldCharacters(m_pasteTopRow, m_pasteLeftColumn, m_pasteBottomRow, m_pasteRightColumn);
 
 	setText(QObject::tr("paste"));
 }
@@ -666,21 +678,7 @@ void PasteCommand::undo()
 
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 
-	int arrayR = 0;
-	int arrayC;
-
-	for (int r=m_pasteTopRow; r<=m_pasteBottomRow; r++) {
-		arrayC = 0;
-		for (int c=m_pasteLeftColumn; c<=m_pasteRightColumn; c++)
-			// Guard against size of pasted block going beyond last line or column
-			if (r < 25 && c < 40) {
-				m_teletextDocument->currentSubPage()->setCharacter(r, c, m_deletedCharacters[arrayR].at(arrayC));
-
-				arrayC++;
-			}
-
-		arrayR++;
-	}
+	retrieveOldCharacters(m_pasteTopRow, m_pasteLeftColumn, m_pasteBottomRow, m_pasteRightColumn);
 
 	emit m_teletextDocument->contentsChanged();
 

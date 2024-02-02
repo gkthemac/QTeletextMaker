@@ -36,6 +36,18 @@ protected:
 	bool m_firstDo;
 };
 
+class StoreOldCharactersCommand : public LevelOneCommand
+{
+public:
+	StoreOldCharactersCommand(TeletextDocument *teletextDocument, QUndoCommand *parent = 0);
+
+protected:
+	void storeOldCharacters(int topRow, int leftColumn, int bottomRow, int rightColumn);
+	void retrieveOldCharacters(int topRow, int leftColumn, int bottomRow, int rightColumn);
+
+	QByteArrayList m_oldCharacters;
+};
+
 class TypeCharacterCommand : public LevelOneCommand
 {
 public:
@@ -152,7 +164,7 @@ private:
 };
 
 #ifndef QT_NO_CLIPBOARD
-class CutCommand : public LevelOneCommand
+class CutCommand : public StoreOldCharactersCommand
 {
 public:
 	CutCommand(TeletextDocument *teletextDocument, QUndoCommand *parent = 0);
@@ -161,12 +173,11 @@ public:
 	void undo() override;
 
 private:
-	QByteArrayList m_deletedCharacters;
 	int m_selectionTopRow, m_selectionBottomRow, m_selectionLeftColumn, m_selectionRightColumn;
 	int m_selectionCornerRow, m_selectionCornerColumn;
 };
 
-class PasteCommand : public LevelOneCommand
+class PasteCommand : public StoreOldCharactersCommand
 {
 public:
 	PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, QUndoCommand *parent = 0);
@@ -175,7 +186,7 @@ public:
 	void undo() override;
 
 private:
-	QByteArrayList m_deletedCharacters, m_pastingCharacters;
+	QByteArrayList m_pastingCharacters;
 	int m_pasteTopRow, m_pasteBottomRow, m_pasteLeftColumn, m_pasteRightColumn;
 	int m_clipboardDataHeight, m_clipboardDataWidth;
 	int m_selectionCornerRow, m_selectionCornerColumn;
