@@ -823,6 +823,8 @@ void MainWindow::createStatusBar()
 
 	m_insertModePushButton = new QPushButton("OVERWRITE");
 	m_insertModePushButton->setFlat(true);
+	m_insertModePushButton->setMinimumHeight(m_subPageLabel->height());
+	m_insertModePushButton->setMaximumHeight(m_subPageLabel->height());
 	m_insertModePushButton->setFocusProxy(m_textWidget);
 	statusBar()->addPermanentWidget(m_insertModePushButton);
 	connect(m_insertModePushButton, &QPushButton::clicked, this, &MainWindow::toggleInsertMode);
@@ -842,6 +844,7 @@ void MainWindow::createStatusBar()
 	connect(m_levelRadioButton[1], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(1); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(false);});
 	connect(m_levelRadioButton[2], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(2); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(false);});
 	connect(m_levelRadioButton[3], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(3); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(true);});
+
 	statusBar()->showMessage(tr("Ready"));
 }
 
