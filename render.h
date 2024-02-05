@@ -21,6 +21,8 @@
 #define RENDER_H
 
 #include <QBitmap>
+#include <QColor>
+#include <QImage>
 #include <QPixmap>
 
 #include "decode.h"
@@ -32,10 +34,12 @@ public:
 	~TeletextFontBitmap();
 
 	QBitmap *rawBitmap() const { return s_fontBitmap; }
+	QImage *image() const { return s_fontImage; }
 
 private:
 	static int s_instances;
 	static QBitmap* s_fontBitmap;
+	static QImage* s_fontImage;
 };
 
 class TeletextPageRender : public QObject
@@ -46,7 +50,7 @@ public:
 	TeletextPageRender();
 	~TeletextPageRender();
 
-	QPixmap* pagePixmap(int i) const { return m_pagePixmap[i]; };
+	QImage* image(int i) const { return m_pageImage[i]; };
 	bool mix() const { return m_mix; };
 	void setDecoder(TeletextPageDecode *decoder);
 	void renderPage(bool force=false);
@@ -63,20 +67,21 @@ signals:
 
 protected:
 	TeletextFontBitmap m_fontBitmap;
-	QPixmap* m_pagePixmap[6];
+	QImage* m_pageImage[6];
 	unsigned char m_controlCodeCache[25][40];
 	bool m_reveal, m_mix, m_showControlCodes;
 	int m_flashBuffersHz;
 	int m_flashingRow[25];
 
 private:
-	inline void drawFromBitmap(QPainter &, int, int, const QBitmap, TeletextPageDecode::CharacterFragment);
-	inline void drawFromFontBitmap(QPainter &, int, int, unsigned char, int, TeletextPageDecode::CharacterFragment);
-	inline void drawCharacter(QPainter &, int, int, unsigned char, int, int, TeletextPageDecode::CharacterFragment);
-	inline void drawBoldOrItalicCharacter(QPainter &, int, int, unsigned char, int, TeletextPageDecode::CharacterFragment);
-	void renderRow(int, int, bool force=false);
-	void setRowFlashStatus(int, int);
+	inline void drawFromBitmap(QPainter &, int, int, const QImage, TeletextPageDecode::CharacterFragment);
+	inline void drawFromFontBitmap(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment);
+	inline void drawCharacter(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, int characterDiacritical, TeletextPageDecode::CharacterFragment characterFragment);
+	inline void drawBoldOrItalicCharacter(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment);
+	void renderRow(int r, int ph, bool force=false);
+	void setRowFlashStatus(int r, int rowFlashHz);
 
+	QColor m_foregroundQColor, m_backgroundQColor;
 	TeletextPageDecode *m_decoder;
 };
 

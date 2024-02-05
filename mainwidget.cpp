@@ -105,11 +105,11 @@ void TeletextWidget::paintEvent(QPaintEvent *event)
 	QPainter widgetPainter(this);
 
 	m_pageRender.renderPage();
-	widgetPainter.drawPixmap(m_pageDecode.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(m_flashPhase), 0, 0, 480, 250);
+	widgetPainter.drawImage(m_pageDecode.leftSidePanelColumns()*12, 0, *m_pageRender.image(m_flashPhase), 0, 0, 480, 250);
 	if (m_pageDecode.leftSidePanelColumns())
-		widgetPainter.drawPixmap(0, 0, *m_pageRender.pagePixmap(m_flashPhase), 864-m_pageDecode.leftSidePanelColumns()*12, 0, m_pageDecode.leftSidePanelColumns()*12, 250);
+		widgetPainter.drawImage(0, 0, *m_pageRender.image(m_flashPhase), 864-m_pageDecode.leftSidePanelColumns()*12, 0, m_pageDecode.leftSidePanelColumns()*12, 250);
 	if (m_pageDecode.rightSidePanelColumns())
-		widgetPainter.drawPixmap(480+m_pageDecode.leftSidePanelColumns()*12, 0, *m_pageRender.pagePixmap(m_flashPhase), 480, 0, m_pageDecode.rightSidePanelColumns()*12, 250);
+		widgetPainter.drawImage(480+m_pageDecode.leftSidePanelColumns()*12, 0, *m_pageRender.image(m_flashPhase), 480, 0, m_pageDecode.rightSidePanelColumns()*12, 250);
 }
 
 void TeletextWidget::updateFlashTimer(int newFlashTimer)

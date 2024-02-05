@@ -18,6 +18,8 @@
  */
 
 #include <QBitmap>
+#include <QColor>
+#include <QImage>
 #include <QPainter>
 #include <QPixmap>
 
@@ -28,27 +30,31 @@
 int TeletextFontBitmap::s_instances = 0;
 
 QBitmap *TeletextFontBitmap::s_fontBitmap = nullptr;
+QImage *TeletextFontBitmap::s_fontImage = nullptr;
 
 TeletextFontBitmap::TeletextFontBitmap()
 {
-	if (s_instances == 0)
+	if (s_instances == 0) {
 		s_fontBitmap = new QBitmap(":/images/teletextfont.png");
+		s_fontImage = new QImage(s_fontBitmap->toImage());
+	}
 	s_instances++;
 }
 
 TeletextFontBitmap::~TeletextFontBitmap()
 {
 	s_instances--;
-	if (s_instances == 0)
+	if (s_instances == 0) {
+		delete s_fontImage;
 		delete s_fontBitmap;
+	}
 }
 
 
 TeletextPageRender::TeletextPageRender()
 {
 	for (int i=0; i<6; i++)
-		m_pagePixmap[i] = new QPixmap(864, 250);
-	m_pagePixmap[0]->fill(Qt::transparent);
+		m_pageImage[i] = new QImage(864, 250, QImage::Format_ARGB32_Premultiplied);
 
 	m_reveal = false;
 	m_mix = false;
@@ -65,7 +71,7 @@ TeletextPageRender::TeletextPageRender()
 TeletextPageRender::~TeletextPageRender()
 {
 	for (int i=0; i<6; i++)
-		delete m_pagePixmap[i];
+		delete m_pageImage[i];
 }
 
 void TeletextPageRender::setDecoder(TeletextPageDecode *decoder)
@@ -73,180 +79,146 @@ void TeletextPageRender::setDecoder(TeletextPageDecode *decoder)
 	m_decoder = decoder;
 }
 
-inline void TeletextPageRender::drawFromBitmap(QPainter &pixmapPainter, int r, int c, const QBitmap bitmap, TeletextPageDecode::CharacterFragment characterFragment)
+inline void TeletextPageRender::drawFromBitmap(QPainter &painter, int r, int c, const QImage image, TeletextPageDecode::CharacterFragment characterFragment)
 {
 	switch (characterFragment) {
 		case TeletextPageDecode::NormalSize:
-			pixmapPainter.drawPixmap(c*12, r*10, bitmap);
+			painter.drawImage(c*12, r*10, image);
 			break;
 		case TeletextPageDecode::DoubleHeightTopHalf:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 0, 12, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), image, QRect(0, 0, 12, 5));
 			break;
 		case TeletextPageDecode::DoubleHeightBottomHalf:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 5, 12, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), image, QRect(0, 5, 12, 5));
 			break;
 		case TeletextPageDecode::DoubleWidthLeftHalf:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 0, 6, 10);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), image, QRect(0, 0, 6, 10));
 			break;
 		case TeletextPageDecode::DoubleWidthRightHalf:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 6, 0, 6, 10);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), image, QRect(6, 0, 6, 10));
 			break;
 		case TeletextPageDecode::DoubleSizeTopLeftQuarter:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 0, 6, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), image, QRect(0, 0, 6, 5));
 			break;
 		case TeletextPageDecode::DoubleSizeTopRightQuarter:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 6, 0, 6, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), image, QRect(6, 0, 6, 5));
 			break;
 		case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 0, 5, 6, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), image, QRect(0, 5, 6, 5));
 			break;
 		case TeletextPageDecode::DoubleSizeBottomRightQuarter:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, bitmap, 6, 5, 6, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), image, QRect(6, 5, 6, 5));
 			break;
 	}
 }
 
-inline void TeletextPageRender::drawFromFontBitmap(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment)
+inline void TeletextPageRender::drawFromFontBitmap(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment)
 {
 	switch (characterFragment) {
 		case TeletextPageDecode::NormalSize:
-			pixmapPainter.drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 12, 10);
+			painter.drawImage(c*12, r*10, *m_fontBitmap.image(), (characterCode-32)*12, characterSet*10, 12, 10);
 			break;
 		case TeletextPageDecode::DoubleHeightTopHalf:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 12, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), *m_fontBitmap.image(), QRect((characterCode-32)*12, characterSet*10, 12, 5));
 			break;
 		case TeletextPageDecode::DoubleHeightBottomHalf:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+5, 12, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), *m_fontBitmap.image(), QRect((characterCode-32)*12, characterSet*10+5, 12, 5));
 			break;
 		case TeletextPageDecode::DoubleWidthLeftHalf:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 6, 10);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), *m_fontBitmap.image(), QRect((characterCode-32)*12, characterSet*10, 6, 10));
 			break;
 		case TeletextPageDecode::DoubleWidthRightHalf:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10, 6, 10);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), *m_fontBitmap.image(), QRect((characterCode-32)*12+6, characterSet*10, 6, 10));
 			break;
 		case TeletextPageDecode::DoubleSizeTopLeftQuarter:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 6, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), *m_fontBitmap.image(), QRect((characterCode-32)*12, characterSet*10, 6, 5));
 			break;
 		case TeletextPageDecode::DoubleSizeTopRightQuarter:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10, 6, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), *m_fontBitmap.image(), QRect((characterCode-32)*12+6, characterSet*10, 6, 5));
 			break;
 		case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+5, 6, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), *m_fontBitmap.image(), QRect((characterCode-32)*12, characterSet*10+5, 6, 5));
 			break;
 		case TeletextPageDecode::DoubleSizeBottomRightQuarter:
-			pixmapPainter.drawPixmap(c*12, r*10, 12, 10, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+6, characterSet*10+5, 6, 5);
+			painter.drawImage(QRect(c*12, r*10, 12, 10), *m_fontBitmap.image(), QRect((characterCode-32)*12+6, characterSet*10+5, 6, 5));
 			break;
 	}
 }
 
-inline void TeletextPageRender::drawCharacter(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, int characterDiacritical, TeletextPageDecode::CharacterFragment characterFragment)
+inline void TeletextPageRender::drawCharacter(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, int characterDiacritical, TeletextPageDecode::CharacterFragment characterFragment)
 {
 	const bool dontUnderline = characterCode == 0x00;
 	if (dontUnderline)
 		characterCode = 0x20;
 
-	// If either foreground or background is set to transparent
-	// tinker with the QPainter settings so we get the desired result
-	if (!pixmapPainter.background().isOpaque()) {
-		if (pixmapPainter.pen().color().alpha() == 0) {
-			// Transparent foreground and background
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
-			pixmapPainter.eraseRect(c*12, r*10, 12, 10);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-
-			return;
-		} else
-			// Transparent background, opaque foreground
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
-	} else if (pixmapPainter.pen().color().alpha() == 0) {
-		// Transparent foreground, opaque background
-		// Deal with optimising G1 solid 7/F blocks and spaces now
-		// otherwise the same optimisations later on won't work with
-		// our tinkered QPainter settings
-		if (characterCode == 0x7f && characterSet == 24) {
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Clear);
-			pixmapPainter.eraseRect(c*12, r*10, 12, 10);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-
-			return;
-		}
-
-		pixmapPainter.fillRect(c*12, r*10, 12, 10, m_decoder->cellBackgroundQColor(r, c));
-
-		if (characterCode == 0x20 && characterSet < 25 && characterDiacritical == 0)
-			return;
-
-		pixmapPainter.setBackground(QColor(0, 0, 0, 0));
-		pixmapPainter.setPen(QColor(255, 255, 255, 255));
-		pixmapPainter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+	if (characterCode == 0x20 && characterSet < 25 && characterDiacritical == 0)
+		painter.fillRect(c*12, r*10, 12, 10, m_backgroundQColor);
+	else if (characterCode == 0x7f && characterSet == 24)
+		painter.fillRect(c*12, r*10, 12, 10, m_foregroundQColor);
+	else if ((m_decoder->cellBold(r, c) || m_decoder->cellItalic(r, c)) && characterSet < 24)
+		drawBoldOrItalicCharacter(painter, r, c, characterCode, characterSet, characterFragment);
+	else {
+		m_fontBitmap.image()->setColorTable(QVector<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
+		drawFromFontBitmap(painter, r, c, characterCode, characterSet, characterFragment);
 	}
 
-	if (characterCode == 0x20 && characterSet < 25 && characterDiacritical == 0)
-		pixmapPainter.fillRect(c*12, r*10, 12, 10, pixmapPainter.background().color());
-	else if (characterCode == 0x7f && characterSet == 24)
-		pixmapPainter.fillRect(c*12, r*10, 12, 10, pixmapPainter.pen().color());
-	else if ((m_decoder->cellBold(r, c) || m_decoder->cellItalic(r, c)) && characterSet < 24)
-		drawBoldOrItalicCharacter(pixmapPainter, r, c, characterCode, characterSet, characterFragment);
-	else
-		drawFromFontBitmap(pixmapPainter, r, c, characterCode, characterSet, characterFragment);
-
-	if (m_decoder->cellUnderlined(r, c) && !dontUnderline)
+	if (m_decoder->cellUnderlined(r, c) && !dontUnderline) {
+		painter.setPen(m_foregroundQColor);
 		switch (characterFragment) {
 			case TeletextPageDecode::NormalSize:
 			case TeletextPageDecode::DoubleWidthLeftHalf:
 			case TeletextPageDecode::DoubleWidthRightHalf:
-				pixmapPainter.drawLine(c*12, r*10+9, c*12+11, r*10+9);
+				painter.drawLine(c*12, r*10+9, c*12+11, r*10+9);
 				break;
 			case TeletextPageDecode::DoubleHeightBottomHalf:
 			case TeletextPageDecode::DoubleSizeBottomLeftQuarter:
 			case TeletextPageDecode::DoubleSizeBottomRightQuarter:
-				pixmapPainter.drawRect(c*12, r*10+8, 11, 1);
+				painter.drawRect(c*12, r*10+8, 11, 1);
 				break;
 			default:
 				break;
 		}
+	}
 
 	if (characterDiacritical != 0) {
-		pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-		pixmapPainter.setBackgroundMode(Qt::TransparentMode);
-		drawFromFontBitmap(pixmapPainter, r, c, characterDiacritical+64, 7, characterFragment);
-		pixmapPainter.setBackgroundMode(Qt::OpaqueMode);
+		painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+		m_fontBitmap.image()->setColorTable(QVector<QRgb>{0x00000000, m_foregroundQColor.rgba()});
+		drawFromFontBitmap(painter, r, c, characterDiacritical+64, 7, characterFragment);
+		painter.setCompositionMode(QPainter::CompositionMode_Source);
 	}
-
-	if (pixmapPainter.compositionMode() != QPainter::CompositionMode_SourceOver)
-		pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 }
 
-inline void TeletextPageRender::drawBoldOrItalicCharacter(QPainter &pixmapPainter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment)
+inline void TeletextPageRender::drawBoldOrItalicCharacter(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment)
 {
-	QBitmap bitmap = QBitmap(12, 10);
-	QPainter bitmapPainter;
+	QImage styledImage = QImage(12, 10, QImage::Format_Mono);
+	QPainter styledPainter;
 
-	// TODO italic glyph-making is VERY slow!
+	m_fontBitmap.image()->setColorTable(QVector<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
+	styledImage.setColorTable(QVector<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
+
 	if (m_decoder->cellItalic(r, c)) {
-		bitmap.clear();
+		styledImage.fill(0);
 
-		bitmapPainter.begin(&bitmap);
-		bitmapPainter.setBackgroundMode(Qt::OpaqueMode);
-		bitmapPainter.drawPixmap(1, 0, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10, 11, 3);
-		bitmapPainter.drawPixmap(0, 3, *m_fontBitmap.rawBitmap(), (characterCode-32)*12, characterSet*10+3, 12, 3);
-		bitmapPainter.drawPixmap(0, 6, *m_fontBitmap.rawBitmap(), (characterCode-32)*12+1, characterSet*10+6, 11, 4);
-		bitmapPainter.end();
+		styledPainter.begin(&styledImage);
+		styledPainter.setCompositionMode(QPainter::CompositionMode_Source);
+		styledPainter.drawImage(1, 0, *m_fontBitmap.image(), (characterCode-32)*12, characterSet*10, 11, 3);
+		styledPainter.drawImage(0, 3, *m_fontBitmap.image(), (characterCode-32)*12, characterSet*10+3, 12, 3);
+		styledPainter.drawImage(0, 6, *m_fontBitmap.image(), (characterCode-32)*12+1, characterSet*10+6, 11, 4);
+		styledPainter.end();
 	} else
-		bitmap = m_fontBitmap.rawBitmap()->copy((characterCode-32)*12, characterSet*10, 12, 10);
+		styledImage = m_fontBitmap.image()->copy((characterCode-32)*12, characterSet*10, 12, 10);
 
 	if (m_decoder->cellBold(r, c)) {
-		QBitmap boldeningBitmap;
+		QImage boldeningImage;
 
-		boldeningBitmap = bitmap.copy();
-		bitmapPainter.begin(&bitmap);
-		// No idea why we need this setPen workaround when character is made italic first?!
-		if (!m_decoder->cellItalic(r, c))
-			bitmapPainter.setPen(Qt::color0);
-		bitmapPainter.drawPixmap(1, 0, boldeningBitmap);
-		bitmapPainter.end();
+		boldeningImage = styledImage.copy();
+		styledPainter.begin(&styledImage);
+		styledPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+		boldeningImage.setColorTable(QVector<QRgb>{0x00000000, m_foregroundQColor.rgba()});
+		styledPainter.drawImage(1, 0, boldeningImage);
+		styledPainter.end();
 	}
-	drawFromBitmap(pixmapPainter, r, c, bitmap, characterFragment);
+	drawFromBitmap(painter, r, c, styledImage, characterFragment);
 }
 
 void TeletextPageRender::renderPage(bool force)
@@ -257,12 +229,12 @@ void TeletextPageRender::renderPage(bool force)
 
 void TeletextPageRender::renderRow(int r, int ph, bool force)
 {
-	QPainter pixmapPainter;
+	QPainter painter;
 	int flashingRow = 0;
 	bool rowRefreshed = false;
 
-	pixmapPainter.begin(m_pagePixmap[ph]);
-	pixmapPainter.setBackgroundMode(Qt::OpaqueMode);
+	painter.begin(m_pageImage[ph]);
+	painter.setCompositionMode(QPainter::CompositionMode_Source);
 
 	for (int c=0; c<72; c++) {
 		bool controlCodeChanged = false;
@@ -304,7 +276,7 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 			}
 
 			if (m_decoder->cellFlashMode(r, c) == 0)
-				pixmapPainter.setPen(m_decoder->cellForegroundQColor(r, c));
+				m_foregroundQColor = m_decoder->cellForegroundQColor(r, c);
 			else {
 				// Flashing cell, decide if phase in this cycle is on or off
 				bool phaseOn;
@@ -316,9 +288,9 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 
 				// If flashing to adjacent CLUT select the appropriate foreground colour
 				if (m_decoder->cellFlashMode(r, c) == 3 && !phaseOn)
-					pixmapPainter.setPen(m_decoder->cellFlashForegroundQColor(r, c));
+					m_foregroundQColor = m_decoder->cellFlashForegroundQColor(r, c);
 				else
-					pixmapPainter.setPen(m_decoder->cellForegroundQColor(r, c));
+					m_foregroundQColor = m_decoder->cellForegroundQColor(r, c);
 
 				// If flashing mode is Normal or Invert, draw a space instead of a character on phase
 				if ((m_decoder->cellFlashMode(r, c) == 1 || m_decoder->cellFlashMode(r, c) == 2) && !phaseOn) {
@@ -330,21 +302,22 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 			}
 
 			if (!m_mix || m_decoder->cellBoxed(r, c))
-				pixmapPainter.setBackground(m_decoder->cellBackgroundQColor(r, c));
+				m_backgroundQColor = m_decoder->cellBackgroundQColor(r, c);
 			else
-				pixmapPainter.setBackground(Qt::transparent);
+				m_backgroundQColor = Qt::transparent;
 
-			drawCharacter(pixmapPainter, r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
+			drawCharacter(painter, r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
 
 			if (m_showControlCodes && c < 40 && m_decoder->teletextPage()->character(r, c) < 0x20) {
-				pixmapPainter.setBackground(QColor(0, 0, 0, 128));
-				pixmapPainter.setPen(QColor(255, 255, 255, 224));
-				pixmapPainter.drawPixmap(c*12, r*10, *m_fontBitmap.rawBitmap(), (m_decoder->teletextPage()->character(r, c)+32)*12, 250, 12, 10);
+				painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+				m_fontBitmap.image()->setColorTable(QVector<QRgb>{0x7f000000, 0xe0ffffff});
+				painter.drawImage(c*12, r*10, *m_fontBitmap.image(), (m_decoder->teletextPage()->character(r, c)+32)*12, 250, 12, 10);
+				painter.setCompositionMode(QPainter::CompositionMode_Source);
 			}
 		}
 	}
 
-	pixmapPainter.end();
+	painter.end();
 
 	if (ph != 0)
 		return;
@@ -361,30 +334,30 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 	// copy this rendered line into the other flash pixmap buffers and then re-render
 	// the flashing cells in those buffers
 	if (rowRefreshed && m_flashBuffersHz > 0) {
-		pixmapPainter.begin(m_pagePixmap[3]);
-		pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
-		pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[0], 0, r*10, 864, 10);
-		pixmapPainter.end();
+		painter.begin(m_pageImage[3]);
+		painter.setCompositionMode(QPainter::CompositionMode_Source);
+		painter.drawImage(0, r*10, *m_pageImage[0], 0, r*10, 864, 10);
+		painter.end();
 
 		renderRow(r, 3);
 
 		if (m_flashBuffersHz == 2) {
-			pixmapPainter.begin(m_pagePixmap[1]);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
-			pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[0], 0, r*10, 864, 10);
-			pixmapPainter.end();
-			pixmapPainter.begin(m_pagePixmap[2]);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
-			pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[0], 0, r*10, 864, 10);
-			pixmapPainter.end();
-			pixmapPainter.begin(m_pagePixmap[4]);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
-			pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[3], 0, r*10, 864, 10);
-			pixmapPainter.end();
-			pixmapPainter.begin(m_pagePixmap[5]);
-			pixmapPainter.setCompositionMode(QPainter::CompositionMode_Source);
-			pixmapPainter.drawPixmap(0, r*10, *m_pagePixmap[3], 0, r*10, 864, 10);
-			pixmapPainter.end();
+			painter.begin(m_pageImage[1]);
+			painter.setCompositionMode(QPainter::CompositionMode_Source);
+			painter.drawImage(0, r*10, *m_pageImage[0], 0, r*10, 864, 10);
+			painter.end();
+			painter.begin(m_pageImage[2]);
+			painter.setCompositionMode(QPainter::CompositionMode_Source);
+			painter.drawImage(0, r*10, *m_pageImage[0], 0, r*10, 864, 10);
+			painter.end();
+			painter.begin(m_pageImage[4]);
+			painter.setCompositionMode(QPainter::CompositionMode_Source);
+			painter.drawImage(0, r*10, *m_pageImage[3], 0, r*10, 864, 10);
+			painter.end();
+			painter.begin(m_pageImage[5]);
+			painter.setCompositionMode(QPainter::CompositionMode_Source);
+			painter.drawImage(0, r*10, *m_pageImage[3], 0, r*10, 864, 10);
+			painter.end();
 
 			renderRow(r, 1);
 			renderRow(r, 2);
@@ -427,12 +400,12 @@ void TeletextPageRender::setRowFlashStatus(int r, int rowFlashHz)
 	// If we get here, new flash Hz for this row is higher than the entire flash Hz
 	// so prepare the pixmap flash buffers
 	if (m_flashBuffersHz == 0)
-		*m_pagePixmap[3] = m_pagePixmap[0]->copy();
+		*m_pageImage[3] = m_pageImage[0]->copy();
 	if (rowFlashHz == 2) {
-		*m_pagePixmap[1] = m_pagePixmap[0]->copy();
-		*m_pagePixmap[2] = m_pagePixmap[0]->copy();
-		*m_pagePixmap[4] = m_pagePixmap[3]->copy();
-		*m_pagePixmap[5] = m_pagePixmap[3]->copy();
+		*m_pageImage[1] = m_pageImage[0]->copy();
+		*m_pageImage[2] = m_pageImage[0]->copy();
+		*m_pageImage[4] = m_pageImage[3]->copy();
+		*m_pageImage[5] = m_pageImage[3]->copy();
 	}
 
 	m_flashBuffersHz = rowFlashHz;
