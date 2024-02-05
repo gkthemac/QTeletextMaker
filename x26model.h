@@ -22,7 +22,6 @@
 
 #include <QAbstractListModel>
 #include "mainwidget.h"
-#include "render.h"
 
 class X26Model : public QAbstractListModel
 {

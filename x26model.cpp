@@ -21,7 +21,6 @@
 
 #include <QList>
 
-#include "render.h"
 #include "x26commands.h"
 
 X26Model::X26Model(TeletextWidget *parent): QAbstractListModel(parent)
