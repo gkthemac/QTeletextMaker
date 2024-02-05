@@ -1,0 +1,71 @@
+DE,Unlimited character sets with Level 3.5
+PN,19901
+SC,0001
+PS,8000
+CT,8,T
+OL,28,@@@|gpCu_@|wKpZA`UB_GQd^w}ww]_}_wM@D
+OL,28,D@@|g@@pC@|p@@CO|O@pA@\p]@@wAG\gYF@D
+OL,26,@laIA@Bma|mDRdo}eO~fo~gOoayA@BpawXH@Xi`
+OL,26,AYIaZia[Ib]ip^Iq_iq`IrbI~do}eO~fo~gOrA|
+OL,26,BXHPXi`YIaZia[Ib]ip^Iq_iq`IrbI~do}eO~fo~
+OL,26,CgOtawXHRXi`YIaZia[Ib]ip^Iq_iq`IrbI~do}
+OL,26,DeO~fo~gOvA|XhRXi`YIaZia[Ib]ip^Iq_iq`Ir
+OL,26,EbI~do}eO~fo~gOxawXh[Xi`YIaZia[Ib]ip^Iq
+OL,26,F_iq`IrbI~do}eO~fo~gOzA|XhjXi`YIaZia[Ib
+OL,26,G]ip^Iq_iq`IrbI~do}eO~fo~gO|awXhkXi`YIa
+OL,26,HZia[Ib]ip^Iq_iq`IrbI~do}eO~fo~gO~A|XH`
+OL,26,IXi`YIaZia[Ib]ip^Iq_iq`IrbI~do}eO~fo~gO
+OL,26,JhApCCCCCCCCCCCC
+OL,1, Level 3.5 allows unlimited char  F(1/2)
+OL,2, sets using the "Modified G0 and G2     
+OL,3, Character Set Designation" triplet.    
+OL,4,F                       `G0 lvl 1`` -G2`
+OL,5,FLevel 1 with         G ABCD abcd |     
+OL,6,F  Level 1.5 G2 chars                   
+OL,7,F`Char set```` `Bits``  `G0 X/26``` `G2`
+OL,8,FLatin        B0000xxxG                 
+OL,10,FCyrillic 1   B0100000G                 
+OL,11,F  Serbian/Croatian                     
+OL,12,FCyrillic 2   B0100100G                 
+OL,13,F  Russian/Bulgarian                    
+OL,14,FCyrillic 3   B0100101G                 
+OL,15,F  Ukranian                             
+OL,16,FGreek        B0110111G                 
+OL,18,FHebrew       B1010101G                 
+OL,20,FArabic       B1010111G                 
+OL,22,FLatin with   B1000000G                 
+OL,23,F  Arabic G2                            
+PN,19902
+SC,0002
+PS,8000
+CT,8,T
+OL,28,@@@|gpCu_@|wKpZA`UB_GQd^w}ww]_}_wM@D
+OL,28,D@@|g@@pC@|p@@CO|O@pA@\p]@@wAG\gYF@D
+OL,26,@layA@Bma|nD@Ao|BO}Co}DO~Eo~FOoayA@Bpaw
+OL,26,AhQaHH@qD@@H@rA|hQaHHPsD@@HPtawhQaHHRuD@
+OL,26,B@HRvA|hQaHhRwD@@hRxawhQaHh[yD@@h[zA|hQa
+OL,26,CHhj{D@@hj|awhQaHhk}D@@hk~A|hQaHH`D@@H`
+OL,26,DhAp_CxUaHI`Ii`JIaKiaLIbMibNIcOicPIdQid
+OL,26,ERIeSieTIfUifVIgWigXIhYihZIi[ii\Ij]ij^Ik
+OL,26,F_ik`IlailbImcimdIneinfIogioiD@Ao|BO}Co}
+OL,26,GDO~Eo~FOHIpIipJIqKiqLIrMirNIsOisPItQit
+OL,26,HRIuSiuTIvUivVIwWiwXIxYixZIy[iy\Iz]iz^I{
+OL,26,I_i{`I|ai|bI}ci}dI~ei~fIBBBBB
+OL,1, Level 3.5 allows unlimited char  F(2/2)
+OL,2, sets using the "Modified G0 and G2     
+OL,3, Character Set Designation" triplet.    
+OL,4,F`G2``` `G0 from level 1`````````` `NOS`
+OL,5,FL1.5  G@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+OL,6,        `abcdefghijklmnopqrstuvwxyz{|}~ 
+OL,7,F`G2``` `G0 from X/26 enhancements``````
+OL,8,FLatin G                                
+OL,10,FCyr 1 CG        CG    C G   C  FGCFC F 
+OL,11,       CG        CG    C G   C  FGCFC   
+OL,12,FCyr 2 CG        CG    C G   C  FGCFC F 
+OL,13,       CG        CG    C G   C  FGCFC   
+OL,14,FCyr 3 CG        CG    C G   C  FGCFC F 
+OL,15,       CG        CG    C G   C  FGCFC   
+OL,16,FGreek G                                
+OL,18,FHebrewG                                
+OL,20,FArabicG                                
+OL,22,FL/AbG2G                                
