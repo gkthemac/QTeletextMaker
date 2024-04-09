@@ -21,13 +21,13 @@
 #define MAINWINDOW_H
 
 #include <QCheckBox>
-#include <QComboBox>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QMainWindow>
 #include <QLabel>
 #include <QPushButton>
+#include <QSlider>
 #include <QToolButton>
 
 #include "mainwidget.h"
@@ -84,6 +84,7 @@ private slots:
 	void setSmoothTransform(bool smoothTransform);
 	void zoomIn();
 	void zoomOut();
+	void zoomSet(int viewZoom);
 	void zoomReset();
 
 	void toggleInsertMode();
@@ -131,6 +132,7 @@ private:
 
 	QLabel *m_subPageLabel, *m_cursorPositionLabel;
 	QToolButton *m_previousSubPageButton, *m_nextSubPageButton;
+	QSlider *m_zoomSlider;
 	QPushButton *m_insertModePushButton;
 	QRadioButton *m_levelRadioButton[4];
 

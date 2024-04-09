@@ -33,6 +33,7 @@
 #include <QScreen>
 #include <QSettings>
 #include <QShortcut>
+#include <QSlider>
 #include <QStatusBar>
 #include <QToolBar>
 #include <QToolButton>
@@ -278,7 +279,7 @@ void MainWindow::init()
 	if (m_viewSmoothTransform)
 		m_textView->setRenderHints(QPainter::SmoothPixmapTransform);
 	m_textView->setBackgroundBrush(QBrush(QColor(32, 48, 96)));
-	setSceneDimensions();
+	m_zoomSlider->setValue(m_viewZoom);
 	setCentralWidget(m_textView);
 
 	connect(m_textWidget->document(), &TeletextDocument::cursorMoved, this, &MainWindow::updateCursorPosition);
@@ -766,26 +767,36 @@ void MainWindow::setSmoothTransform(bool smoothTransform)
 
 void MainWindow::zoomIn()
 {
-	if (m_viewZoom < 4)
+	if (m_viewZoom < 4) {
 		m_viewZoom++;
-	else if (m_viewZoom < 12)
+		m_zoomSlider->setValue(m_viewZoom);
+	} else if (m_viewZoom < 12) {
 		m_viewZoom += 2;
-	setSceneDimensions();
+		m_zoomSlider->setValue(m_viewZoom / 2 + 2);
+	}
 }
 
 void MainWindow::zoomOut()
 {
-	if (m_viewZoom > 4)
+	if (m_viewZoom > 4) {
 		m_viewZoom -= 2;
-	else if (m_viewZoom > 0)
+		m_zoomSlider->setValue(m_viewZoom == 4 ? 4 : m_viewZoom / 2 + 2);
+	} else if (m_viewZoom > 0) {
 		m_viewZoom--;
+		m_zoomSlider->setValue(m_viewZoom);
+	}
+}
+
+void MainWindow::zoomSet(int viewZoom)
+{
+	m_viewZoom = (viewZoom < 5) ? viewZoom : (viewZoom - 2) * 2;
 	setSceneDimensions();
 }
 
 void MainWindow::zoomReset()
 {
 	m_viewZoom = 2;
-	setSceneDimensions();
+	m_zoomSlider->setValue(2);
 }
 
 void MainWindow::toggleInsertMode()
@@ -820,6 +831,17 @@ void MainWindow::createStatusBar()
 
 	m_cursorPositionLabel = new QLabel("1, 1");
 	statusBar()->insertWidget(3, m_cursorPositionLabel);
+
+	m_zoomSlider = new QSlider;
+	m_zoomSlider->setOrientation(Qt::Horizontal);
+	m_zoomSlider->setMinimumHeight(m_subPageLabel->height());
+	m_zoomSlider->setMaximumHeight(m_subPageLabel->height());
+	m_zoomSlider->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+	m_zoomSlider->setRange(0, 8);
+	m_zoomSlider->setPageStep(1);
+	m_zoomSlider->setFocusPolicy(Qt::NoFocus);
+	statusBar()->insertWidget(4, m_zoomSlider);
+	connect(m_zoomSlider, &QSlider::valueChanged, this, &MainWindow::zoomSet);
 
 	m_insertModePushButton = new QPushButton("OVERWRITE");
 	m_insertModePushButton->setFlat(true);
