@@ -33,8 +33,8 @@ public:
 	TeletextFontBitmap();
 	~TeletextFontBitmap();
 
-	QBitmap *rawBitmap() const { return s_fontBitmap; }
 	QImage *image() const { return s_fontImage; }
+	QBitmap charBitmap(int c, int s) const { return s_fontBitmap->copy((c-32)*12, s*10, 12, 10); }
 
 private:
 	static int s_instances;

@@ -57,7 +57,7 @@ QVariant CharacterListModel::data(const QModelIndex &index, int role) const
 		return QString("0x%1").arg(index.row()+0x20, 2, 16);
 
 	if (role == Qt::DecorationRole)
-		return m_fontBitmap.rawBitmap()->copy(index.row()*12, m_characterSet*10, 12, 10);
+		return m_fontBitmap.charBitmap(index.row()+32, m_characterSet);
 
 	return QVariant();
 }
