@@ -19,6 +19,7 @@ HEADERS       = decode.h \
                 render.h \
                 x26commands.h \
                 x26dockwidget.h \
+                x26menus.h \
                 x26model.h \
                 x26triplets.h
 SOURCES       = decode.cpp \
@@ -38,6 +39,7 @@ SOURCES       = decode.cpp \
                 render.cpp \
                 x26commands.cpp \
                 x26dockwidget.cpp \
+                x26menus.cpp \
                 x26model.cpp \
                 x26triplets.cpp
 RESOURCES     = qteletextmaker.qrc

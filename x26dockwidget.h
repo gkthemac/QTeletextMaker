@@ -35,6 +35,7 @@
 
 #include "mainwidget.h"
 #include "render.h"
+#include "x26menus.h"
 #include "x26model.h"
 
 class CharacterListModel : public QAbstractListModel
@@ -115,6 +116,8 @@ private:
 	QComboBox *m_terminationMarkerPageTypeComboBox;
 	QCheckBox *m_terminationMarkerMoreFollowsCheckBox;
 	QPushButton *m_insertBeforePushButton, *m_insertAfterPushButton, *m_insertCopyPushButton, *m_deletePushButton;
+
+	ModeTripletNames m_modeTripletNames;
 
 	TeletextWidget *m_parentMainWidget;
 

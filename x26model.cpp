@@ -23,6 +23,7 @@
 #include <QList>
 
 #include "x26commands.h"
+#include "x26menus.h"
 
 X26Model::X26Model(TeletextWidget *parent): QAbstractListModel(parent)
 {
@@ -114,7 +115,7 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 
 	if (role == Qt::DisplayRole) {
 		if (index.column() == 2)
-			return (m_modeTripletName[triplet.modeExt()]);
+			return (m_modeTripletNames.modeName(triplet.modeExt()));
 		// Column 3 - describe effects of data/address triplet parameters in plain English
 		switch (triplet.modeExt()) {
 			case 0x01: // Full row colour
