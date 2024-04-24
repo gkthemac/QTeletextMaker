@@ -470,6 +470,17 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					return (triplet.data() & 0x01) == 0x01;
 			}
 			break;
+		case 0x21: // G1 character
+			// Qt::UserRole+1 is character number, returned by default below
+			if (role == Qt::UserRole+2) // Character set
+				return 24;
+			break;
+		case 0x22: // G3 character at Level 1.5
+		case 0x2b: // G3 character at Level 2.5
+			// Qt::UserRole+1 is character number, returned by default below
+			if (role == Qt::UserRole+2) // Character set
+				return 26;
+			break;
 		case 0x27: // Flash functions
 			switch (role) {
 				case Qt::UserRole+1: // Flash mode
