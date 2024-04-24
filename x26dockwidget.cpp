@@ -1049,17 +1049,27 @@ void X26DockWidget::deleteTriplet()
 
 void X26DockWidget::customMenuRequested(QPoint pos)
 {
+	QMenu *customMenu;
+
 	QModelIndex index = m_x26View->indexAt(pos);
 
-	QMenu *menu = new QMenu(this);
+	if (index.isValid() && index.column() == 2) {
+		customMenu = new TripletModeQMenu(this);
+
+		for (int m=0; m<64; m++)
+			connect(static_cast<TripletModeQMenu *>(customMenu)->action(m), &QAction::triggered, [=]() { cookedModeMenuSelected(m); });
+
+		customMenu->addSeparator();
+	} else
+		customMenu = new QMenu(this);
 
 	QAction *insertAct = new QAction("Insert triplet copy", this);
-	menu->addAction(insertAct);
+	customMenu->addAction(insertAct);
 	connect(insertAct, &QAction::triggered, this, &X26DockWidget::insertTripletCopy);
 	if (index.isValid()) {
 		QAction *deleteAct = new QAction("Delete triplet", this);
-		menu->addAction(deleteAct);
+		customMenu->addAction(deleteAct);
 		connect(deleteAct, &QAction::triggered, this, &X26DockWidget::deleteTriplet);
 	}
-	menu->popup(m_x26View->viewport()->mapToGlobal(pos));
+	customMenu->popup(m_x26View->viewport()->mapToGlobal(pos));
 }
