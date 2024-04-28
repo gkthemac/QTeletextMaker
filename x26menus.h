@@ -23,6 +23,8 @@
 #include <QMenu>
 #include <QString>
 
+#include "render.h"
+
 class ModeTripletNames
 {
 public:
@@ -124,6 +126,19 @@ private:
 
 	QAction *m_actions[64];
 	ModeTripletNames m_modeTripletNames;
+};
+
+class TripletCharacterQMenu : public QMenu
+{
+	Q_OBJECT
+
+public:
+	TripletCharacterQMenu(int charSet, QWidget *parent = nullptr);
+	QAction *action(int n) const { return m_actions[n]; };
+
+private:
+	QAction *m_actions[96];
+	TeletextFontBitmap m_fontBitmap;
 };
 
 #endif

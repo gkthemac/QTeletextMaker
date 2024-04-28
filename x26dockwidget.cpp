@@ -1060,6 +1060,41 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 			connect(static_cast<TripletModeQMenu *>(customMenu)->action(m), &QAction::triggered, [=]() { cookedModeMenuSelected(m); });
 
 		customMenu->addSeparator();
+	} else if (index.isValid() && index.column() == 3) {
+		const int modeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
+
+		switch (modeExt) {
+			case 0x21: // G1 mosaic character
+			case 0x22: // G3 mosaic character at level 1.5
+			case 0x2b: // G3 mosaic character at level >=2.5
+			case 0x29: // G0 character
+			case 0x2f: // G2 character
+			case 0x30:
+			case 0x31:
+			case 0x32:
+			case 0x33:
+			case 0x34:
+			case 0x35:
+			case 0x36:
+			case 0x37:
+			case 0x38:
+			case 0x39:
+			case 0x3a:
+			case 0x3b:
+			case 0x3c:
+			case 0x3d:
+			case 0x3e:
+			case 0x3f: // G0 character with diacritical
+				customMenu = new TripletCharacterQMenu(m_x26Model->data(index.model()->index(index.row(), 2), Qt::UserRole+2).toInt(), this);
+
+				for (int m=0; m<96; m++)
+					connect(static_cast<TripletCharacterQMenu *>(customMenu)->action(m), &QAction::triggered, [=]() { updateModelFromCookedWidget(m+32, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
+
+				customMenu->addSeparator();
+				break;
+			default:
+				customMenu = new QMenu(this);
+		}
 	} else
 		customMenu = new QMenu(this);
 

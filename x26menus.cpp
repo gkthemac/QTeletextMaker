@@ -19,8 +19,11 @@
 
 #include "x26menus.h"
 
+#include <QIcon>
 #include <QMenu>
 #include <QString>
+
+#include "render.h"
 
 TripletModeQMenu::TripletModeQMenu(QWidget *parent): QMenu(parent)
 {
@@ -95,4 +98,17 @@ TripletModeQMenu::TripletModeQMenu(QWidget *parent): QMenu(parent)
 void TripletModeQMenu::addModeAction(QMenu *menu, int mode)
 {
 	m_actions[mode] = menu->addAction(m_modeTripletNames.modeName(mode));
+}
+
+
+TripletCharacterQMenu::TripletCharacterQMenu(int charSet, QWidget *parent): QMenu(parent)
+{
+	QMenu *charRange[6];
+
+	for (int r=0; r<6; r++) {
+		charRange[r] = this->addMenu(QString("0x%010-0x%01f").arg(r+2));
+
+		for (int c=0; c<16; c++)
+			m_actions[r*16+c] = charRange[r]->addAction(QIcon(m_fontBitmap.charBitmap(r*16+c+32, charSet)), QString("0x%1").arg(r*16+c+32, 2, 16, QChar('0')));
+	}
 }
