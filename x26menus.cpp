@@ -19,8 +19,10 @@
 
 #include "x26menus.h"
 
+#include <QColor>
 #include <QIcon>
 #include <QMenu>
+#include <QPixmap>
 #include <QString>
 
 #include "render.h"
@@ -98,6 +100,32 @@ TripletModeQMenu::TripletModeQMenu(QWidget *parent): QMenu(parent)
 void TripletModeQMenu::addModeAction(QMenu *menu, int mode)
 {
 	m_actions[mode] = menu->addAction(m_modeTripletNames.modeName(mode));
+}
+
+
+TripletCLUTQMenu::TripletCLUTQMenu(bool rows, QWidget *parent): QMenu(parent)
+{
+	QMenu *clut[4];
+
+	for (int c=0; c<4; c++) {
+		clut[c] = this->addMenu(QString("CLUT %1").arg(c));
+
+		for (int e=0; e<8; e++)
+			m_actions[c*8+e] = clut[c]->addAction(QString("CLUT %1:%2").arg(c).arg(e));
+	}
+
+	if (rows) {
+		m_actions[32] = this->addAction(tr("This row only"));
+		m_actions[33] = this->addAction(tr("Down to bottom"));
+	}
+}
+
+void TripletCLUTQMenu::setColour(int i, QColor c)
+{
+	QPixmap menuColour(32, 32); // Should get downscaled to the menu text size
+
+	menuColour.fill(c);
+	m_actions[i]->setIcon(QIcon(menuColour));
 }
 
 

@@ -20,6 +20,7 @@
 #ifndef X26MENUS_H
 #define X26MENUS_H
 
+#include <QColor>
 #include <QMenu>
 #include <QString>
 
@@ -126,6 +127,19 @@ private:
 
 	QAction *m_actions[64];
 	ModeTripletNames m_modeTripletNames;
+};
+
+class TripletCLUTQMenu : public QMenu
+{
+	Q_OBJECT
+
+public:
+	TripletCLUTQMenu(bool rows, QWidget *parent = nullptr);
+	QAction *action(int n) const { return m_actions[n]; };
+	void setColour(int i, QColor c);
+
+private:
+	QAction *m_actions[34];
 };
 
 class TripletCharacterQMenu : public QMenu
