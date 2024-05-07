@@ -1053,20 +1053,14 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 
 	QModelIndex index = m_x26View->indexAt(pos);
 
-	if (index.isValid() && index.column() == 2) {
-		customMenu = new TripletModeQMenu(this);
-
-		for (int m=0; m<64; m++)
-			connect(static_cast<TripletModeQMenu *>(customMenu)->action(m), &QAction::triggered, [=]() { cookedModeMenuSelected(m); });
-
-		customMenu->addSeparator();
-	} else if (index.isValid() && index.column() == 3) {
+	if (index.isValid()) {
 		const int modeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
 
 		switch (modeExt) {
 			case 0x01: // Full Row colour
 			case 0x07: // Address row 0
 				customMenu = new TripletCLUTQMenu(true, this);
+
 				connect(static_cast<TripletCLUTQMenu *>(customMenu)->action(32), &QAction::triggered, [=]() { updateModelFromCookedWidget(0, Qt::UserRole+2); updateAllCookedTripletWidgets(index); });
 				connect(static_cast<TripletCLUTQMenu *>(customMenu)->action(33), &QAction::triggered, [=]() { updateModelFromCookedWidget(1, Qt::UserRole+2); updateAllCookedTripletWidgets(index); });
 				// fall-through
@@ -1075,11 +1069,11 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 			case 0x23: // Background colour
 				if (!customMenu)
 					customMenu = new TripletCLUTQMenu(false, this);
+
 				for (int m=0; m<32; m++) {
 					static_cast<TripletCLUTQMenu *>(customMenu)->setColour(m, m_parentMainWidget->document()->currentSubPage()->CLUTtoQColor(m));
 					connect(static_cast<TripletCLUTQMenu *>(customMenu)->action(m), &QAction::triggered, [=]() { updateModelFromCookedWidget(m, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
 				}
-				customMenu->addSeparator();
 				break;
 			case 0x21: // G1 mosaic character
 			case 0x22: // G3 mosaic character at level 1.5
@@ -1106,12 +1100,23 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 
 				for (int m=0; m<96; m++)
 					connect(static_cast<TripletCharacterQMenu *>(customMenu)->action(m), &QAction::triggered, [=]() { updateModelFromCookedWidget(m+32, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
-
-				customMenu->addSeparator();
 				break;
-			default:
-				customMenu = new QMenu(this);
 		}
+
+		if (customMenu)
+			customMenu->addSeparator();
+		else
+			customMenu = new QMenu(this);
+
+		TripletModeQMenu *modeChangeMenu = new TripletModeQMenu(this);
+		modeChangeMenu->setTitle(tr("Change mode"));
+
+		customMenu->addMenu(modeChangeMenu);
+
+		for (int m=0; m<64; m++)
+			connect(static_cast<TripletModeQMenu *>(modeChangeMenu)->action(m), &QAction::triggered, [=]() { cookedModeMenuSelected(m); });
+
+		customMenu->addSeparator();
 	} else
 		customMenu = new QMenu(this);
 
