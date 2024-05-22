@@ -63,6 +63,7 @@ public:
 
 public slots:
 	void insertTriplet(int modeExt, bool after);
+	void insertTriplet(int modeExt, int row = -1);
 	void insertTripletCopy();
 	void deleteTriplet();
 	void customMenuRequested(QPoint pos);

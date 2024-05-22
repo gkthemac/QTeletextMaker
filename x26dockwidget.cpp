@@ -978,41 +978,51 @@ void X26DockWidget::updateModelFromCookedWidget(const int value, const int role)
 void X26DockWidget::insertTriplet(int modeExt, bool after)
 {
 	QModelIndex index = m_x26View->currentIndex();
+
+	if (index.isValid())
+		insertTriplet(modeExt, index.row()+after);
+	else
+		insertTriplet(modeExt);
+}
+
+void X26DockWidget::insertTriplet(int modeExt, int row)
+{
 	X26Triplet newTriplet(modeExt < 0x20 ? 41 : 0, modeExt & 0x1f, 0);
-	int newListRow;
 
-	if (index.isValid()) {
-		newListRow = index.row()+after;
+	if (row != -1) {
+		QModelIndex index = m_x26View->currentIndex();
 
-		// If we're inserting a column triplet next to another column triplet,
-		// duplicate the column number
-		// Avoid the PDC and reserved mode triplets
-		if (modeExt >= 0x20 && modeExt != 0x24 && modeExt != 0x25 && modeExt != 0x26 && modeExt != 0x2a) {
-			const int existingTripletModeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
+		if (index.isValid()) {
+			// If we're inserting a column triplet next to another column triplet,
+			// duplicate the column number
+			// Avoid the PDC and reserved mode triplets
+			if (modeExt >= 0x20 && modeExt != 0x24 && modeExt != 0x25 && modeExt != 0x26 && modeExt != 0x2a) {
+				const int existingTripletModeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
 
-			if (existingTripletModeExt >= 0x20 && existingTripletModeExt != 0x24 && existingTripletModeExt != 0x25 && existingTripletModeExt != 0x26 && existingTripletModeExt != 0x2a)
-				newTriplet.setAddress(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole).toInt());
-		}
-		// If we're inserting a Set Active Position or Full Row Colour triplet,
-		// look for a previous row setting triplet and set this one to the row after
-		if (modeExt == 0x04 || modeExt == 0x01) {
-			for (int i=newListRow-1; i>=0; i--) {
-				const int scanTripletModeExt = index.model()->data(index.model()->index(i, 2), Qt::EditRole).toInt();
+				if (existingTripletModeExt >= 0x20 && existingTripletModeExt != 0x24 && existingTripletModeExt != 0x25 && existingTripletModeExt != 0x26 && existingTripletModeExt != 0x2a)
+					newTriplet.setAddress(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole).toInt());
+			}
+			// If we're inserting a Set Active Position or Full Row Colour triplet,
+			// look for a previous row setting triplet and set this one to the row after
+			if (modeExt == 0x04 || modeExt == 0x01) {
+				for (int i=row-1; i>=0; i--) {
+					const int scanTripletModeExt = index.model()->data(index.model()->index(i, 2), Qt::EditRole).toInt();
 
-				if (scanTripletModeExt == 0x04 || scanTripletModeExt == 0x01) {
-					const int scanActivePositionRow = index.model()->data(index.model()->index(i, 0), Qt::EditRole).toInt()+1;
+					if (scanTripletModeExt == 0x04 || scanTripletModeExt == 0x01) {
+						const int scanActivePositionRow = index.model()->data(index.model()->index(i, 0), Qt::EditRole).toInt()+1;
 
-					if (scanActivePositionRow < 25)
-						newTriplet.setAddressRow(scanActivePositionRow);
-					else
-						newTriplet.setAddressRow(24);
+						if (scanActivePositionRow < 25)
+							newTriplet.setAddressRow(scanActivePositionRow);
+						else
+							newTriplet.setAddressRow(24);
 
-					break;
+						break;
+					}
 				}
 			}
 		}
 	} else
-		newListRow = 0;
+		row = 0;
 
 	// For character triplets, ensure Data is not reserved
 	if (modeExt == 0x21 || modeExt == 0x22 || modeExt == 0x29 || modeExt == 0x2b || modeExt >= 0x2f)
@@ -1026,7 +1036,7 @@ void X26DockWidget::insertTriplet(int modeExt, bool after)
 		newTriplet.setData(7);
 	}
 
-	m_x26Model->insertRows(newListRow, 1, QModelIndex(), newTriplet);
+	m_x26Model->insertRows(row, 1, QModelIndex(), newTriplet);
 }
 
 void X26DockWidget::insertTripletCopy()
@@ -1110,23 +1120,41 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 
 		TripletModeQMenu *modeChangeMenu = new TripletModeQMenu(this);
 		modeChangeMenu->setTitle(tr("Change mode"));
-
 		customMenu->addMenu(modeChangeMenu);
 
-		for (int m=0; m<64; m++)
-			connect(static_cast<TripletModeQMenu *>(modeChangeMenu)->action(m), &QAction::triggered, [=]() { cookedModeMenuSelected(m); });
-
 		customMenu->addSeparator();
-	} else
-		customMenu = new QMenu(this);
 
-	QAction *insertAct = new QAction("Insert triplet copy", this);
-	customMenu->addAction(insertAct);
-	connect(insertAct, &QAction::triggered, this, &X26DockWidget::insertTripletCopy);
-	if (index.isValid()) {
+		TripletModeQMenu *insertBeforeQMenu = new TripletModeQMenu(this);
+		insertBeforeQMenu->setTitle(tr("Insert before"));
+		customMenu->addMenu(insertBeforeQMenu);
+
+		TripletModeQMenu *insertAfterQMenu = new TripletModeQMenu(this);
+		insertAfterQMenu->setTitle(tr("Insert after"));
+		customMenu->addMenu(insertAfterQMenu);
+
+		for (int m=0; m<64; m++) {
+			connect(static_cast<TripletModeQMenu *>(modeChangeMenu)->action(m), &QAction::triggered, [=]() { cookedModeMenuSelected(m); });
+			connect(static_cast<TripletModeQMenu *>(insertBeforeQMenu)->action(m), &QAction::triggered, [=]() { insertTriplet(m, false); });
+			connect(static_cast<TripletModeQMenu *>(insertAfterQMenu)->action(m), &QAction::triggered, [=]() { insertTriplet(m, true); });
+		}
+
+		QAction *insertCopyAct = new QAction(tr("Insert copy"), this);
+		customMenu->addAction(insertCopyAct);
+		connect(insertCopyAct, &QAction::triggered, this, &X26DockWidget::insertTripletCopy);
+
 		QAction *deleteAct = new QAction("Delete triplet", this);
 		customMenu->addAction(deleteAct);
 		connect(deleteAct, &QAction::triggered, this, &X26DockWidget::deleteTriplet);
+	} else {
+		customMenu = new QMenu(this);
+
+		TripletModeQMenu *appendModeMenu = new TripletModeQMenu(this);
+		appendModeMenu->setTitle(tr("Append"));
+		customMenu->addMenu(appendModeMenu);
+
+		for (int m=0; m<64; m++)
+			connect(static_cast<TripletModeQMenu *>(appendModeMenu)->action(m), &QAction::triggered, [=]() { insertTriplet(m, m_x26Model->rowCount()); });
 	}
+
 	customMenu->popup(m_x26View->viewport()->mapToGlobal(pos));
 }
