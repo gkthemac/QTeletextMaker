@@ -179,3 +179,39 @@ void TripletFlashQMenu::setRatePhaseChecked(int n)
 {
 	m_actions[n+4]->setChecked(true);
 }
+
+
+TripletDisplayAttrsQMenu::TripletDisplayAttrsQMenu(QWidget *parent): QMenu(parent)
+{
+	QMenu *sizeMenu = this->addMenu(tr("Text size"));
+	m_actions[0] = sizeMenu->addAction(tr("Normal size"));
+	m_actions[1] = sizeMenu->addAction(tr("Double height"));
+	m_actions[2] = sizeMenu->addAction(tr("Double width"));
+	m_actions[3] = sizeMenu->addAction(tr("Double size"));
+	m_sizeActionGroup = new QActionGroup(this);
+	for (int i=0; i<4; i++) {
+		m_actions[i]->setCheckable(true);
+		m_sizeActionGroup->addAction(m_actions[i]);
+	}
+
+	m_actions[4] = this->addAction(tr("Boxing/Window"));
+	m_actions[5] = this->addAction(tr("Conceal"));
+	m_actions[6] = this->addAction(tr("Invert"));
+	m_actions[7] = this->addAction(tr("Underline/Separated"));
+	m_otherActionGroup = new QActionGroup(this);
+	m_otherActionGroup->setExclusive(false);
+	for (int i=4; i<8; i++) {
+		m_actions[i]->setCheckable(true);
+		m_otherActionGroup->addAction(m_actions[i]);
+	}
+}
+
+void TripletDisplayAttrsQMenu::setTextSizeChecked(int n)
+{
+	m_actions[n]->setChecked(true);
+}
+
+void TripletDisplayAttrsQMenu::setOtherAttrChecked(int n, bool b)
+{
+	m_actions[n+4]->setChecked(b);
+}

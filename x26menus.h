@@ -172,4 +172,20 @@ private:
 	QActionGroup *m_modeActionGroup, *m_ratePhaseActionGroup;
 };
 
+class TripletDisplayAttrsQMenu : public QMenu
+{
+	Q_OBJECT
+
+public:
+	TripletDisplayAttrsQMenu(QWidget *parent = nullptr);
+	QAction *textSizeAction(int n) const { return m_actions[n]; };
+	QAction *otherAttrAction(int n) const { return m_actions[n+4]; };
+	void setTextSizeChecked(int n);
+	void setOtherAttrChecked(int n, bool b);
+
+private:
+	QAction *m_actions[8];
+	QActionGroup *m_sizeActionGroup, *m_otherActionGroup;
+};
+
 #endif
