@@ -20,6 +20,7 @@
 #ifndef X26MENUS_H
 #define X26MENUS_H
 
+#include <QActionGroup>
 #include <QColor>
 #include <QMenu>
 #include <QString>
@@ -153,6 +154,22 @@ public:
 private:
 	QAction *m_actions[96];
 	TeletextFontBitmap m_fontBitmap;
+};
+
+class TripletFlashQMenu : public QMenu
+{
+	Q_OBJECT
+
+public:
+	TripletFlashQMenu(QWidget *parent = nullptr);
+	QAction *modeAction(int n) const { return m_actions[n]; };
+	QAction *ratePhaseAction(int n) const { return m_actions[n+4]; };
+	void setModeChecked(int n);
+	void setRatePhaseChecked(int n);
+
+private:
+	QAction *m_actions[10];
+	QActionGroup *m_modeActionGroup, *m_ratePhaseActionGroup;
 };
 
 #endif

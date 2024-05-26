@@ -1080,10 +1080,21 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 				if (!customMenu)
 					customMenu = new TripletCLUTQMenu(false, this);
 
-				for (int m=0; m<32; m++) {
-					static_cast<TripletCLUTQMenu *>(customMenu)->setColour(m, m_parentMainWidget->document()->currentSubPage()->CLUTtoQColor(m));
-					connect(static_cast<TripletCLUTQMenu *>(customMenu)->action(m), &QAction::triggered, [=]() { updateModelFromCookedWidget(m, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
+				for (int i=0; i<32; i++) {
+					static_cast<TripletCLUTQMenu *>(customMenu)->setColour(i, m_parentMainWidget->document()->currentSubPage()->CLUTtoQColor(i));
+					connect(static_cast<TripletCLUTQMenu *>(customMenu)->action(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
 				}
+				break;
+			case 0x27: // Additional flash functions
+				customMenu = new TripletFlashQMenu(this);
+
+				static_cast<TripletFlashQMenu *>(customMenu)->setModeChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt());
+				static_cast<TripletFlashQMenu *>(customMenu)->setRatePhaseChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+2).toInt());
+
+				for (int i=0; i<4; i++)
+					connect(static_cast<TripletFlashQMenu *>(customMenu)->modeAction(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
+				for (int i=0; i<6; i++)
+					connect(static_cast<TripletFlashQMenu *>(customMenu)->ratePhaseAction(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+2); updateAllCookedTripletWidgets(index); });
 				break;
 			case 0x21: // G1 mosaic character
 			case 0x22: // G3 mosaic character at level 1.5
@@ -1108,8 +1119,8 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 			case 0x3f: // G0 character with diacritical
 				customMenu = new TripletCharacterQMenu(m_x26Model->data(index.model()->index(index.row(), 2), Qt::UserRole+2).toInt(), this);
 
-				for (int m=0; m<96; m++)
-					connect(static_cast<TripletCharacterQMenu *>(customMenu)->action(m), &QAction::triggered, [=]() { updateModelFromCookedWidget(m+32, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
+				for (int i=0; i<96; i++)
+					connect(static_cast<TripletCharacterQMenu *>(customMenu)->action(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i+32, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
 				break;
 		}
 
@@ -1119,7 +1130,7 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 			customMenu = new QMenu(this);
 
 		TripletModeQMenu *modeChangeMenu = new TripletModeQMenu(this);
-		modeChangeMenu->setTitle(tr("Change mode"));
+		modeChangeMenu->setTitle(tr("Change triplet mode"));
 		customMenu->addMenu(modeChangeMenu);
 
 		customMenu->addSeparator();
@@ -1132,10 +1143,10 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 		insertAfterQMenu->setTitle(tr("Insert after"));
 		customMenu->addMenu(insertAfterQMenu);
 
-		for (int m=0; m<64; m++) {
-			connect(static_cast<TripletModeQMenu *>(modeChangeMenu)->action(m), &QAction::triggered, [=]() { cookedModeMenuSelected(m); });
-			connect(static_cast<TripletModeQMenu *>(insertBeforeQMenu)->action(m), &QAction::triggered, [=]() { insertTriplet(m, false); });
-			connect(static_cast<TripletModeQMenu *>(insertAfterQMenu)->action(m), &QAction::triggered, [=]() { insertTriplet(m, true); });
+		for (int i=0; i<64; i++) {
+			connect(static_cast<TripletModeQMenu *>(modeChangeMenu)->action(i), &QAction::triggered, [=]() { cookedModeMenuSelected(i); });
+			connect(static_cast<TripletModeQMenu *>(insertBeforeQMenu)->action(i), &QAction::triggered, [=]() { insertTriplet(i, false); });
+			connect(static_cast<TripletModeQMenu *>(insertAfterQMenu)->action(i), &QAction::triggered, [=]() { insertTriplet(i, true); });
 		}
 
 		QAction *insertCopyAct = new QAction(tr("Insert copy"), this);
@@ -1152,8 +1163,8 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 		appendModeMenu->setTitle(tr("Append"));
 		customMenu->addMenu(appendModeMenu);
 
-		for (int m=0; m<64; m++)
-			connect(static_cast<TripletModeQMenu *>(appendModeMenu)->action(m), &QAction::triggered, [=]() { insertTriplet(m, m_x26Model->rowCount()); });
+		for (int i=0; i<64; i++)
+			connect(static_cast<TripletModeQMenu *>(appendModeMenu)->action(i), &QAction::triggered, [=]() { insertTriplet(i, m_x26Model->rowCount()); });
 	}
 
 	customMenu->popup(m_x26View->viewport()->mapToGlobal(pos));

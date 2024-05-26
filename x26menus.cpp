@@ -19,6 +19,7 @@
 
 #include "x26menus.h"
 
+#include <QActionGroup>
 #include <QColor>
 #include <QIcon>
 #include <QMenu>
@@ -139,4 +140,42 @@ TripletCharacterQMenu::TripletCharacterQMenu(int charSet, QWidget *parent): QMen
 		for (int c=0; c<16; c++)
 			m_actions[r*16+c] = charRange[r]->addAction(QIcon(m_fontBitmap.charBitmap(r*16+c+32, charSet)), QString("0x%1").arg(r*16+c+32, 2, 16, QChar('0')));
 	}
+}
+
+
+TripletFlashQMenu::TripletFlashQMenu(QWidget *parent): QMenu(parent)
+{
+	QMenu *flashModeMenu = this->addMenu(tr("Flash mode"));
+	m_actions[0] = flashModeMenu->addAction(tr("Steady"));
+	m_actions[1] = flashModeMenu->addAction(tr("Normal"));
+	m_actions[2] = flashModeMenu->addAction(tr("Invert"));
+	m_actions[3] = flashModeMenu->addAction(tr("Adjacent CLUT"));
+	m_modeActionGroup = new QActionGroup(this);
+	for (int i=0; i<4; i++) {
+		m_actions[i]->setCheckable(true);
+		m_modeActionGroup->addAction(m_actions[i]);
+	}
+
+	QMenu *flashRatePhaseMenu = this->addMenu(tr("Flash rate/phase"));
+	m_actions[4] = flashRatePhaseMenu->addAction(tr("Slow 1Hz"));
+	m_actions[5] = flashRatePhaseMenu->addAction(tr("Fast 2Hz phase 1"));
+	m_actions[6] = flashRatePhaseMenu->addAction(tr("Fast 2Hz phase 2"));
+	m_actions[7] = flashRatePhaseMenu->addAction(tr("Fast 2Hz phase 3"));
+	m_actions[8] = flashRatePhaseMenu->addAction(tr("Fast 2Hz inc/right"));
+	m_actions[9] = flashRatePhaseMenu->addAction(tr("Fast 2Hz dec/left"));
+	m_ratePhaseActionGroup = new QActionGroup(this);
+	for (int i=4; i<10; i++) {
+		m_actions[i]->setCheckable(true);
+		m_ratePhaseActionGroup->addAction(m_actions[i]);
+	}
+}
+
+void TripletFlashQMenu::setModeChecked(int n)
+{
+	m_actions[n]->setChecked(true);
+}
+
+void TripletFlashQMenu::setRatePhaseChecked(int n)
+{
+	m_actions[n+4]->setChecked(true);
 }
