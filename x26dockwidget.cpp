@@ -1106,6 +1106,17 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 					connect(static_cast<TripletDisplayAttrsQMenu *>(customMenu)->otherAttrAction(i), &QAction::toggled, [=](const int checked) { updateModelFromCookedWidget(checked, Qt::UserRole+i+2); updateAllCookedTripletWidgets(index); });
 				}
 				break;
+			case 0x2e: // Font style
+				customMenu = new TripletFontStyleQMenu(this);
+
+				for (int i=0; i<3; i++) {
+					static_cast<TripletFontStyleQMenu *>(customMenu)->setStyleChecked(i, index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+i+1).toBool());
+					connect(static_cast<TripletFontStyleQMenu *>(customMenu)->styleAction(i), &QAction::toggled, [=](const int checked) { updateModelFromCookedWidget(checked, Qt::UserRole+i+1); updateAllCookedTripletWidgets(index); });
+				}
+				static_cast<TripletFontStyleQMenu *>(customMenu)->setRowsChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+4).toInt());
+				for (int i=0; i<8; i++)
+					connect(static_cast<TripletFontStyleQMenu *>(customMenu)->rowsAction(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+4); updateAllCookedTripletWidgets(index); });
+				break;
 			case 0x21: // G1 mosaic character
 			case 0x22: // G3 mosaic character at level 1.5
 			case 0x2b: // G3 mosaic character at level >=2.5

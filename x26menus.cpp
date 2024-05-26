@@ -215,3 +215,35 @@ void TripletDisplayAttrsQMenu::setOtherAttrChecked(int n, bool b)
 {
 	m_actions[n+4]->setChecked(b);
 }
+
+
+TripletFontStyleQMenu::TripletFontStyleQMenu(QWidget *parent): QMenu(parent)
+{
+	m_actions[0] = this->addAction(tr("Proportional"));
+	m_actions[1] = this->addAction(tr("Bold"));
+	m_actions[2] = this->addAction(tr("Italic"));
+	m_styleActionGroup = new QActionGroup(this);
+	m_styleActionGroup->setExclusive(false);
+	for (int i=0; i<3; i++) {
+		m_actions[i]->setCheckable(true);
+		m_styleActionGroup->addAction(m_actions[i]);
+	}
+
+	QMenu *rowsMenu = this->addMenu(tr("Next rows"));
+	m_rowsActionGroup = new QActionGroup(this);
+	for (int i=3; i<11; i++) {
+		m_actions[i] = rowsMenu->addAction(QString("%1").arg(i-3));
+		m_actions[i]->setCheckable(true);
+		m_rowsActionGroup->addAction(m_actions[i]);
+	}
+}
+
+void TripletFontStyleQMenu::setStyleChecked(int n, bool b)
+{
+	m_actions[n]->setChecked(b);
+}
+
+void TripletFontStyleQMenu::setRowsChecked(int n)
+{
+	m_actions[n+3]->setChecked(true);
+}

@@ -188,4 +188,20 @@ private:
 	QActionGroup *m_sizeActionGroup, *m_otherActionGroup;
 };
 
+class TripletFontStyleQMenu : public QMenu
+{
+	Q_OBJECT
+
+public:
+	TripletFontStyleQMenu(QWidget *parent = nullptr);
+	QAction *styleAction(int n) const { return m_actions[n]; };
+	QAction *rowsAction(int n) const { return m_actions[n+3]; };
+	void setStyleChecked(int n, bool b);
+	void setRowsChecked(int n);
+
+private:
+	QAction *m_actions[11];
+	QActionGroup *m_styleActionGroup, *m_rowsActionGroup;
+};
+
 #endif
