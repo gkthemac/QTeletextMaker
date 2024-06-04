@@ -1067,6 +1067,30 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 		const int modeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
 
 		switch (modeExt) {
+			case 0x11:
+			case 0x12:
+			case 0x13: {  // Invoke Object
+				QMenu *localDefMenu;
+				const QList objectList = m_parentMainWidget->document()->currentSubPage()->enhancements()->objects(modeExt - 0x11);
+
+				for (int i=0; i<objectList.size(); i++) {
+					// Messy way to create submenu only if definitions exist
+					if (i == 0) {
+						customMenu = new QMenu(this);
+						localDefMenu = customMenu->addMenu(tr("Local definition"));
+					}
+
+					const int d = objectList.at(i) / 13;
+					const int t = objectList.at(i) % 13;
+					QAction *action = localDefMenu->addAction(QString("d%1 t%2").arg(d).arg(t));
+					connect(action, &QAction::triggered, [=]() {
+						updateModelFromCookedWidget(0, Qt::UserRole+1);
+						updateModelFromCookedWidget(d, Qt::UserRole+2);
+						updateModelFromCookedWidget(t, Qt::UserRole+3);
+						updateAllCookedTripletWidgets(index);
+					} );
+				}
+			} break;
 			case 0x01: // Full Row colour
 			case 0x07: // Address row 0
 				customMenu = new TripletCLUTQMenu(true, this);
