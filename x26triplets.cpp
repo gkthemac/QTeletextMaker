@@ -74,6 +74,10 @@ void X26TripletList::updateInternalData()
 	ActivePosition activePosition;
 	X26Triplet *triplet;
 
+	m_objects[0].clear();
+	m_objects[1].clear();
+	m_objects[2].clear();
+
 	// Check for errors, and fill in where the Active Position goes for Level 2.5 and above
 	for (int i=0; i < m_list.size(); i++) {
 		triplet = &m_list[i];
@@ -140,6 +144,7 @@ void X26TripletList::updateInternalData()
 				case 0x15: // Define Active Object
 				case 0x16: // Define Adaptive Object
 				case 0x17: // Define Passive Object
+					m_objects[triplet->modeExt() - 0x15].append(i);
 					activePosition.reset();
 					// Make sure data field holds correct place of triplet
 					// otherwise the object won't appear

@@ -96,11 +96,13 @@ public:
 	bool isEmpty() const { return m_list.isEmpty(); }
 	void reserve(int alloc) { m_list.reserve(alloc); }
 	int size() const { return m_list.size(); }
+	const QList<int> &objects(int t) const { return m_objects[t]; };
 
 private:
 	void updateInternalData();
 
 	QList<X26Triplet> m_list;
+	QList<int> m_objects[3];
 
 	class ActivePosition
 	{
