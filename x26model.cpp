@@ -379,6 +379,9 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 					// Returning the bitmap as-is doesn't seem to work here
 					// but putting it inside a QIcon... does?
 					return QIcon(m_fontBitmap.charBitmap(triplet.data(), 24));
+				else if (triplet.data() >= 0x20)
+					// Blast-through
+					return QIcon(m_fontBitmap.charBitmap(triplet.data(), m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())));
 				break;
 			case 0x22: // G3 mosaic character at level 1.5
 			case 0x2b: // G3 mosaic character at level >=2.5
@@ -472,13 +475,17 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 			break;
 		case 0x21: // G1 character
 			// Qt::UserRole+1 is character number, returned by default below
-			if (role == Qt::UserRole+2) // Character set
-				return 24;
+			switch (role) {
+				case Qt::UserRole+2: // G1 character set
+					return 24;
+				case Qt::UserRole+3: // G0 character set for blast-through
+					return m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn());
+			}
 			break;
 		case 0x22: // G3 character at Level 1.5
 		case 0x2b: // G3 character at Level 2.5
 			// Qt::UserRole+1 is character number, returned by default below
-			if (role == Qt::UserRole+2) // Character set
+			if (role == Qt::UserRole+2) // G3 character set
 				return 26;
 			break;
 		case 0x27: // Flash functions

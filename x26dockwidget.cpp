@@ -43,6 +43,7 @@
 CharacterListModel::CharacterListModel(QObject *parent): QAbstractListModel(parent)
 {
 	m_characterSet = 0;
+	m_mosaic = true;
 }
 
 int CharacterListModel::rowCount(const QModelIndex & /*parent*/) const
@@ -58,16 +59,30 @@ QVariant CharacterListModel::data(const QModelIndex &index, int role) const
 	if (role == Qt::DisplayRole)
 		return QString("0x%1").arg(index.row()+0x20, 2, 16);
 
-	if (role == Qt::DecorationRole)
-		return m_fontBitmap.charBitmap(index.row()+32, m_characterSet);
+	if (role == Qt::DecorationRole) {
+		if (m_mosaic && (index.row()+32) & 0x20)
+			return m_fontBitmap.charBitmap(index.row()+32, 24);
+		else
+			return m_fontBitmap.charBitmap(index.row()+32, m_characterSet);
+	}
 
 	return QVariant();
 }
 
 void CharacterListModel::setCharacterSet(int characterSet)
 {
-	if (characterSet != m_characterSet) {
+	if (characterSet != m_characterSet || m_mosaic) {
 		m_characterSet = characterSet;
+		m_mosaic = false;
+		emit dataChanged(createIndex(0, 0), createIndex(95, 0), QVector<int>(Qt::DecorationRole));
+	}
+}
+
+void CharacterListModel::setG1AndBlastCharacterSet(int characterSet)
+{
+	if (characterSet != m_characterSet || !m_mosaic) {
+		m_characterSet = characterSet;
+		m_mosaic = true;
 		emit dataChanged(createIndex(0, 0), createIndex(95, 0), QVector<int>(Qt::DecorationRole));
 	}
 }
@@ -693,7 +708,7 @@ void X26DockWidget::updateAllCookedTripletWidgets(const QModelIndex &index)
 		case 0x3f: // G0 character with diacritical
 			m_characterCodeComboBox->blockSignals(true);
 			if (modeExt == 0x21)
-				m_characterListModel.setCharacterSet(24);
+				m_characterListModel.setG1AndBlastCharacterSet(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+3).toInt());
 			else if (modeExt == 0x22 || modeExt == 0x2b)
 				m_characterListModel.setCharacterSet(26);
 			else
@@ -1142,6 +1157,8 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 					connect(static_cast<TripletFontStyleQMenu *>(customMenu)->rowsAction(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+4); updateAllCookedTripletWidgets(index); });
 				break;
 			case 0x21: // G1 mosaic character
+				customMenu = new TripletCharacterQMenu(m_x26Model->data(index.model()->index(index.row(), 2), Qt::UserRole+3).toInt(), true, this);
+				// fall-through
 			case 0x22: // G3 mosaic character at level 1.5
 			case 0x2b: // G3 mosaic character at level >=2.5
 			case 0x29: // G0 character
@@ -1162,7 +1179,8 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 			case 0x3d:
 			case 0x3e:
 			case 0x3f: // G0 character with diacritical
-				customMenu = new TripletCharacterQMenu(m_x26Model->data(index.model()->index(index.row(), 2), Qt::UserRole+2).toInt(), this);
+				if (!customMenu)
+					customMenu = new TripletCharacterQMenu(m_x26Model->data(index.model()->index(index.row(), 2), Qt::UserRole+2).toInt(), false, this);
 
 				for (int i=0; i<96; i++)
 					connect(static_cast<TripletCharacterQMenu *>(customMenu)->action(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i+32, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });

@@ -48,10 +48,12 @@ public:
 	int rowCount(const QModelIndex &parent = QModelIndex()) const override;
 	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 	void setCharacterSet(int characterSet);
+	void setG1AndBlastCharacterSet(int characterSet);
 
 private:
 	TeletextFontBitmap m_fontBitmap;
 	int m_characterSet;
+	bool m_mosaic;
 };
 
 class X26DockWidget : public QDockWidget

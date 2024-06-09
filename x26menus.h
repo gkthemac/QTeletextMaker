@@ -148,7 +148,7 @@ class TripletCharacterQMenu : public QMenu
 	Q_OBJECT
 
 public:
-	TripletCharacterQMenu(int charSet, QWidget *parent = nullptr);
+	TripletCharacterQMenu(int charSet, bool mosaic, QWidget *parent = nullptr);
 	QAction *action(int n) const { return m_actions[n]; };
 
 private:

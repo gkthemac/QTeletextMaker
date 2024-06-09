@@ -130,15 +130,17 @@ void TripletCLUTQMenu::setColour(int i, QColor c)
 }
 
 
-TripletCharacterQMenu::TripletCharacterQMenu(int charSet, QWidget *parent): QMenu(parent)
+TripletCharacterQMenu::TripletCharacterQMenu(int charSet, bool mosaic, QWidget *parent): QMenu(parent)
 {
 	QMenu *charRange[6];
 
 	for (int r=0; r<6; r++) {
 		charRange[r] = this->addMenu(QString("0x%010-0x%01f").arg(r+2));
 
+		const int charSetInColumn = (mosaic && ((r & 0x2) == 0)) ? 24 : charSet;
+
 		for (int c=0; c<16; c++)
-			m_actions[r*16+c] = charRange[r]->addAction(QIcon(m_fontBitmap.charBitmap(r*16+c+32, charSet)), QString("0x%1").arg(r*16+c+32, 2, 16, QChar('0')));
+			m_actions[r*16+c] = charRange[r]->addAction(QIcon(m_fontBitmap.charBitmap(r*16+c+32, charSetInColumn)), QString("0x%1").arg(r*16+c+32, 2, 16, QChar('0')));
 	}
 }
 
