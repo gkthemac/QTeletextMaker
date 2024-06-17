@@ -61,9 +61,9 @@ QVariant CharacterListModel::data(const QModelIndex &index, int role) const
 
 	if (role == Qt::DecorationRole) {
 		if (m_mosaic && (index.row()+32) & 0x20)
-			return m_fontBitmap.charBitmap(index.row()+32, 24);
+			return m_fontBitmap.charIcon(index.row()+32, 24);
 		else
-			return m_fontBitmap.charBitmap(index.row()+32, m_characterSet);
+			return m_fontBitmap.charIcon(index.row()+32, m_characterSet);
 	}
 
 	return QVariant();

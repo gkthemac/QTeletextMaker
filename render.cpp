@@ -19,9 +19,9 @@
 
 #include <QBitmap>
 #include <QColor>
+#include <QIcon>
 #include <QImage>
 #include <QPainter>
-#include <QPixmap>
 
 #include "render.h"
 
@@ -29,25 +29,34 @@
 
 int TeletextFontBitmap::s_instances = 0;
 
-QBitmap *TeletextFontBitmap::s_fontBitmap = nullptr;
 QImage *TeletextFontBitmap::s_fontImage = nullptr;
 
 TeletextFontBitmap::TeletextFontBitmap()
 {
-	if (s_instances == 0) {
-		s_fontBitmap = new QBitmap(":/images/teletextfont.png");
-		s_fontImage = new QImage(s_fontBitmap->toImage());
-	}
+	if (s_instances == 0)
+		s_fontImage = new QImage(":/images/teletextfont.png");
+
 	s_instances++;
 }
 
 TeletextFontBitmap::~TeletextFontBitmap()
 {
 	s_instances--;
-	if (s_instances == 0) {
+
+	if (s_instances == 0)
 		delete s_fontImage;
-		delete s_fontBitmap;
-	}
+}
+
+QIcon TeletextFontBitmap::charIcon(int c, int s) const
+{
+	QImage glyphImage;
+	QBitmap glyphBitmap;
+
+	glyphImage = s_fontImage->copy((c-32)*12, s*10, 12, 10);
+	glyphImage.invertPixels();
+	glyphBitmap = QBitmap::fromImage(glyphImage);
+
+	return QIcon(glyphBitmap);
 }
 
 
