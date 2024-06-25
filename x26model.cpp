@@ -376,25 +376,27 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				break;
 			case 0x21: // G1 mosaic character
 				if (triplet.data() & 0x20)
-					return m_fontBitmap.charIcon(triplet.data(), 24);
+					// Returning the bitmap as-is doesn't seem to work here
+					// but putting it inside a QIcon... does?
+					return QIcon(m_fontBitmap.charBitmap(triplet.data(), 24));
 				else if (triplet.data() >= 0x20)
 					// Blast-through
-					return m_fontBitmap.charIcon(triplet.data(), m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn()));
+					return QIcon(m_fontBitmap.charBitmap(triplet.data(), m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())));
 				break;
 			case 0x22: // G3 mosaic character at level 1.5
 			case 0x2b: // G3 mosaic character at level >=2.5
 				if (triplet.data() >= 0x20)
-					return m_fontBitmap.charIcon(triplet.data(), 26);
+					return QIcon(m_fontBitmap.charBitmap(triplet.data(), 26));
 				break;
 			case 0x2f: // G2 character
 				if (triplet.data() >= 0x20)
-					return m_fontBitmap.charIcon(triplet.data(), m_parentMainWidget->pageDecode()->cellG2CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn()));
+					return QIcon(m_fontBitmap.charBitmap(triplet.data(), m_parentMainWidget->pageDecode()->cellG2CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())));
 				break;
 			default:
 				if (triplet.modeExt() == 0x29 || (triplet.modeExt() >= 0x30 && triplet.modeExt() <= 0x3f))
 					// G0 character or G0 diacritical mark
 					if (triplet.data() >= 0x20)
-						return m_fontBitmap.charIcon(triplet.data(), m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn()));
+						return QIcon(m_fontBitmap.charBitmap(triplet.data(), m_parentMainWidget->pageDecode()->cellG0CharacterSet(triplet.activePositionRow(), triplet.activePositionColumn())));
 		}
 
 	if (role == Qt::EditRole && index.column() == 2)

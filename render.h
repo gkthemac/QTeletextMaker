@@ -20,9 +20,10 @@
 #ifndef RENDER_H
 #define RENDER_H
 
+#include <QBitmap>
 #include <QColor>
-#include <QIcon>
 #include <QImage>
+#include <QPixmap>
 
 #include "decode.h"
 
@@ -33,10 +34,11 @@ public:
 	~TeletextFontBitmap();
 
 	QImage *image() const { return s_fontImage; }
-	QIcon charIcon(int c, int s) const;
+	QPixmap charBitmap(int c, int s) const { return s_fontBitmap->copy((c-32)*12, s*10, 12, 10); }
 
 private:
 	static int s_instances;
+	static QBitmap* s_fontBitmap;
 	static QImage* s_fontImage;
 };
 
