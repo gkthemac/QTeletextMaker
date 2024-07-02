@@ -497,10 +497,8 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 
 			if (!m_selectionActive) {
 				// If selection is NOT active, use the full width of the page to paste.
-				// The second and subsequent lines will start at column 1, unless the
-				// cursor is explicitly on column 0.
-				if (m_pasteLeftColumn != 0)
-					m_pasteLeftColumn = 1;
+				// The second and subsequent lines will start at column 1
+				m_pasteLeftColumn = 1;
 
 				// Check if first word in the first line will fit from the cursor position
 				bool firstWordFits = true;
