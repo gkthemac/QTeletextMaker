@@ -22,6 +22,7 @@
 
 #include <QBitmap>
 #include <QColor>
+#include <QIcon>
 #include <QImage>
 #include <QPixmap>
 
@@ -35,6 +36,7 @@ public:
 
 	QImage *image() const { return s_fontImage; }
 	QPixmap charBitmap(int c, int s) const { return s_fontBitmap->copy((c-32)*12, s*10, 12, 10); }
+	QIcon charIcon(int c, int s) const { return QIcon(charBitmap(c, s)); }
 
 private:
 	static int s_instances;
