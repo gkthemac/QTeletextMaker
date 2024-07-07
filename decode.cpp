@@ -169,7 +169,8 @@ TeletextPageDecode::TeletextPageDecode()
 		m_rowHeight[r] = NormalHeight;
 		for (int c=0; c<72; c++) {
 			if (c < 40) {
-				m_cellLevel1Mosaic[r][c] = false;
+				m_cellLevel1MosaicAttr[r][c] = false;
+				m_cellLevel1MosaicChar[r][c] = false;
 				m_cellLevel1CharSet[r][c] = 0;
 			}
 			m_refresh[r][c] = true;
@@ -723,13 +724,18 @@ void TeletextPageDecode::decodeRow(int r)
 			}
 
 		// Level 1 character
+		if (c < 40) {
+			m_cellLevel1CharSet[r][c] = level1CharSet;
+			m_cellLevel1MosaicAttr[r][c] = level1Mosaics;
+			// Set to true on mosaic CHARACTER - not on blast through alphanumerics
+			m_cellLevel1MosaicChar[r][c] = level1Mosaics && (m_levelOnePage->character(r, c) & 0x20);
+		}
+
 		if (c < 40 && m_rowHeight[r] != BottomHalf) {
 			m_level1ActivePainter.result.character.diacritical = 0;
 			if (m_levelOnePage->character(r, c) >= 0x20) {
 				m_level1ActivePainter.result.character.code = m_levelOnePage->character(r, c);
-				// Set to true on mosaic character - not on blast through alphanumerics
-				m_cellLevel1Mosaic[r][c] = level1Mosaics && (m_levelOnePage->character(r, c) & 0x20);
-				if (m_cellLevel1Mosaic[r][c]) {
+				if (m_cellLevel1MosaicChar[r][c]) {
 					m_level1ActivePainter.result.character.set = 24 + (level1SeparatedMosaics || m_level1ActivePainter.attribute.display.underlineSeparated);
 					level1HoldMosaicCharacter = m_levelOnePage->character(r, c);
 					level1HoldMosaicSeparated = level1SeparatedMosaics;
@@ -742,9 +748,6 @@ void TeletextPageDecode::decodeRow(int r)
 		} else
 			// In side panel or on bottom half of Level 1 double height row, no Level 1 characters here
 			m_level1ActivePainter.result.character = { 0x20, 0, 0 };
-
-		if (c < 40)
-			m_cellLevel1CharSet[r][c] = level1CharSet;
 
 		// X/26 characters
 

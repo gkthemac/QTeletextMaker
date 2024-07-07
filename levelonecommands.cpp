@@ -149,12 +149,19 @@ bool TypeCharacterCommand::mergeWith(const QUndoCommand *command)
 ToggleMosaicBitCommand::ToggleMosaicBitCommand(TeletextDocument *teletextDocument, unsigned char bitToToggle, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
 	m_oldCharacter = teletextDocument->currentSubPage()->character(m_row, m_column);
+
 	if (bitToToggle == 0x20 || bitToToggle == 0x7f)
+		// Clear or fill the whole mosaic character
 		m_newCharacter = bitToToggle;
 	else if (bitToToggle == 0x66)
+		// Dither
 		m_newCharacter = (m_row & 1) ? 0x66 : 0x39;
-	else
+	else if (m_oldCharacter & 0x20)
+		// Previous character was mosaic, just toggle the bit(s)
 		m_newCharacter = m_oldCharacter ^ bitToToggle;
+	else
+		// Previous character was blast-through, change to mosaic and set bit alone
+		m_newCharacter = bitToToggle | 0x20;
 
 	setText(QObject::tr("mosaic"));
 

@@ -227,7 +227,7 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 		// Map it to block character so it doesn't need to be inserted-between later on
 		if (mappedKeyPress & 0x80)
 			mappedKeyPress = 0x7f;
-		if (m_pageDecode.level1MosaicAttribute(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) && (mappedKeyPress < 0x40 || mappedKeyPress > 0x5f)) {
+		if (m_pageDecode.level1MosaicAttr(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) && (mappedKeyPress < 0x40 || mappedKeyPress > 0x5f)) {
 			// We're on a mosaic and a blast-through character was NOT pressed
 			if (event->key() >= Qt::Key_0 && event->key() <= Qt::Key_9 && event->modifiers() & Qt::KeypadModifier) {
 				switch (event->key()) {
@@ -406,7 +406,7 @@ void TeletextWidget::selectionToClipboard()
 			else
 				plainTextData.append(' ');
 
-			if (m_pageDecode.level1MosaicAttribute(r, c) && m_teletextDocument->currentSubPage()->character(r, c) & 0x20) {
+			if (m_pageDecode.level1MosaicChar(r, c)) {
 				// A first mosaic character was found so create the image "just in time"
 				if (imageData == nullptr) {
 					imageData = new QImage(m_teletextDocument->selectionWidth() * 2, m_teletextDocument->selectionHeight() * 3, QImage::Format_Mono);

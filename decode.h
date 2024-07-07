@@ -64,7 +64,8 @@ public:
 	bool cellItalic(int r, int c) const { return m_cell[r][c].attribute.style.italic; };
 	bool cellProportional(int r, int c) const { return m_cell[r][c].attribute.style.proportional; };
 
-	bool level1MosaicAttribute(int r, int c) const { return m_cellLevel1Mosaic[r][c]; };
+	bool level1MosaicAttr(int r, int c) const { return m_cellLevel1MosaicAttr[r][c]; };
+	bool level1MosaicChar(int r, int c) const { return m_cellLevel1MosaicChar[r][c]; };
 	int level1CharSet(int r, int c) const { return m_cellLevel1CharSet[r][c]; };
 
 	RowHeight rowHeight(int r) const { return m_rowHeight[r]; };
@@ -261,7 +262,8 @@ private:
 
 	bool m_refresh[25][72];
 	textCell m_cell[25][72];
-	bool m_cellLevel1Mosaic[25][40];
+	bool m_cellLevel1MosaicAttr[25][40];
+	bool m_cellLevel1MosaicChar[25][40];
 	int m_cellLevel1CharSet[25][40];
 	LevelOnePage* m_levelOnePage;
 	int m_fullRowColour[25];
