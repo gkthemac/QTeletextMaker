@@ -21,6 +21,7 @@
 #include <QByteArray>
 #include <QByteArrayList>
 #include <QClipboard>
+#include <QImage>
 #include <QMimeData>
 #include <QRegularExpression>
 
@@ -604,6 +605,75 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 		if (!m_selectionActive) {
 			m_pasteBottomRow = m_pasteTopRow + m_clipboardDataHeight - 1;
 			m_pasteRightColumn = m_pasteLeftColumn + m_clipboardDataWidth - 1;
+		}
+	} else if (mimeData->hasImage()) {
+		QImage imageData = qvariant_cast<QImage>(mimeData->imageData());
+		m_plainText = false;
+		// Round up when dividing pixel size into character cell size
+		m_clipboardDataHeight = (imageData.height() + 2) / 3;
+		m_clipboardDataWidth = (imageData.width() + 1) / 2;
+
+		// Format_MonoLSB reverses the bits which makes them easier to shuffle into sixels
+		if (imageData.depth() == 1)
+			imageData.convertTo(QImage::Format_MonoLSB);
+		else
+			// Only pure black and white images convert reliably this way...
+			imageData = imageData.convertToFormat(QImage::Format_MonoLSB, QVector<QRgb>{0x000000ff, 0xffffffff});
+
+		for (int r=0; r<m_clipboardDataHeight; r++)
+			m_pastingCharacters.append(QByteArray(m_clipboardDataWidth, 0x00));
+
+		// Directly read the pixel-bits and convert them to sixels with some funky bit manipulation
+		for (int y=0; y<imageData.height(); y++) {
+			const unsigned char *bytePointer = imageData.constScanLine(y);
+			// Three rows of sixels per character cell
+			const int r = y / 3;
+			// Where to shuffle the bits into the top, middle or bottom row of sixels
+			// Yes it does put the bottom right sixel into bit 5 instead of bit 6;
+			// this gets remedied further on
+			const int yShift = (y % 3) * 2;
+			// The loop does eight horizontal pixels into four character cells at a time
+			for (int x=0; x<imageData.width(); x+=8) {
+				const unsigned char byteScanned = *bytePointer;
+				const int c = x / 2;
+
+				m_pastingCharacters[r][c] = m_pastingCharacters[r][c] | ((byteScanned & 0x03) << yShift);
+				// Since we're doing four character cells at a time, we need to exit the loop
+				// early before we go out of bounds.
+				// Yes it does leave an undefined last column of sixels from images that are an
+				// odd numbered number of pixels wide; this gets remedied further on
+				if (x + 2 >= imageData.width())
+					continue;
+				m_pastingCharacters[r][c+1] = m_pastingCharacters[r][c+1] | (((byteScanned >> 2) & 0x03) << yShift);
+				if (x + 4 >= imageData.width())
+					continue;
+				m_pastingCharacters[r][c+2] = m_pastingCharacters[r][c+2] | (((byteScanned >> 4) & 0x03) << yShift);
+				if (x + 6 >= imageData.width())
+					continue;
+				m_pastingCharacters[r][c+3] = m_pastingCharacters[r][c+3] | (((byteScanned >> 6) & 0x03) << yShift);
+
+				bytePointer++;
+			}
+		}
+
+		for (int r=0; r<m_clipboardDataHeight; r++) {
+			for (int c=0; c<m_clipboardDataWidth; c++)
+				if (m_pastingCharacters.at(r).at(c) & 0x20)
+					// If bit 5 was set, correct this to bit 6
+					// but we keep bit 5 set as all mosaic characters have bit 5 set
+					m_pastingCharacters[r][c] = m_pastingCharacters.at(r).at(c) | 0x40;
+				else
+					// Set bit 5 to have it recognised as a mosaic character
+					m_pastingCharacters[r][c] = m_pastingCharacters.at(r).at(c) | 0x20;
+			// If image was an odd numbered width, neutralise the undefined sixels
+			// on the right half
+			if (imageData.width() & 0x01)
+				m_pastingCharacters[r][m_clipboardDataWidth-1] = m_pastingCharacters.at(r).at(m_clipboardDataWidth-1) & 0x35;
+		}
+
+		if (!m_selectionActive) {
+			m_pasteBottomRow = m_row + m_clipboardDataHeight - 1;
+			m_pasteRightColumn = m_column + m_clipboardDataWidth - 1;
 		}
 	}
 

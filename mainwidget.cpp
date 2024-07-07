@@ -26,6 +26,7 @@
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
 #include <QGraphicsSceneEvent>
+#include <QImage>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMimeData>
@@ -385,6 +386,7 @@ void TeletextWidget::selectionToClipboard()
 {
 	QByteArray nativeData;
 	QString plainTextData;
+	QImage *imageData = nullptr;
 	QClipboard *clipboard = QApplication::clipboard();
 
 	nativeData.resize(2 + m_teletextDocument->selectionWidth() * m_teletextDocument->selectionHeight());
@@ -393,7 +395,7 @@ void TeletextWidget::selectionToClipboard()
 
 	plainTextData.reserve((m_teletextDocument->selectionWidth()+1) * m_teletextDocument->selectionHeight() - 1);
 
-	int i=2;
+	int i = 2;
 
 	for (int r=m_teletextDocument->selectionTopRow(); r<=m_teletextDocument->selectionBottomRow(); r++) {
 		for (int c=m_teletextDocument->selectionLeftColumn(); c<=m_teletextDocument->selectionRightColumn(); c++) {
@@ -403,6 +405,31 @@ void TeletextWidget::selectionToClipboard()
 				plainTextData.append(keymapping[m_pageDecode.level1CharSet(r, c)].key(m_teletextDocument->currentSubPage()->character(r, c), QChar(m_teletextDocument->currentSubPage()->character(r, c))));
 			else
 				plainTextData.append(' ');
+
+			if (m_pageDecode.level1MosaicAttribute(r, c) && m_teletextDocument->currentSubPage()->character(r, c) & 0x20) {
+				// A first mosaic character was found so create the image "just in time"
+				if (imageData == nullptr) {
+					imageData = new QImage(m_teletextDocument->selectionWidth() * 2, m_teletextDocument->selectionHeight() * 3, QImage::Format_Mono);
+
+					imageData->fill(0);
+				}
+
+				const int ix = (c - m_teletextDocument->selectionLeftColumn()) * 2;
+				const int iy = (r - m_teletextDocument->selectionTopRow()) * 3;
+
+				if (m_teletextDocument->currentSubPage()->character(r, c) & 0x01)
+					imageData->setPixel(ix, iy, 1);
+				if (m_teletextDocument->currentSubPage()->character(r, c) & 0x02)
+					imageData->setPixel(ix+1, iy, 1);
+				if (m_teletextDocument->currentSubPage()->character(r, c) & 0x04)
+					imageData->setPixel(ix, iy+1, 1);
+				if (m_teletextDocument->currentSubPage()->character(r, c) & 0x08)
+					imageData->setPixel(ix+1, iy+1, 1);
+				if (m_teletextDocument->currentSubPage()->character(r, c) & 0x10)
+					imageData->setPixel(ix, iy+2, 1);
+				if (m_teletextDocument->currentSubPage()->character(r, c) & 0x40)
+					imageData->setPixel(ix+1, iy+2, 1);
+			}
 		}
 
 		plainTextData.append('\n');
@@ -411,6 +438,11 @@ void TeletextWidget::selectionToClipboard()
 	QMimeData *mimeData = new QMimeData();
 	mimeData->setData("application/x-teletext", nativeData);
 	mimeData->setText(plainTextData);
+	if (imageData != nullptr) {
+		mimeData->setImageData(*imageData);
+		delete imageData;
+	}
+
 	clipboard->setMimeData(mimeData);
 }
 
