@@ -39,13 +39,10 @@ LevelOneCommand::LevelOneCommand(TeletextDocument *teletextDocument, QUndoComman
 	m_firstDo = true;
 }
 
-
-StoreOldCharactersCommand::StoreOldCharactersCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+QByteArrayList LevelOneCommand::storeCharacters(int topRow, int leftColumn, int bottomRow, int rightColumn)
 {
-}
+	QByteArrayList result;
 
-void StoreOldCharactersCommand::storeOldCharacters(int topRow, int leftColumn, int bottomRow, int rightColumn)
-{
 	for (int r=topRow; r<=bottomRow; r++) {
 		QByteArray rowArray;
 
@@ -58,12 +55,17 @@ void StoreOldCharactersCommand::storeOldCharacters(int topRow, int leftColumn, i
 				// Not sure if this is really necessary as out-of-bounds access might not occur?
 				rowArray.append(0x7f);
 
-		m_oldCharacters.append(rowArray);
+		result.append(rowArray);
 	}
+
+	return result;
 }
 
-void StoreOldCharactersCommand::retrieveOldCharacters(int topRow, int leftColumn, int bottomRow, int rightColumn)
+void LevelOneCommand::retrieveCharacters(int topRow, int leftColumn, const QByteArrayList &storedChars)
 {
+	const int bottomRow = topRow + storedChars.size() - 1;
+	const int rightColumn = leftColumn + storedChars.at(0).size() - 1;
+
 	int arrayR = 0;
 	int arrayC;
 
@@ -72,7 +74,7 @@ void StoreOldCharactersCommand::retrieveOldCharacters(int topRow, int leftColumn
 		for (int c=leftColumn; c<=rightColumn; c++)
 			// Guard against size of pasted block going beyond last line or column
 			if (r < 25 && c < 40) {
-				m_teletextDocument->currentSubPage()->setCharacter(r, c, m_oldCharacters[arrayR].at(arrayC));
+				m_teletextDocument->currentSubPage()->setCharacter(r, c, storedChars.at(arrayR).at(arrayC));
 
 				arrayC++;
 			}
@@ -402,7 +404,7 @@ void DeleteRowCommand::undo()
 
 
 #ifndef QT_NO_CLIPBOARD
-CutCommand::CutCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : StoreOldCharactersCommand(teletextDocument, parent)
+CutCommand::CutCommand(TeletextDocument *teletextDocument, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
 	m_selectionTopRow = m_teletextDocument->selectionTopRow();
 	m_selectionBottomRow = m_teletextDocument->selectionBottomRow();
@@ -412,7 +414,7 @@ CutCommand::CutCommand(TeletextDocument *teletextDocument, QUndoCommand *parent)
 	m_selectionCornerRow = m_teletextDocument->selectionCornerRow();
 	m_selectionCornerColumn = m_teletextDocument->selectionCornerColumn();
 
-	storeOldCharacters(m_selectionTopRow, m_selectionLeftColumn, m_selectionBottomRow, m_selectionRightColumn);
+	m_oldCharacters = storeCharacters(m_selectionTopRow, m_selectionLeftColumn, m_selectionBottomRow, m_selectionRightColumn);
 
 	setText(QObject::tr("cut"));
 }
@@ -433,7 +435,7 @@ void CutCommand::undo()
 {
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 
-	retrieveOldCharacters(m_selectionTopRow, m_selectionLeftColumn, m_selectionBottomRow, m_selectionRightColumn);
+	retrieveCharacters(m_selectionTopRow, m_selectionLeftColumn, m_oldCharacters);
 
 	emit m_teletextDocument->contentsChanged();
 
@@ -442,7 +444,7 @@ void CutCommand::undo()
 }
 
 
-PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, QUndoCommand *parent) : StoreOldCharactersCommand(teletextDocument, parent)
+PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {
 	const QClipboard *clipboard = QApplication::clipboard();
 	const QMimeData *mimeData = clipboard->mimeData();
@@ -687,7 +689,7 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 	if (m_clipboardDataWidth == 0 || m_clipboardDataHeight == 0)
 		return;
 
-	storeOldCharacters(m_pasteTopRow, m_pasteLeftColumn, m_pasteBottomRow, m_pasteRightColumn);
+	m_oldCharacters = storeCharacters(m_pasteTopRow, m_pasteLeftColumn, m_pasteBottomRow, m_pasteRightColumn);
 
 	setText(QObject::tr("paste"));
 }
@@ -753,7 +755,7 @@ void PasteCommand::undo()
 
 	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
 
-	retrieveOldCharacters(m_pasteTopRow, m_pasteLeftColumn, m_pasteBottomRow, m_pasteRightColumn);
+	retrieveCharacters(m_pasteTopRow, m_pasteLeftColumn, m_oldCharacters);
 
 	emit m_teletextDocument->contentsChanged();
 
