@@ -26,7 +26,7 @@
 
 #include "pageenhancementsdockwidget.h"
 
-#include "levelonecommands.h"
+#include "x28commands.h"
 
 PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): QDockWidget(parent)
 {

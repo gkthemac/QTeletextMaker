@@ -28,7 +28,7 @@
 
 #include "palettedockwidget.h"
 
-#include "levelonecommands.h"
+#include "x28commands.h"
 #include "document.h"
 #include "mainwidget.h"
 
