@@ -21,6 +21,7 @@
 #define LEVELONECOMMANDS_H
 
 #include <QByteArrayList>
+#include <QSet>
 #include <QUndoCommand>
 
 #include "document.h"
@@ -105,6 +106,62 @@ public:
 
 private:
 	unsigned char m_oldRowContents[40], m_newRowContents[40];
+};
+
+class ShiftMosaicsCommand : public LevelOneCommand
+{
+public:
+	ShiftMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+	bool mergeWith(const QUndoCommand *command) override;
+
+protected:
+	QByteArrayList m_oldCharacters, m_newCharacters;
+	QSet<QPair<int, int>> m_mosaicList;
+	int m_selectionTopRow, m_selectionBottomRow, m_selectionLeftColumn, m_selectionRightColumn;
+	int m_selectionCornerRow, m_selectionCornerColumn;
+};
+
+class ShiftMosaicsUpCommand : public ShiftMosaicsCommand
+{
+public:
+	enum { Id = 110 };
+
+	ShiftMosaicsUpCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent = 0);
+
+	int id() const override { return Id; }
+};
+
+class ShiftMosaicsDownCommand : public ShiftMosaicsCommand
+{
+public:
+	enum { Id = 111 };
+
+	ShiftMosaicsDownCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent = 0);
+
+	int id() const override { return Id; }
+};
+
+class ShiftMosaicsLeftCommand : public ShiftMosaicsCommand
+{
+public:
+	enum { Id = 112 };
+
+	ShiftMosaicsLeftCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent = 0);
+
+	int id() const override { return Id; }
+};
+
+class ShiftMosaicsRightCommand : public ShiftMosaicsCommand
+{
+public:
+	enum { Id = 113 };
+
+	ShiftMosaicsRightCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent = 0);
+
+	int id() const override { return Id; }
 };
 
 class InsertSubPageCommand : public LevelOneCommand

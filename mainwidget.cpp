@@ -32,6 +32,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QPair>
+#include <QSet>
 #include <QUndoCommand>
 #include <QWidget>
 #include <vector>
@@ -318,6 +319,7 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 		setCharacter(mappedKeyPress);
 		return;
 	}
+
 	switch (event->key()) {
 		case Qt::Key_Backspace:
 			m_teletextDocument->undoStack()->push(new BackspaceKeyCommand(m_teletextDocument, m_insertMode));
@@ -333,16 +335,28 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 			break;
 
 		case Qt::Key_Up:
-			m_teletextDocument->cursorUp(event->modifiers() & Qt::ShiftModifier);
+			if (event->modifiers() & Qt::ControlModifier)
+				shiftMosaics(event->key());
+			else
+				m_teletextDocument->cursorUp(event->modifiers() & Qt::ShiftModifier);
 			break;
 		case Qt::Key_Down:
-			m_teletextDocument->cursorDown(event->modifiers() & Qt::ShiftModifier);
+			if (event->modifiers() & Qt::ControlModifier)
+				shiftMosaics(event->key());
+			else
+				m_teletextDocument->cursorDown(event->modifiers() & Qt::ShiftModifier);
 			break;
 		case Qt::Key_Left:
-			m_teletextDocument->cursorLeft(event->modifiers() & Qt::ShiftModifier);
+			if (event->modifiers() & Qt::ControlModifier)
+				shiftMosaics(event->key());
+			else
+				m_teletextDocument->cursorLeft(event->modifiers() & Qt::ShiftModifier);
 			break;
 		case Qt::Key_Right:
-			m_teletextDocument->cursorRight(event->modifiers() & Qt::ShiftModifier);
+			if (event->modifiers() & Qt::ControlModifier)
+				shiftMosaics(event->key());
+			else
+				m_teletextDocument->cursorRight(event->modifiers() & Qt::ShiftModifier);
 			break;
 		case Qt::Key_Return:
 		case Qt::Key_Enter:
@@ -375,6 +389,35 @@ void TeletextWidget::setCharacter(unsigned char newCharacter)
 void TeletextWidget::toggleCharacterBit(unsigned char bitToToggle)
 {
 	m_teletextDocument->undoStack()->push(new ToggleMosaicBitCommand(m_teletextDocument, bitToToggle));
+}
+
+void TeletextWidget::shiftMosaics(int key)
+{
+	if (!m_teletextDocument->selectionActive())
+		return;
+
+	QSet<QPair<int, int>> mosaicList;
+
+	for (int r=m_teletextDocument->selectionTopRow(); r<=m_teletextDocument->selectionBottomRow(); r++)
+		for (int c=m_teletextDocument->selectionLeftColumn(); c<=m_teletextDocument->selectionRightColumn(); c++)
+			if (m_pageDecode.level1MosaicChar(r, c))
+				mosaicList.insert(qMakePair(r, c));
+
+	if (!mosaicList.isEmpty())
+		switch (key) {
+			case Qt::Key_Up:
+				m_teletextDocument->undoStack()->push(new ShiftMosaicsUpCommand(m_teletextDocument, mosaicList));
+				break;
+			case Qt::Key_Down:
+				m_teletextDocument->undoStack()->push(new ShiftMosaicsDownCommand(m_teletextDocument, mosaicList));
+				break;
+			case Qt::Key_Left:
+				m_teletextDocument->undoStack()->push(new ShiftMosaicsLeftCommand(m_teletextDocument, mosaicList));
+				break;
+			case Qt::Key_Right:
+				m_teletextDocument->undoStack()->push(new ShiftMosaicsRightCommand(m_teletextDocument, mosaicList));
+				break;
+		}
 }
 
 void TeletextWidget::selectionToClipboard()

@@ -24,6 +24,7 @@
 #include <QImage>
 #include <QMimeData>
 #include <QRegularExpression>
+#include <QSet>
 
 #include "levelonecommands.h"
 
@@ -315,6 +316,145 @@ bool DeleteKeyCommand::mergeWith(const QUndoCommand *command)
 		m_newRowContents[c] = newerCommand->m_newRowContents[c];
 
 	return true;
+}
+
+
+ShiftMosaicsCommand::ShiftMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
+{
+	m_selectionTopRow = m_teletextDocument->selectionTopRow();
+	m_selectionLeftColumn = m_teletextDocument->selectionLeftColumn();
+	m_selectionBottomRow = m_teletextDocument->selectionBottomRow();
+	m_selectionRightColumn = m_teletextDocument->selectionRightColumn();
+
+	m_selectionCornerRow = m_teletextDocument->selectionCornerRow();
+	m_selectionCornerColumn = m_teletextDocument->selectionCornerColumn();
+
+	m_mosaicList = mosaicList;
+
+	m_oldCharacters = storeCharacters(m_selectionTopRow, m_selectionLeftColumn, m_selectionBottomRow, m_selectionRightColumn);
+	m_newCharacters = m_oldCharacters;
+}
+
+void ShiftMosaicsCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	retrieveCharacters(m_selectionTopRow, m_selectionLeftColumn, m_newCharacters);
+
+	emit m_teletextDocument->contentsChanged();
+
+	m_teletextDocument->setSelectionCorner(m_selectionCornerRow, m_selectionCornerColumn);
+	m_teletextDocument->moveCursor(m_row, m_column, true);
+}
+
+void ShiftMosaicsCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	retrieveCharacters(m_selectionTopRow, m_selectionLeftColumn, m_oldCharacters);
+
+	emit m_teletextDocument->contentsChanged();
+
+	m_teletextDocument->setSelectionCorner(m_selectionCornerRow, m_selectionCornerColumn);
+	m_teletextDocument->moveCursor(m_row, m_column, true);
+}
+
+bool ShiftMosaicsCommand::mergeWith(const QUndoCommand *command)
+{
+	const ShiftMosaicsCommand *newerCommand = static_cast<const ShiftMosaicsCommand *>(command);
+
+	if (m_subPageIndex != newerCommand->m_subPageIndex || m_selectionTopRow != newerCommand->m_selectionTopRow || m_selectionLeftColumn != newerCommand->m_selectionLeftColumn || m_selectionBottomRow != newerCommand->m_selectionBottomRow || m_selectionRightColumn != newerCommand->m_selectionRightColumn)
+		return false;
+
+	m_newCharacters = newerCommand->m_newCharacters;
+
+	return true;
+}
+
+ShiftMosaicsUpCommand::ShiftMosaicsUpCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent) : ShiftMosaicsCommand(teletextDocument, mosaicList, parent)
+{
+	for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++)
+		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
+			if (m_mosaicList.contains(qMakePair(r, c))) {
+				const int lr = r - m_selectionTopRow;
+				const int lc = c - m_selectionLeftColumn;
+				unsigned char mosaicWrap = 0x00;
+
+				for (int sr=r+1; sr<=m_selectionBottomRow; sr++)
+					if (m_mosaicList.contains(qMakePair(sr, c))) {
+						mosaicWrap = m_newCharacters[sr - m_selectionTopRow][lc];
+						mosaicWrap = ((mosaicWrap & 0x01) << 4) | ((mosaicWrap & 0x02) << 5);
+						break;
+					}
+
+				m_newCharacters[lr][lc] = ((m_newCharacters[lr][lc] >> 2) & 0x07) | ((m_newCharacters[lr][lc] & 0x40) >> 3) | mosaicWrap | 0x20;
+			}
+
+	setText(QObject::tr("shift mosaics up"));
+}
+
+ShiftMosaicsDownCommand::ShiftMosaicsDownCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent) : ShiftMosaicsCommand(teletextDocument, mosaicList, parent)
+{
+	for (int r=m_selectionBottomRow; r>=m_selectionTopRow; r--)
+		for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
+			if (m_mosaicList.contains(qMakePair(r, c))) {
+				const int lr = r - m_selectionTopRow;
+				const int lc = c - m_selectionLeftColumn;
+				unsigned char mosaicWrap = 0x00;
+
+				for (int sr=r-1; sr>=m_selectionTopRow; sr--)
+					if (m_mosaicList.contains(qMakePair(sr, c))) {
+						mosaicWrap = m_newCharacters[sr - m_selectionTopRow][lc];
+						mosaicWrap = ((mosaicWrap & 0x10) >> 4) | ((mosaicWrap & 0x40) >> 5);
+						break;
+					}
+
+				m_newCharacters[lr][lc] = ((m_newCharacters[lr][lc] & 0x07) << 2) | ((m_newCharacters[lr][lc] & 0x08) << 3) | mosaicWrap | 0x20;
+			}
+
+	setText(QObject::tr("shift mosaics down"));
+}
+
+ShiftMosaicsLeftCommand::ShiftMosaicsLeftCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent) : ShiftMosaicsCommand(teletextDocument, mosaicList, parent)
+{
+	for (int c=m_selectionLeftColumn; c<=m_selectionRightColumn; c++)
+		for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++)
+			if (m_mosaicList.contains(qMakePair(r, c))) {
+				const int lr = r - m_selectionTopRow;
+				const int lc = c - m_selectionLeftColumn;
+				unsigned char mosaicWrap = 0x00;
+
+				for (int sc=c+1; sc<=m_selectionRightColumn; sc++)
+					if (m_mosaicList.contains(qMakePair(r, sc))) {
+						mosaicWrap = m_newCharacters[lr][sc - m_selectionLeftColumn];
+						mosaicWrap = ((mosaicWrap & 0x05) << 1) | ((mosaicWrap & 0x10) << 2);
+						break;
+					}
+
+				m_newCharacters[lr][lc] = ((m_newCharacters[lr][lc] & 0x0a) >> 1) | ((m_newCharacters[lr][lc] & 0x40) >> 2) | mosaicWrap | 0x20;
+			}
+
+	setText(QObject::tr("shift mosaics left"));
+}
+
+ShiftMosaicsRightCommand::ShiftMosaicsRightCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent) : ShiftMosaicsCommand(teletextDocument, mosaicList, parent)
+{
+	for (int c=m_selectionRightColumn; c>=m_selectionLeftColumn; c--)
+		for (int r=m_selectionTopRow; r<=m_selectionBottomRow; r++)
+			if (m_mosaicList.contains(qMakePair(r, c))) {
+				const int lr = r - m_selectionTopRow;
+				const int lc = c - m_selectionLeftColumn;
+				unsigned char mosaicWrap = 0x00;
+
+				for (int sc=c-1; sc>=m_selectionLeftColumn; sc--)
+					if (m_mosaicList.contains(qMakePair(r, sc))) {
+						mosaicWrap = m_newCharacters[lr][sc - m_selectionLeftColumn];
+						mosaicWrap = ((mosaicWrap & 0x0a) >> 1) | ((mosaicWrap & 0x40) >> 2);
+						break;
+					}
+
+				m_newCharacters[lr][lc] = ((m_newCharacters[lr][lc] & 0x05) << 1) | ((m_newCharacters[lr][lc] & 0x10) << 2) | mosaicWrap | 0x20;
+			}
+
+	setText(QObject::tr("shift mosaics right"));
 }
 
 

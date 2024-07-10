@@ -102,6 +102,7 @@ private:
 	int m_flashTiming, m_flashPhase;
 
 	void timerEvent(QTimerEvent *event) override;
+	void shiftMosaics(int key);
 	void selectionToClipboard();
 
 	QPair<int, int> mouseToRowAndColumn(const QPoint &mousePosition);
