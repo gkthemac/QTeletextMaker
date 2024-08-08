@@ -602,11 +602,13 @@ void X26DockWidget::selectX26ListRow(int row)
 
 void X26DockWidget::loadX26List()
 {
+	disableTripletWidgets();
 	m_x26Model->setX26ListLoaded(true);
 }
 
 void X26DockWidget::unloadX26List()
 {
+	disableTripletWidgets();
 	m_x26Model->setX26ListLoaded(false);
 	m_rawTripletAddressSpinBox->setEnabled(false);
 	m_rawTripletDataSpinBox->setEnabled(false);
