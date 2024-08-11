@@ -1,6 +1,4 @@
-.qmake.stash
-moc_*
-qrc_*
-*.o
 Makefile
-qteletextmaker
+build*/
+cmake-build-*/
+.idea

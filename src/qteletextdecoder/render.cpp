@@ -19,6 +19,7 @@
 
 #include <QBitmap>
 #include <QColor>
+#include <QDir>
 #include <QImage>
 #include <QPainter>
 #include <QPixmap>
@@ -34,8 +35,10 @@ QImage *TeletextFontBitmap::s_fontImage = nullptr;
 
 TeletextFontBitmap::TeletextFontBitmap()
 {
+	Q_INIT_RESOURCE(teletextfonts);
+
 	if (s_instances == 0) {
-		s_fontBitmap = new QBitmap(":/images/teletextfont.png");
+		s_fontBitmap = new QBitmap(":/fontimages/teletextfont.png");
 		s_fontImage = new QImage(s_fontBitmap->toImage());
 	}
 	s_instances++;

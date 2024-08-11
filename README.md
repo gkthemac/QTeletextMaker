@@ -1,7 +1,7 @@
 # QTeletextMaker
 QTeletextMaker is a teletext page editor with an emphasis on Level 2.5 enhancement editing, released under the GNU General Public License v3.0
 
-It is written in C++ using the Qt 5 widget libraries but should also compile with Qt 6.
+It is written in C++ using the Qt 6 widget libraries.
 
 Features
 - Load and save teletext pages in .tti format.
@@ -20,11 +20,19 @@ Although designed on and developed for Linux, the Qt libraries are cross platfor
 
 ## Building
 ### Linux
-Install version 5 or 6 of the QtCore, QtGui and QtWidgets libraries and build headers, along with the qmake tool. Depending on how qmake is installed, type `qmake && make -j3` or `qmake5 && make -j3` or `qmake6 && make -j3` in a terminal to build, you can replace -j3 with the number of processor cores used for the compile process.
+Install version 6 of the QtCore, QtGui and QtWidgets libraries and build headers, along with CMake.
 
-The above should place the qteletextmaker executable in the same directory as the source, type `./qteletextmaker` in the terminal to launch. Some Qt installs may place the executable into a "release" directory.
+Change into the source directory and run the following commands. -j8 can be replaced with the number of processor cores used for the compile process
+```
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j8
+```
 
-Optionally, type `make install` afterwards to place the executable into /usr/local/bin.
+The above should place the qteletextmaker executable into the build directory created by the above commands. Within the build directory type `./qteletextmaker` in the terminal to launch.
+
+Optionally, type `cmake --install .` to place the executable into /usr/local/bin and the example .tti files into /usr/local/share/doc/qteletextmaker.
 
 ## Current limitations
 The following X/26 enhancement triplets are not rendered by the editor, although the list is fully aware of them.

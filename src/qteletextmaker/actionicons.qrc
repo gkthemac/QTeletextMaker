@@ -1,6 +1,5 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-	<file>images/teletextfont.png</file>
 	<file>images/copy.png</file>
 	<file>images/cut.png</file>
 	<file>images/new.png</file>
