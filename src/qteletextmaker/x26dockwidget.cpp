@@ -610,9 +610,6 @@ void X26DockWidget::unloadX26List()
 {
 	disableTripletWidgets();
 	m_x26Model->setX26ListLoaded(false);
-	m_rawTripletAddressSpinBox->setEnabled(false);
-	m_rawTripletDataSpinBox->setEnabled(false);
-	m_rawTripletModeSpinBox->setEnabled(false);
 }
 
 void X26DockWidget::rowSelected(const QModelIndex &current, const QModelIndex &previous)
