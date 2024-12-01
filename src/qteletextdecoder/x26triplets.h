@@ -66,6 +66,7 @@ public:
 	X26TripletError error() const { return m_error; }
 	bool reservedMode() const { return m_reservedMode; }
 	bool reservedData() const { return m_reservedData; }
+	bool activePosition1p5Differs() const { return m_activePosition1p5Differs; }
 
 	friend class X26TripletList;
 
@@ -77,6 +78,7 @@ private:
 	int m_activePositionColumn = -1;
 	int m_activePositionRow1p5 = -1;
 	int m_activePositionColumn1p5 = -1;
+	bool m_activePosition1p5Differs = false;
 	X26TripletError m_error = NoError;
 	bool m_reservedMode = false;
 	bool m_reservedData = false;

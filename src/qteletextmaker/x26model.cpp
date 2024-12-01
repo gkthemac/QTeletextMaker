@@ -69,19 +69,27 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 	if (role == Qt::ForegroundRole) {
 		if (triplet.error() != X26Triplet::NoError && index.column() == m_tripletErrors[triplet.error()].columnHighlight)
 			return QColor(252, 252, 252);
-		else if ((index.column() == 2 && triplet.reservedMode()) || (index.column() == 3 && triplet.reservedData()))
+		if ((index.column() == 2 && triplet.reservedMode()) || (index.column() == 3 && triplet.reservedData()))
+			return QColor(35, 38, 39);
+		if (index.column() <= 1 && triplet.activePosition1p5Differs())
 			return QColor(35, 38, 39);
 	}
 
 	if (role == Qt::BackgroundRole) {
 		if (triplet.error() != X26Triplet::NoError && index.column() == m_tripletErrors[triplet.error()].columnHighlight)
 			return QColor(218, 68, 63);
-		else if ((index.column() == 2 && triplet.reservedMode()) || (index.column() == 3 && triplet.reservedData()))
+		if ((index.column() == 2 && triplet.reservedMode()) || (index.column() == 3 && triplet.reservedData()))
+			return QColor(246, 116, 0);
+		if (index.column() <= 1 && triplet.activePosition1p5Differs())
 			return QColor(246, 116, 0);
 	}
 
-	if (role == Qt::ToolTipRole && triplet.error() != X26Triplet::NoError)
-		return m_tripletErrors[triplet.error()].message;
+	if (role == Qt::ToolTipRole) {
+		if (triplet.error() != X26Triplet::NoError)
+			return m_tripletErrors[triplet.error()].message;
+		if (triplet.activePosition1p5Differs())
+			return "Active Position differs between Level 1.5 and higher levels";
+	}
 
 	if (role == Qt::DisplayRole || role == Qt::EditRole)
 		switch (index.column()) {
