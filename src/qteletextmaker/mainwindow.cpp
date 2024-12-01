@@ -189,11 +189,9 @@ void MainWindow::exportPNG()
 	m_textWidget->pauseFlash(true);
 	m_textScene->hideGUIElements(true);
 	// Disable exporting in Mix mode as it corrupts the background
-	bool reMix = m_textWidget->pageRender()->mix();
-	if (reMix) {
-		m_textWidget->setMix(false);
-		m_textScene->setMix(false);
-	}
+	bool reMix = m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderMix;
+	if (reMix)
+		m_textScene->setRenderMode(TeletextPageRender::RenderNormal);
 
 	// Extract the image from the scene
 	QImage interImage = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
@@ -205,10 +203,8 @@ void MainWindow::exportPNG()
 
 	// Now we've extracted the image we can put the GUI things back
 	m_textScene->hideGUIElements(false);
-	if (reMix) {
-		m_textWidget->setMix(true);
-		m_textScene->setMix(true);
-	}
+	if (reMix)
+		m_textScene->setRenderMode(TeletextPageRender::RenderMix);
 	m_textWidget->pauseFlash(false);
 
 	// Now scale the extracted image to the selected aspect ratio
@@ -503,13 +499,6 @@ void MainWindow::createActions()
 	revealAct->setStatusTip(tr("Toggle reveal"));
 	connect(revealAct, &QAction::toggled, m_textWidget, &TeletextWidget::setReveal);
 
-	QAction *mixAct = viewMenu->addAction(tr("&Mix"));
-	mixAct->setCheckable(true);
-	mixAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_M));
-	mixAct->setStatusTip(tr("Toggle mix"));
-	connect(mixAct, &QAction::toggled, m_textWidget, &TeletextWidget::setMix);
-	connect(mixAct, &QAction::toggled, m_textScene, &LevelOneScene::setMix);
-
 	QAction *gridAct = viewMenu->addAction(tr("&Grid"));
 	gridAct->setCheckable(true);
 	gridAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_G));
@@ -523,6 +512,17 @@ void MainWindow::createActions()
 	connect(showControlCodesAct, &QAction::toggled, m_textWidget, &TeletextWidget::setShowControlCodes);
 
 	viewMenu->addSeparator();
+
+	QMenu *renderModeSubMenu = viewMenu->addMenu(tr("Render mode"));
+	QAction *renderModeActs[4];
+	renderModeActs[0] = renderModeSubMenu->addAction(tr("Normal"));
+	renderModeActs[0]->setStatusTip(tr("Render page normally"));
+	renderModeActs[1] = renderModeSubMenu->addAction(tr("Mix"));
+	renderModeActs[1]->setStatusTip(tr("Render page in mix mode"));
+	renderModeActs[2] = renderModeSubMenu->addAction(tr("White on black"));
+	renderModeActs[2]->setStatusTip(tr("Render page with white foreground on black background"));
+	renderModeActs[3] = renderModeSubMenu->addAction(tr("Black on white"));
+	renderModeActs[3]->setStatusTip(tr("Render page with black foreground on white background"));
 
 	QMenu *borderSubMenu = viewMenu->addMenu(tr("Border"));
 	m_borderActs[0] = borderSubMenu->addAction(tr("None"));
@@ -542,18 +542,26 @@ void MainWindow::createActions()
 	m_aspectRatioActs[3] = aspectRatioSubMenu->addAction(tr("Pixel 1:2"));
 	m_aspectRatioActs[3]->setStatusTip(tr("View with 1:2 pixel mapping"));
 
+	QActionGroup *renderModeGroup = new QActionGroup(this);
 	QActionGroup *borderGroup = new QActionGroup(this);
 	QActionGroup *aspectRatioGroup = new QActionGroup(this);
 	for (int i=0; i<=3; i++) {
+		renderModeActs[i]->setCheckable(true);
+		connect(renderModeActs[i], &QAction::triggered, [=]() { m_textScene->setRenderMode(static_cast<TeletextPageRender::RenderMode>(i)); });
+		renderModeGroup->addAction(renderModeActs[i]);
+
 		m_aspectRatioActs[i]->setCheckable(true);
 		connect(m_aspectRatioActs[i], &QAction::triggered, [=]() { setAspectRatio(i); });
 		aspectRatioGroup->addAction(m_aspectRatioActs[i]);
+
 		if (i == 3)
 			break;
+
 		m_borderActs[i]->setCheckable(true);
 		connect(m_borderActs[i], &QAction::triggered, [=]() { setBorder(i); });
 		borderGroup->addAction(m_borderActs[i]);
 	}
+	renderModeActs[0]->setChecked(true);
 
 	viewMenu->addSeparator();
 

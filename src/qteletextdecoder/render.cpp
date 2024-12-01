@@ -60,7 +60,7 @@ TeletextPageRender::TeletextPageRender()
 		m_pageImage[i] = new QImage(864, 250, QImage::Format_ARGB32_Premultiplied);
 
 	m_reveal = false;
-	m_mix = false;
+	m_renderMode = RenderNormal;
 	m_showControlCodes = false;
 	m_flashBuffersHz = 0;
 
@@ -226,6 +226,13 @@ inline void TeletextPageRender::drawBoldOrItalicCharacter(QPainter &painter, int
 
 void TeletextPageRender::renderPage(bool force)
 {
+	if (m_renderMode == RenderWhiteOnBlack) {
+		m_foregroundQColor = Qt::white;
+		m_backgroundQColor = Qt::black;
+	} else if (m_renderMode == RenderBlackOnWhite) {
+		m_foregroundQColor = Qt::black;
+		m_backgroundQColor = Qt::white;
+	}
 	for (int r=0; r<25; r++)
 		renderRow(r, 0, force);
 }
@@ -253,9 +260,11 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 			}
 		}
 
-		if (ph == 0) {
+		// Second part of "if" suppresses all flashing on monochrome render modes
+		if (ph == 0 && m_renderMode < RenderWhiteOnBlack) {
 			if (m_decoder->cellFlashMode(r, c) != 0)
 				flashingRow = qMax(flashingRow, (m_decoder->cellFlashRatePhase(r, c) == 0) ? 1 : 2);
+//		} else if (!force)
 		} else
 			force = m_decoder->cellFlashMode(r, c) != 0;
 
@@ -278,36 +287,38 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 				characterDiacritical = m_decoder->cellCharacterDiacritical(r, c);
 			}
 
-			if (m_decoder->cellFlashMode(r, c) == 0)
-				m_foregroundQColor = m_decoder->cellForegroundQColor(r, c);
-			else {
-				// Flashing cell, decide if phase in this cycle is on or off
-				bool phaseOn;
-
-				if (m_decoder->cellFlashRatePhase(r, c) == 0)
-					phaseOn = (ph < 3) ^ (m_decoder->cellFlashMode(r, c) == 2);
-				else
-					phaseOn = ((ph == m_decoder->cellFlash2HzPhaseNumber(r, c)-1) || (ph == m_decoder->cellFlash2HzPhaseNumber(r, c)+2)) ^ (m_decoder->cellFlashMode(r, c) == 2);
-
-				// If flashing to adjacent CLUT select the appropriate foreground colour
-				if (m_decoder->cellFlashMode(r, c) == 3 && !phaseOn)
-					m_foregroundQColor = m_decoder->cellFlashForegroundQColor(r, c);
-				else
+			if (m_renderMode < RenderWhiteOnBlack) {
+				if (m_decoder->cellFlashMode(r, c) == 0)
 					m_foregroundQColor = m_decoder->cellForegroundQColor(r, c);
+				else {
+					// Flashing cell, decide if phase in this cycle is on or off
+					bool phaseOn;
 
-				// If flashing mode is Normal or Invert, draw a space instead of a character on phase
-				if ((m_decoder->cellFlashMode(r, c) == 1 || m_decoder->cellFlashMode(r, c) == 2) && !phaseOn) {
-					// Character 0x00 draws space without underline
-					characterCode = 0x00;
-					characterSet = 0;
-					characterDiacritical = 0;
+					if (m_decoder->cellFlashRatePhase(r, c) == 0)
+						phaseOn = (ph < 3) ^ (m_decoder->cellFlashMode(r, c) == 2);
+					else
+						phaseOn = ((ph == m_decoder->cellFlash2HzPhaseNumber(r, c)-1) || (ph == m_decoder->cellFlash2HzPhaseNumber(r, c)+2)) ^ (m_decoder->cellFlashMode(r, c) == 2);
+
+					// If flashing to adjacent CLUT select the appropriate foreground colour
+					if (m_decoder->cellFlashMode(r, c) == 3 && !phaseOn)
+						m_foregroundQColor = m_decoder->cellFlashForegroundQColor(r, c);
+					else
+						m_foregroundQColor = m_decoder->cellForegroundQColor(r, c);
+
+					// If flashing mode is Normal or Invert, draw a space instead of a character on phase
+					if ((m_decoder->cellFlashMode(r, c) == 1 || m_decoder->cellFlashMode(r, c) == 2) && !phaseOn) {
+						// Character 0x00 draws space without underline
+						characterCode = 0x00;
+						characterSet = 0;
+						characterDiacritical = 0;
+					}
 				}
-			}
 
-			if (!m_mix || m_decoder->cellBoxed(r, c))
-				m_backgroundQColor = m_decoder->cellBackgroundQColor(r, c);
-			else
-				m_backgroundQColor = Qt::transparent;
+				if (m_renderMode != RenderMix || m_decoder->cellBoxed(r, c))
+					m_backgroundQColor = m_decoder->cellBackgroundQColor(r, c);
+				else
+					m_backgroundQColor = Qt::transparent;
+			}
 
 			drawCharacter(painter, r, c, characterCode, characterSet, characterDiacritical, m_decoder->cellCharacterFragment(r, c));
 
@@ -439,17 +450,16 @@ void TeletextPageRender::setReveal(bool reveal)
 				m_decoder->setRefresh(r, c, true);
 }
 
-void TeletextPageRender::setMix(bool mix)
+void TeletextPageRender::setRenderMode(RenderMode renderMode)
 {
-	if (mix  == m_mix)
+	if (renderMode == m_renderMode)
 		return;
 
-	m_mix = mix;
+	m_renderMode = renderMode;
 
 	for (int r=0; r<25; r++)
 		for (int c=0; c<72; c++)
-			if (!m_decoder->cellBoxed(r, c))
-				m_decoder->setRefresh(r, c, true);
+			m_decoder->setRefresh(r, c, true);
 }
 
 

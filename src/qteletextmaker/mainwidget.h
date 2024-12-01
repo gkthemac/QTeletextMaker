@@ -65,8 +65,8 @@ public slots:
 	void subPageSelected();
 	void refreshPage();
 	void setReveal(bool reveal);
-	void setMix(bool mix);
 	void setShowControlCodes(bool showControlCodes);
+	void setRenderMode(TeletextPageRender::RenderMode renderMode);
 	void updateFlashTimer(int newFlashTimer);
 	void pauseFlash(bool pauseNow);
 
@@ -120,7 +120,7 @@ public:
 public slots:
 	void updateCursor();
 	void updateSelection();
-	void setMix(bool mix);
+	void setRenderMode(TeletextPageRender::RenderMode renderMode);
 	void toggleGrid(bool gridOn);
 	void hideGUIElements(bool hidden);
 	void setFullScreenColour(const QColor &newColor);

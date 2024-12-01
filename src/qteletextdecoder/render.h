@@ -49,11 +49,13 @@ class TeletextPageRender : public QObject
 	Q_OBJECT
 
 public:
+	enum RenderMode { RenderNormal, RenderMix, RenderWhiteOnBlack, RenderBlackOnWhite };
+
 	TeletextPageRender();
 	~TeletextPageRender();
 
 	QImage* image(int i) const { return m_pageImage[i]; };
-	bool mix() const { return m_mix; };
+	RenderMode renderMode() const { return m_renderMode; };
 	void setDecoder(TeletextPageDecode *decoder);
 	void renderPage(bool force=false);
 	bool showControlCodes() const { return m_showControlCodes; };
@@ -61,7 +63,7 @@ public:
 public slots:
 	void colourChanged(int index);
 	void setReveal(bool reveal);
-	void setMix(bool mix);
+	void setRenderMode(RenderMode renderMode);
 	void setShowControlCodes(bool showControlCodes);
 
 signals:
@@ -71,7 +73,8 @@ protected:
 	TeletextFontBitmap m_fontBitmap;
 	QImage* m_pageImage[6];
 	unsigned char m_controlCodeCache[25][40];
-	bool m_reveal, m_mix, m_showControlCodes;
+	RenderMode m_renderMode;
+	bool m_reveal, m_showControlCodes;
 	int m_flashBuffersHz;
 	int m_flashingRow[25];
 

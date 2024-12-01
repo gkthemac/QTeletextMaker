@@ -161,15 +161,15 @@ void TeletextWidget::setReveal(bool reveal)
 	update();
 }
 
-void TeletextWidget::setMix(bool mix)
-{
-	m_pageRender.setMix(mix);
-	update();
-}
-
 void TeletextWidget::setShowControlCodes(bool showControlCodes)
 {
 	m_pageRender.setShowControlCodes(showControlCodes);
+	update();
+}
+
+void TeletextWidget::setRenderMode(TeletextPageRender::RenderMode renderMode)
+{
+	m_pageRender.setRenderMode(renderMode);
 	update();
 }
 
@@ -705,19 +705,34 @@ void LevelOneScene::updateSelection()
 	m_selectionRectItem->setVisible(true);
 }
 
-void LevelOneScene::setMix(bool mix)
+void LevelOneScene::setRenderMode(TeletextPageRender::RenderMode renderMode)
 {
-	if (mix) {
-		m_fullScreenTopRectItem->setBrush(Qt::transparent);
-		m_fullScreenBottomRectItem->setBrush(Qt::transparent);
-		for (int r=0; r<25; r++) {
-			m_fullRowLeftRectItem[r]->setBrush(Qt::transparent);
-			m_fullRowRightRectItem[r]->setBrush(Qt::transparent);
-		}
-	} else {
-		setFullScreenColour(static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageDecode()->fullScreenQColor());
-		for (int r=0; r<25; r++)
-			setFullRowColour(r, static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageDecode()->fullRowQColor(r));
+	static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->setRenderMode(renderMode);
+
+	QColor fullColour;
+
+	switch (renderMode) {
+		case TeletextPageRender::RenderNormal:
+			setFullScreenColour(static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageDecode()->fullScreenQColor());
+			for (int r=0; r<25; r++)
+				setFullRowColour(r, static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageDecode()->fullRowQColor(r));
+			return;
+		case TeletextPageRender::RenderMix:
+			fullColour = Qt::transparent;
+			break;
+		case TeletextPageRender::RenderWhiteOnBlack:
+			fullColour = Qt::black;
+			break;
+		case TeletextPageRender::RenderBlackOnWhite:
+			fullColour = Qt::white;
+			break;
+	}
+
+	m_fullScreenTopRectItem->setBrush(fullColour);
+	m_fullScreenBottomRectItem->setBrush(fullColour);
+	for (int r=0; r<25; r++) {
+		m_fullRowLeftRectItem[r]->setBrush(fullColour);
+		m_fullRowRightRectItem[r]->setBrush(fullColour);
 	}
 }
 
@@ -782,7 +797,7 @@ void LevelOneScene::keyReleaseEvent(QKeyEvent *keyEvent)
 
 void LevelOneScene::setFullScreenColour(const QColor &newColor)
 {
-	if (!static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageRender()->mix()) {
+	if (static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageRender()->renderMode() == TeletextPageRender::RenderNormal) {
 		m_fullScreenTopRectItem->setBrush(newColor);
 		m_fullScreenBottomRectItem->setBrush(newColor);
 	}
@@ -790,7 +805,7 @@ void LevelOneScene::setFullScreenColour(const QColor &newColor)
 
 void LevelOneScene::setFullRowColour(int row, const QColor &newColor)
 {
-	if (!static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageRender()->mix()) {
+	if (static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageRender()->renderMode() == TeletextPageRender::RenderNormal) {
 		m_fullRowLeftRectItem[row]->setBrush(newColor);
 		m_fullRowRightRectItem[row]->setBrush(newColor);
 	}
