@@ -164,6 +164,47 @@ public:
 	int id() const override { return Id; }
 };
 
+class FillMosaicsCommand : public ShiftMosaicsCommand
+{
+public:
+	enum { Id = 120 };
+
+	FillMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent = 0);
+
+	int id() const override { return Id; }
+};
+
+class ClearMosaicsCommand : public ShiftMosaicsCommand
+{
+public:
+	enum { Id = 121 };
+
+	ClearMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent = 0);
+
+	int id() const override { return Id; }
+};
+
+class InvertMosaicsCommand : public ShiftMosaicsCommand
+{
+public:
+	enum { Id = 122 };
+
+	InvertMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent = 0);
+
+	bool mergeWith(const QUndoCommand *command) override;
+	int id() const override { return Id; }
+};
+
+class DitherMosaicsCommand : public ShiftMosaicsCommand
+{
+public:
+	enum { Id = 123 };
+
+	DitherMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent = 0);
+
+	int id() const override { return Id; }
+};
+
 class InsertSubPageCommand : public LevelOneCommand
 {
 public:

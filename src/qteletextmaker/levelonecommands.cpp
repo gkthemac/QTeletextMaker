@@ -457,6 +457,49 @@ ShiftMosaicsRightCommand::ShiftMosaicsRightCommand(TeletextDocument *teletextDoc
 	setText(QObject::tr("shift mosaics right"));
 }
 
+FillMosaicsCommand::FillMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent) : ShiftMosaicsCommand(teletextDocument, mosaicList, parent)
+{
+	for (const auto &m : m_mosaicList)
+		m_newCharacters[m.first - m_selectionTopRow][m.second - m_selectionLeftColumn] = 0x7f;
+
+	setText(QObject::tr("fill mosaics"));
+}
+
+ClearMosaicsCommand::ClearMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent) : ShiftMosaicsCommand(teletextDocument, mosaicList, parent)
+{
+	for (const auto &m : m_mosaicList)
+		m_newCharacters[m.first - m_selectionTopRow][m.second - m_selectionLeftColumn] = 0x20;
+
+	setText(QObject::tr("clear mosaics"));
+}
+
+InvertMosaicsCommand::InvertMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent) : ShiftMosaicsCommand(teletextDocument, mosaicList, parent)
+{
+	for (const auto &m : m_mosaicList)
+		m_newCharacters[m.first - m_selectionTopRow][m.second - m_selectionLeftColumn] ^= 0x5f;
+
+	setText(QObject::tr("reverse mosaics"));
+}
+
+bool InvertMosaicsCommand::mergeWith(const QUndoCommand *command)
+{
+	const InvertMosaicsCommand *newerCommand = static_cast<const InvertMosaicsCommand *>(command);
+
+	if (m_subPageIndex != newerCommand->m_subPageIndex || m_selectionTopRow != newerCommand->m_selectionTopRow || m_selectionLeftColumn != newerCommand->m_selectionLeftColumn || m_selectionBottomRow != newerCommand->m_selectionBottomRow || m_selectionRightColumn != newerCommand->m_selectionRightColumn)
+		return false;
+
+	setObsolete(true);
+	return true;
+}
+
+DitherMosaicsCommand::DitherMosaicsCommand(TeletextDocument *teletextDocument, const QSet<QPair<int, int>> &mosaicList, QUndoCommand *parent) : ShiftMosaicsCommand(teletextDocument, mosaicList, parent)
+{
+	for (const auto &m : m_mosaicList)
+		m_newCharacters[m.first - m_selectionTopRow][m.second - m_selectionLeftColumn] = (m.first & 1) ? 0x66 : 0x39;
+
+	setText(QObject::tr("dither mosaics"));
+}
+
 
 InsertRowCommand::InsertRowCommand(TeletextDocument *teletextDocument, bool copyRow, QUndoCommand *parent) : LevelOneCommand(teletextDocument, parent)
 {

@@ -228,8 +228,9 @@ void TeletextWidget::keyPressEvent(QKeyEvent *event)
 		// Map it to block character so it doesn't need to be inserted-between later on
 		if (mappedKeyPress & 0x80)
 			mappedKeyPress = 0x7f;
-		if (m_pageDecode.level1MosaicAttr(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) && (mappedKeyPress < 0x40 || mappedKeyPress > 0x5f)) {
-			// We're on a mosaic and a blast-through character was NOT pressed
+		if ((m_pageDecode.level1MosaicAttr(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn()) || m_teletextDocument->selectionActive()) && (mappedKeyPress < 0x40 || mappedKeyPress > 0x5f)) {
+			// A blast-through character was NOT pressed
+			// and we're either on a mosaic or a selection is active
 			if (event->key() >= Qt::Key_0 && event->key() <= Qt::Key_9 && event->modifiers() & Qt::KeypadModifier) {
 				switch (event->key()) {
 					case Qt::Key_7:
@@ -388,7 +389,27 @@ void TeletextWidget::setCharacter(unsigned char newCharacter)
 
 void TeletextWidget::toggleCharacterBit(unsigned char bitToToggle)
 {
-	m_teletextDocument->undoStack()->push(new ToggleMosaicBitCommand(m_teletextDocument, bitToToggle));
+	if (!m_teletextDocument->selectionActive())
+		m_teletextDocument->undoStack()->push(new ToggleMosaicBitCommand(m_teletextDocument, bitToToggle));
+	else {
+		const QSet<QPair<int, int>> mosaicList = findMosaics();
+
+		if (!mosaicList.isEmpty())
+			switch (bitToToggle) {
+				case 0x7f:
+					m_teletextDocument->undoStack()->push(new FillMosaicsCommand(m_teletextDocument, mosaicList));
+					break;
+				case 0x20:
+					m_teletextDocument->undoStack()->push(new ClearMosaicsCommand(m_teletextDocument, mosaicList));
+					break;
+				case 0x5f:
+					m_teletextDocument->undoStack()->push(new InvertMosaicsCommand(m_teletextDocument, mosaicList));
+					break;
+				case 0x66:
+					m_teletextDocument->undoStack()->push(new DitherMosaicsCommand(m_teletextDocument, mosaicList));
+					break;
+			}
+	}
 }
 
 QSet<QPair<int, int>> TeletextWidget::findMosaics()
