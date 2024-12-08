@@ -391,17 +391,24 @@ void TeletextWidget::toggleCharacterBit(unsigned char bitToToggle)
 	m_teletextDocument->undoStack()->push(new ToggleMosaicBitCommand(m_teletextDocument, bitToToggle));
 }
 
-void TeletextWidget::shiftMosaics(int key)
+QSet<QPair<int, int>> TeletextWidget::findMosaics()
 {
-	if (!m_teletextDocument->selectionActive())
-		return;
+	QSet<QPair<int, int>> result;
 
-	QSet<QPair<int, int>> mosaicList;
+	if (!m_teletextDocument->selectionActive())
+		return result;
 
 	for (int r=m_teletextDocument->selectionTopRow(); r<=m_teletextDocument->selectionBottomRow(); r++)
 		for (int c=m_teletextDocument->selectionLeftColumn(); c<=m_teletextDocument->selectionRightColumn(); c++)
 			if (m_pageDecode.level1MosaicChar(r, c))
-				mosaicList.insert(qMakePair(r, c));
+				result.insert(qMakePair(r, c));
+
+	return result;
+}
+
+void TeletextWidget::shiftMosaics(int key)
+{
+	const QSet<QPair<int, int>> mosaicList = findMosaics();
 
 	if (!mosaicList.isEmpty())
 		switch (key) {

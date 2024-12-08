@@ -102,6 +102,7 @@ private:
 	int m_flashTiming, m_flashPhase;
 
 	void timerEvent(QTimerEvent *event) override;
+	QSet<QPair<int, int>> findMosaics();
 	void shiftMosaics(int key);
 	void selectionToClipboard();
 
