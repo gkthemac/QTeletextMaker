@@ -104,7 +104,11 @@ PageOptionsDockWidget::PageOptionsDockWidget(TeletextWidget *parent): QDockWidge
 
 		m_controlBitsAct[i] = new QCheckBox(controlBitsLabel[i]);
 		subPageOptionsLayout->addWidget(m_controlBitsAct[i]);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+		connect(m_controlBitsAct[i], &QCheckBox::checkStateChanged, [=](bool active) { m_parentMainWidget->setControlBit(i, active); });
+#else
 		connect(m_controlBitsAct[i], &QCheckBox::stateChanged, [=](bool active) { m_parentMainWidget->setControlBit(i, active); });
+#endif
 	}
 
 	// Region and language

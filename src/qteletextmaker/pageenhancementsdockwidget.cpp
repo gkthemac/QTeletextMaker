@@ -71,7 +71,11 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 	// Black background colour substitution
 	m_blackBackgroundSubstAct = new QCheckBox("Black background colour substitution");
 	colourLayout->addWidget(m_blackBackgroundSubstAct, 3, 0, 1, 2, Qt::AlignTop);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(m_blackBackgroundSubstAct, &QCheckBox::checkStateChanged, [=](int state){ m_parentMainWidget->document()->undoStack()->push(new SetBlackBackgroundSubstCommand(m_parentMainWidget->document(), state)); });
+#else
 	connect(m_blackBackgroundSubstAct, &QCheckBox::stateChanged, [=](int state){ m_parentMainWidget->document()->undoStack()->push(new SetBlackBackgroundSubstCommand(m_parentMainWidget->document(), state)); });
+#endif
 
 	// Add group box to the main layout
 	colourGroupBox->setLayout(colourLayout);
@@ -98,7 +102,11 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 	// Side panels status
 	m_sidePanelStatusAct = new QCheckBox("Side panels at level 3.5 only");
 	sidePanelsLayout->addWidget(m_sidePanelStatusAct, 2, 0, 1, 2, Qt::AlignTop);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(m_sidePanelStatusAct, &QCheckBox::checkStateChanged, m_parentMainWidget, &TeletextWidget::setSidePanelAtL35Only);
+#else
 	connect(m_sidePanelStatusAct, &QCheckBox::stateChanged, m_parentMainWidget, &TeletextWidget::setSidePanelAtL35Only);
+#endif
 
 	// Add group box to the main layout
 	sidePanelsGroupBox->setLayout(sidePanelsLayout);

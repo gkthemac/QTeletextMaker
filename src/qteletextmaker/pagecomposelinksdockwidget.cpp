@@ -68,10 +68,18 @@ PageComposeLinksDockWidget::PageComposeLinksDockWidget(TeletextWidget *parent): 
 			// Required at which Levels
 			m_composeLinkLevelCheckbox[i][0] = new QCheckBox(this);
 			x27Layout->addWidget(m_composeLinkLevelCheckbox[i][0], i+2, 1, 1, 1);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+			connect(m_composeLinkLevelCheckbox[i][0], &QCheckBox::checkStateChanged, [=](bool active) { m_parentMainWidget->document()->currentSubPage()->setComposeLinkLevel2p5(i, active); });
+#else
 			connect(m_composeLinkLevelCheckbox[i][0], &QCheckBox::stateChanged, [=](bool active) { m_parentMainWidget->document()->currentSubPage()->setComposeLinkLevel2p5(i, active); });
+#endif
 			m_composeLinkLevelCheckbox[i][1] = new QCheckBox(this);
 			x27Layout->addWidget(m_composeLinkLevelCheckbox[i][1], i+2, 2, 1, 1);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+			connect(m_composeLinkLevelCheckbox[i][1], &QCheckBox::checkStateChanged, [=](bool active) { m_parentMainWidget->document()->currentSubPage()->setComposeLinkLevel3p5(i, active); });
+#else
 			connect(m_composeLinkLevelCheckbox[i][1], &QCheckBox::stateChanged, [=](bool active) { m_parentMainWidget->document()->currentSubPage()->setComposeLinkLevel3p5(i, active); });
+#endif
 		} else {
 			// Selectable link functions for Level 3.5
 			m_composeLinkFunctionComboBox[i-4] = new QComboBox;

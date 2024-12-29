@@ -65,7 +65,11 @@ PaletteDockWidget::PaletteDockWidget(TeletextWidget *parent): QDockWidget(parent
 
 	m_showHexValuesCheckBox = new QCheckBox(tr("Show colour hex values"));
 	paletteGridLayout->addWidget(m_showHexValuesCheckBox, 5, 1, 1, 8);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(m_showHexValuesCheckBox, &QCheckBox::checkStateChanged, this, &PaletteDockWidget::updateAllColourButtons);
+#else
 	connect(m_showHexValuesCheckBox, &QCheckBox::stateChanged, this, &PaletteDockWidget::updateAllColourButtons);
+#endif
 
 	paletteGridWidget->setLayout(paletteGridLayout);
 	this->setWidget(paletteGridWidget);

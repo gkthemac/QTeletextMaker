@@ -208,7 +208,11 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 
 	x26Layout->addLayout(tripletSelectLayout);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(rawOrCookedCheckBox, &QCheckBox::checkStateChanged,[=](const int value) { m_rawOrCookedStackedLayout->setCurrentIndex(value == 2); } );
+#else
 	connect(rawOrCookedCheckBox, &QCheckBox::stateChanged,[=](const int value) { m_rawOrCookedStackedLayout->setCurrentIndex(value == 2); } );
+#endif
 
 
 	// Widgets that alter the parameters of triplets which will all be stacked
@@ -280,10 +284,17 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	displayAttributesLayout->addWidget(m_displayAttributeConcealCheckBox);
 	displayAttributesLayout->addWidget(m_displayAttributeInvertCheckBox);
 	displayAttributesLayout->addWidget(m_displayAttributeUnderlineCheckBox);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(m_displayAttributeBoxingCheckBox, &QCheckBox::checkStateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+2); } );
+	connect(m_displayAttributeConcealCheckBox, &QCheckBox::checkStateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+3); } );
+	connect(m_displayAttributeInvertCheckBox, &QCheckBox::checkStateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+4); } );
+	connect(m_displayAttributeUnderlineCheckBox, &QCheckBox::checkStateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+5); } );
+#else
 	connect(m_displayAttributeBoxingCheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+2); } );
 	connect(m_displayAttributeConcealCheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+3); } );
 	connect(m_displayAttributeInvertCheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+4); } );
 	connect(m_displayAttributeUnderlineCheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+5); } );
+#endif
 
 	// Index 5 - Invoke Object
 	QHBoxLayout *invokeObjectLayout = new QHBoxLayout;
@@ -422,9 +433,15 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	fontStyleLayout->addWidget(m_fontStyleProportionalCheckBox);
 	fontStyleLayout->addWidget(m_fontStyleBoldCheckBox);
 	fontStyleLayout->addWidget(m_fontStyleItalicCheckBox);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(m_fontStyleProportionalCheckBox, &QCheckBox::checkStateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+1); } );
+	connect(m_fontStyleBoldCheckBox, &QCheckBox::checkStateChanged, this, [=](const int value) { updateModelFromCookedWidget((value == 2), Qt::UserRole+2);; } );
+	connect(m_fontStyleItalicCheckBox, &QCheckBox::checkStateChanged, this, [=](const int value) { updateModelFromCookedWidget((value == 2), Qt::UserRole+3); } );
+#else
 	connect(m_fontStyleProportionalCheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget((value == 2), Qt::UserRole+1); } );
 	connect(m_fontStyleBoldCheckBox, &QCheckBox::stateChanged, this, [=](const int value) { updateModelFromCookedWidget((value == 2), Qt::UserRole+2);; } );
 	connect(m_fontStyleItalicCheckBox, &QCheckBox::stateChanged, this, [=](const int value) { updateModelFromCookedWidget((value == 2), Qt::UserRole+3); } );
+#endif
 	m_fontStyleRowsSpinBox = new QSpinBox;
 	m_fontStyleRowsSpinBox->setRange(0, 7);
 	fontStyleLayout->addWidget(m_fontStyleRowsSpinBox);
@@ -454,7 +471,11 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 
 	m_terminationMarkerMoreFollowsCheckBox = new QCheckBox(tr("Objects follow"));
 	terminationMarkerLayout->addWidget(m_terminationMarkerMoreFollowsCheckBox);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+	connect(m_terminationMarkerMoreFollowsCheckBox, &QCheckBox::checkStateChanged, this, [=](const int value) {  updateModelFromCookedWidget(value != 2, Qt::UserRole+2); } );
+#else
 	connect(m_terminationMarkerMoreFollowsCheckBox, &QCheckBox::stateChanged, this, [=](const int value) {  updateModelFromCookedWidget(value != 2, Qt::UserRole+2); } );
+#endif
 
 
 	// Stack all the triplet parameter layouts together
