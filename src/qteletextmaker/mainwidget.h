@@ -48,6 +48,7 @@ public:
 	bool insertMode() const { return m_insertMode; };
 	void setInsertMode(bool insertMode);
 	bool showControlCodes() const { return m_pageRender.showControlCodes(); };
+	int flashTiming() const { return m_flashTiming; };
 
 	QSize sizeHint() { return QSize(480+(pageDecode()->leftSidePanelColumns()+pageDecode()->rightSidePanelColumns())*12, 250); }
 
@@ -68,7 +69,8 @@ public slots:
 	void setShowControlCodes(bool showControlCodes);
 	void setRenderMode(TeletextPageRender::RenderMode renderMode);
 	void updateFlashTimer(int newFlashTimer);
-	void pauseFlash(bool pauseNow);
+	void pauseFlash(int p);
+	void resumeFlash();
 
 	void setControlBit(int bitNumber, bool active);
 	void setDefaultCharSet(int newDefaultCharSet);

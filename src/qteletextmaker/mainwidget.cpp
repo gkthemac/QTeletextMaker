@@ -140,13 +140,18 @@ void TeletextWidget::timerEvent(QTimerEvent *event)
 		QWidget::timerEvent(event);
 }
 
-void TeletextWidget::pauseFlash(bool pauseNow)
+void TeletextWidget::pauseFlash(int p)
 {
-	if (pauseNow && m_flashTiming != 0) {
+	if (m_flashTiming != 0) {
 		m_flashTimer.stop();
-		m_flashPhase = 0;
+		m_flashPhase = p;
 		update();
-	} else if (m_flashTiming != 0)
+	}
+}
+
+void TeletextWidget::resumeFlash()
+{
+	if (m_flashTiming != 0)
 		m_flashTimer.start((m_flashTiming == 1) ? 500 : 167, this);
 }
 

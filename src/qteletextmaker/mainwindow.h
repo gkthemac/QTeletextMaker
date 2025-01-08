@@ -64,7 +64,7 @@ private slots:
 	void exportT42(bool fromAuto);
 	void exportZXNet();
 	void exportEditTF();
-	void exportPNG();
+	void exportImage();
 	void exportM29();
 	void updateRecentFileActions();
 	void updateExportAutoAction();
@@ -136,7 +136,7 @@ private:
 	QPushButton *m_insertModePushButton;
 	QRadioButton *m_levelRadioButton[4];
 
-	QString m_curFile, m_exportAutoFileName;
+	QString m_curFile, m_exportAutoFileName, m_exportImageFileName;
 	bool m_isUntitled;
 };
 

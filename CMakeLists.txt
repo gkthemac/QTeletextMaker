@@ -15,10 +15,12 @@ qt_standard_project_setup()
 
 add_subdirectory(src/qteletextdecoder)
 
+add_subdirectory(3rdparty/QtGifImage)
+
 file (GLOB SOURCES src/qteletextmaker/*.cpp)
 qt_add_executable(qteletextmaker ${SOURCES} src/qteletextmaker/actionicons.qrc)
 
-target_link_libraries(qteletextmaker PRIVATE qteletextdecoder Qt::Widgets)
+target_link_libraries(qteletextmaker PRIVATE QtGifImage::QtGifImage qteletextdecoder Qt::Widgets)
 
 set_target_properties(qteletextmaker PROPERTIES
 	WIN32_EXECUTABLE ON

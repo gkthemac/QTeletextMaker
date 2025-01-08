@@ -50,6 +50,8 @@
 #include "palettedockwidget.h"
 #include "x26dockwidget.h"
 
+#include "gifimage/qgifimage.h"
+
 MainWindow::MainWindow()
 {
 	init();
@@ -179,49 +181,132 @@ void MainWindow::reload()
 	m_textWidget->document()->selectSubPageIndex(subPageIndex, true);
 }
 
-void MainWindow::exportPNG()
+void MainWindow::exportImage()
 {
-	QString exportFileName = QFileDialog::getSaveFileName(this, tr("Export PNG"), QString(), "PNG image (*.png)");
+	QString exportFileName, selectedFilter, gifFilter;
+
+	if (!m_exportImageFileName.isEmpty())
+		exportFileName = m_exportImageFileName;
+	else {
+		// Image not exported before: suggest a filename with image extension
+		// If page has flashing, suggest GIF
+		exportFileName = m_curFile;
+		if (m_textWidget->flashTiming() != 0)
+			changeSuffixFromTTI(exportFileName, "gif");
+		else
+			changeSuffixFromTTI(exportFileName, "png");
+	}
+
+	if (m_textWidget->flashTiming() != 0)
+		gifFilter = "Animated GIF image (*.gif)";
+	else
+		gifFilter = "GIF image (*.gif)";
+
+	// Set the filter in the file dialog to the same as the current filename extension
+	if (QFileInfo(exportFileName).suffix().toLower() == "gif")
+		selectedFilter = gifFilter;
+	else
+		selectedFilter = "PNG image (*.png)";
+
+	exportFileName = QFileDialog::getSaveFileName(this, tr("Export image"), exportFileName, "PNG image (*.png);;" + gifFilter, &selectedFilter);
 	if (exportFileName.isEmpty())
 		return;
 
+	const QString suffix = QFileInfo(exportFileName).suffix().toLower();
+
+	if (suffix.isEmpty()) {
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("No filename extension specified."));
+		return;
+	} else if (suffix != "png" && suffix != "gif") {
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot export image of format %1.").arg(suffix));
+		return;
+	}
+
+	// Disable flash exporting if extension is not GIF
+	const int flashTiming = suffix == "gif" ? m_textWidget->flashTiming() : 0;
+
 	// Prepare widget image for extraction
-	m_textWidget->pauseFlash(true);
 	m_textScene->hideGUIElements(true);
 	// Disable exporting in Mix mode as it corrupts the background
 	bool reMix = m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderMix;
 	if (reMix)
 		m_textScene->setRenderMode(TeletextPageRender::RenderNormal);
 
-	// Extract the image from the scene
-	QImage interImage = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-//	This ought to make the background transparent in Mix mode, but it doesn't
-//	if (m_textWidget->pageDecode()->mix())
-//		interImage.fill(QColor(0, 0, 0, 0));
-	QPainter interPainter(&interImage);
-	m_textScene->render(&interPainter);
+	// Allocate initial image, with additional images for flashing if necessary
+	QImage interImage[6];
+
+	interImage[0] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+	if (flashTiming != 0) {
+		interImage[3] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+		if (flashTiming == 2) {
+			interImage[1] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+			interImage[2] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+			interImage[4] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+			interImage[5] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+		}
+	}
+
+	// Now extract the image(s) from the scene
+	for (int p=0; p<6; p++)
+		if (!interImage[p].isNull()) {
+			m_textWidget->pauseFlash(p);
+			//	This ought to make the background transparent in Mix mode, but it doesn't
+			//	if (m_textWidget->pageDecode()->mix())
+			//		interImage.fill(QColor(0, 0, 0, 0));
+			QPainter interPainter(&interImage[p]);
+			m_textScene->render(&interPainter);
+		}
 
 	// Now we've extracted the image we can put the GUI things back
 	m_textScene->hideGUIElements(false);
 	if (reMix)
 		m_textScene->setRenderMode(TeletextPageRender::RenderMix);
-	m_textWidget->pauseFlash(false);
+	m_textWidget->resumeFlash();
 
-	// Now scale the extracted image to the selected aspect ratio
-	// We do this in two steps so that anti-aliasing only occurs on vertical lines
+	// Now scale the extracted image(s) to the selected aspect ratio
+	QImage scaledImage[6];
 
-	// Double the vertical height first
-	const QImage doubleHeightImage = interImage.scaled(interImage.width(), interImage.height()*2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+	for (int p=0; p<6; p++)
+		if (!interImage[p].isNull())
+			if (m_viewAspectRatio == 3)
+				// Aspect ratio is Pixel 1:2 so we only need to double the vertical height
+				scaledImage[p] = interImage[p].scaled(interImage[p].width(), interImage[p].height()*2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+			else {
+				// Scale the image in two steps so that smoothing only occurs on vertical lines
+				// Double the vertical height first
+				const QImage doubleHeightImage = interImage[p].scaled(interImage[p].width(), interImage[p].height()*2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+				// then scale it horizontally to the selected aspect ratio
+				// Don't smooth GIF as it's bound to break the 256 colour limit
+				scaledImage[p] = doubleHeightImage.scaled((int)((float)doubleHeightImage.width() * aspectRatioHorizontalScaling[m_viewAspectRatio] * 2), doubleHeightImage.height(), Qt::IgnoreAspectRatio, (suffix == "gif") ? Qt::FastTransformation : Qt::SmoothTransformation);
+			}
 
-	// If aspect ratio is Pixel 1:2 we're already at the correct scale
-	if (m_viewAspectRatio != 3) {
-		// Scale it horizontally to the selected aspect ratio
-		const QImage scaledImage = doubleHeightImage.scaled((int)((float)doubleHeightImage.width() * aspectRatioHorizontalScaling[m_viewAspectRatio] * 2), doubleHeightImage.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	if (suffix == "png") {
+		if (scaledImage[0].save(exportFileName, "PNG"))
+			m_exportImageFileName = exportFileName;
+		else
+			QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot export image %1.").arg(QDir::toNativeSeparators(exportFileName)));
+	}
 
-		if (!scaledImage.save(exportFileName, "PNG"))
-			QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot export file %1.").arg(QDir::toNativeSeparators(exportFileName)));
-	} else if (!doubleHeightImage.save(exportFileName, "PNG"))
-		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot export file %1.").arg(QDir::toNativeSeparators(exportFileName)));
+	if (suffix == "gif") {
+		QGifImage gif(scaledImage[0].size());
+
+		if (scaledImage[3].isNull())
+			// No flashing
+			gif.addFrame(scaledImage[0], 0);
+		else if (interImage[1].isNull()) {
+			// 1Hz flashing
+			gif.addFrame(scaledImage[0], 500);
+			gif.addFrame(scaledImage[3], 500);
+		} else
+			// 2Hz flashing
+			for (int p=0; p<6; p++)
+				gif.addFrame(scaledImage[p], (p % 3 == 0) ? 166 : 167);
+
+		if (gif.save(exportFileName))
+			m_exportImageFileName = exportFileName;
+		else
+			QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot export image %1.").arg(QDir::toNativeSeparators(exportFileName)));
+	}
 }
 
 void MainWindow::exportZXNet()
@@ -391,9 +476,9 @@ void MainWindow::createActions()
 	exportEditTFAct->setStatusTip("Export and open this subpage in the edit.tf online editor");
 	connect(exportEditTFAct, &QAction::triggered, this, &MainWindow::exportEditTF);
 
-	QAction *exportPNGAct = fileMenu->addAction(tr("Export subpage as PNG..."));
-	exportPNGAct->setStatusTip("Export a PNG image of this subpage");
-	connect(exportPNGAct, &QAction::triggered, this, &MainWindow::exportPNG);
+	QAction *exportImageAct = fileMenu->addAction(tr("Export subpage as image..."));
+	exportImageAct->setStatusTip("Export an image of this subpage");
+	connect(exportImageAct, &QAction::triggered, this, &MainWindow::exportImage);
 
 	QAction *exportM29Act = fileMenu->addAction(tr("Export subpage X/28 as M/29..."));
 	exportM29Act->setStatusTip("Export this subpage's X/28 packets as a tti file with M/29 packets");
