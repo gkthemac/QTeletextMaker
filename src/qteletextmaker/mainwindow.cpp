@@ -190,11 +190,8 @@ void MainWindow::exportImage()
 	else {
 		// Image not exported before: suggest a filename with image extension
 		// If page has flashing, suggest GIF
-		exportFileName = m_curFile;
-		if (m_textWidget->flashTiming() != 0)
-			changeSuffixFromTTI(exportFileName, "gif");
-		else
-			changeSuffixFromTTI(exportFileName, "png");
+		exportFileName = m_curFile.left(m_curFile.lastIndexOf('.'));
+		exportFileName.append(m_textWidget->flashTiming() != 0 ? ".gif" : ".png");
 	}
 
 	if (m_textWidget->flashTiming() != 0)
