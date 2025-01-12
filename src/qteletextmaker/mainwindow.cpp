@@ -971,7 +971,7 @@ void MainWindow::readSettings()
 	m_viewBorder = (m_viewBorder < 0 || m_viewBorder > 2) ? 2 : m_viewBorder;
 	m_borderActs[m_viewBorder]->setChecked(true);
 	m_viewAspectRatio = settings.value("aspectratio", 0).toInt();
-	m_viewAspectRatio = (m_viewAspectRatio < 0 || m_viewAspectRatio > 2) ? 0 : m_viewAspectRatio;
+	m_viewAspectRatio = (m_viewAspectRatio < 0 || m_viewAspectRatio > 3) ? 0 : m_viewAspectRatio;
 	m_aspectRatioActs[m_viewAspectRatio]->setChecked(true);
 	m_viewSmoothTransform = settings.value("smoothTransform", 0).toBool();
 	m_smoothTransformAction->blockSignals(true);
