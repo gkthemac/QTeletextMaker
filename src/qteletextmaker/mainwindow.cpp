@@ -968,8 +968,8 @@ void MainWindow::readSettings()
 	const QByteArray geometry = settings.value("geometry", QByteArray()).toByteArray();
 	const QByteArray windowState = settings.value("windowState", QByteArray()).toByteArray();
 
-	m_viewBorder = settings.value("border", 2).toInt();
-	m_viewBorder = (m_viewBorder < 0 || m_viewBorder > 2) ? 2 : m_viewBorder;
+	m_viewBorder = settings.value("border", 1).toInt();
+	m_viewBorder = (m_viewBorder < 0 || m_viewBorder > 2) ? 1 : m_viewBorder;
 	m_borderActs[m_viewBorder]->setChecked(true);
 	m_viewAspectRatio = settings.value("aspectratio", 0).toInt();
 	m_viewAspectRatio = (m_viewAspectRatio < 0 || m_viewAspectRatio > 3) ? 0 : m_viewAspectRatio;
@@ -981,17 +981,17 @@ void MainWindow::readSettings()
 	m_viewZoom = settings.value("zoom", 2).toInt();
 	m_viewZoom = (m_viewZoom < 0 || m_viewZoom > 12) ? 2 : m_viewZoom;
 
-	// zoom 0 = 420,426px, 1 = 620,570px, 2 = 780,720px
+	// zoom 0 = 430,385px, 1 = 500,530px, 2 = 650,670px
 	if (geometry.isEmpty()) {
 		const QRect availableGeometry = QGuiApplication::primaryScreen()->availableGeometry();
-		if (availableGeometry.width() < 620 || availableGeometry.height() < 570) {
-			resize(430, 430);
+		if (availableGeometry.width() < 500 || availableGeometry.height() < 530) {
+			resize(430, 385);
 			m_viewZoom = 0;
-		} else if (availableGeometry.width() < 780 || availableGeometry.height() < 720) {
-			resize(620, 570);
+		} else if (availableGeometry.width() < 650 || availableGeometry.height() < 670) {
+			resize(500, 530);
 			m_viewZoom = 1;
 		} else
-			resize(780, 720);
+			resize(650, 670);
 //			m_viewZoom = 2;
 		move((availableGeometry.width() - width()) / 2, (availableGeometry.height() - height()) / 2);
 	} else
