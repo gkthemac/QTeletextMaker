@@ -957,8 +957,6 @@ void MainWindow::createStatusBar()
 	connect(m_levelRadioButton[1], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(1); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(false);});
 	connect(m_levelRadioButton[2], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(2); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(false);});
 	connect(m_levelRadioButton[3], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(3); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(true);});
-
-	statusBar()->showMessage(tr("Ready"));
 }
 
 void MainWindow::readSettings()
