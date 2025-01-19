@@ -52,7 +52,7 @@ public:
 
 	QSize sizeHint() { return QSize(480+(pageDecode()->leftSidePanelColumns()+pageDecode()->rightSidePanelColumns())*12, 250); }
 
-	void inputMethodEvent(QInputMethodEvent *event);
+	void inputMethodEvent(QInputMethodEvent *event) override;
 
 	TeletextDocument* document() const { return m_teletextDocument; }
 	TeletextPageDecode *pageDecode() { return &m_pageDecode; }

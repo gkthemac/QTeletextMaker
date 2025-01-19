@@ -264,7 +264,7 @@ void MainWindow::exportImage()
 	QImage scaledImage[6];
 
 	for (int p=0; p<6; p++)
-		if (!interImage[p].isNull())
+		if (!interImage[p].isNull()) {
 			if (m_viewAspectRatio == 3)
 				// Aspect ratio is Pixel 1:2 so we only need to double the vertical height
 				scaledImage[p] = interImage[p].scaled(interImage[p].width(), interImage[p].height()*2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
@@ -276,6 +276,7 @@ void MainWindow::exportImage()
 				// Don't smooth GIF as it's bound to break the 256 colour limit
 				scaledImage[p] = doubleHeightImage.scaled((int)((float)doubleHeightImage.width() * aspectRatioHorizontalScaling[m_viewAspectRatio] * 2), doubleHeightImage.height(), Qt::IgnoreAspectRatio, (suffix == "gif") ? Qt::FastTransformation : Qt::SmoothTransformation);
 			}
+		}
 
 	if (suffix == "png") {
 		if (scaledImage[0].save(exportFileName, "PNG"))

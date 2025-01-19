@@ -35,11 +35,11 @@ public:
 	int rowCount(const QModelIndex &parent = QModelIndex()) const override ;
 	int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-	bool setData(const QModelIndex &index, const QVariant &value, int role);
-	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-	bool insertRows(int position, int rows, const QModelIndex &parent);
+	bool setData(const QModelIndex &index, const QVariant &value, int role) override;
+	QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+	bool insertRows(int position, int rows, const QModelIndex &parent) override;
 	bool insertRows(int position, int rows, const QModelIndex &parent, X26Triplet triplet);
-	bool removeRows(int position, int rows, const QModelIndex &index);
+	bool removeRows(int position, int rows, const QModelIndex &index) override;
 //	Qt::ItemFlags flags(const QModelIndex &index) const;
 
 	// The x26commands classes manipulate the model but beginInsertRows and endInsertRows
