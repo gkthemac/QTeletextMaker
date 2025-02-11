@@ -41,15 +41,15 @@ public:
 
 	bool isEmpty() const override;
 
-	QByteArray packet(int packetNumber) const override;
-	QByteArray packet(int packetNumber, int designationCode) const override;
-	bool packetExists(int packetNumber) const override;
-	bool packetExists(int packetNumber, int designationCode) const override;
-	bool setPacket(int packetNumber, QByteArray packetContents) override;
-	bool setPacket(int packetNumber, int designationCode, QByteArray packetContents) override;
+	QByteArray packet(int y) const override;
+	QByteArray packet(int y, int d) const override;
+	bool packetExists(int y) const override;
+	bool packetExists(int y, int d) const override;
+	bool setPacket(int y, QByteArray pkt) override;
+	bool setPacket(int y, int d, QByteArray pkt) override;
 
-	bool controlBit(int bitNumber) const override;
-	bool setControlBit(int bitNumber, bool active) override;
+	bool controlBit(int b) const override;
+	bool setControlBit(int b, bool active) override;
 
 	void clearPage();
 

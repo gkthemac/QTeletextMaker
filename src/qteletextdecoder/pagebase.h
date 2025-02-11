@@ -35,21 +35,22 @@ public:
 
 	virtual bool isEmpty() const;
 
-	virtual QByteArray packet(int i) const;
-	virtual QByteArray packet(int i, int j) const;
-	virtual bool packetExists(int i) const { return m_displayPackets[i] != nullptr; }
-	virtual bool packetExists(int i, int j) const { return m_designationPackets[i-26][j] != nullptr; }
-	virtual bool setPacket(int i, QByteArray packetContents);
-	virtual bool setPacket(int i, int j, QByteArray packetContents);
-//	bool deletePacket(int);
-//	bool deletePacket(int, int);
+	virtual QByteArray packet(int y) const;
+	virtual QByteArray packet(int y, int d) const;
+	virtual bool packetExists(int y) const { return m_displayPackets[y] != nullptr; }
+	virtual bool packetExists(int y, int d) const { return m_designationPackets[y-26][d] != nullptr; }
+	virtual bool setPacket(int y, QByteArray packet);
+	virtual bool setPacket(int y, int d, QByteArray pkt);
+//	bool clearPacket(int y);
+//	bool clearPacket(int y, int d);
+//	void clearAllPackets();
 
-	virtual bool controlBit(int bitNumber) const { return m_controlBits[bitNumber]; }
-	virtual bool setControlBit(int bitNumber, bool active);
+	virtual bool controlBit(int b) const { return m_controlBits[b]; }
+	virtual bool setControlBit(int b, bool active);
 
 private:
 	bool m_controlBits[11];
-	QByteArray *m_displayPackets[26], *m_designationPackets[4][16];
+	QByteArray *m_displayPackets[26], *m_designationPackets[3][16];
 };
 
 #endif
