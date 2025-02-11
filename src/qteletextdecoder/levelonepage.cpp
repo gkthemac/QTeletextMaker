@@ -91,7 +91,7 @@ QByteArray LevelOnePage::packet(int y) const
 		return result;
 	}
 
-	return PageBase::packet(y);
+	return PageX26Base::packet(y);
 }
 
 QByteArray LevelOnePage::packet(int y, int d) const
@@ -157,7 +157,7 @@ QByteArray LevelOnePage::packet(int y, int d) const
 		return result;
 	}
 
-	return PageBase::packet(y, d);
+	return PageX26Base::packet(y, d);
 }
 
 bool LevelOnePage::setPacket(int y, QByteArray pkt)
@@ -170,7 +170,7 @@ bool LevelOnePage::setPacket(int y, QByteArray pkt)
 
 	qDebug("LevelOnePage unhandled setPacket X/%d", y);
 	// BUG can't store unhandled packets as default copy constructor uses pointers
-	//return PageBase::setPacket(y, pkt);
+	//return PageX26Base::setPacket(y, pkt);
 	return false;
 }
 
@@ -239,7 +239,7 @@ bool LevelOnePage::setPacket(int y, int d, QByteArray pkt)
 
 	qDebug("LevelOnePage unhandled setPacket X/%d/%d", y, d);
 	// BUG can't store unhandled packets as default copy constructor uses pointers
-	//return PageBase::setPacket(y, d, pkt);
+	//return PageX26Base::setPacket(y, d, pkt);
 	return false;
 }
 
@@ -252,7 +252,7 @@ bool LevelOnePage::packetExists(int y) const
 		return false;
 	}
 
-	return PageBase::packetExists(y);
+	return PageX26Base::packetExists(y);
 }
 
 bool LevelOnePage::packetExists(int y, int d) const
@@ -287,7 +287,7 @@ bool LevelOnePage::packetExists(int y, int d) const
 			return !isPaletteDefault(0, 15);
 	}
 
-	return PageBase::packetExists(y, d);
+	return PageX26Base::packetExists(y, d);
 }
 
 bool LevelOnePage::controlBit(int b) const
@@ -300,7 +300,7 @@ bool LevelOnePage::controlBit(int b) const
 		case C14NOS:
 			return (m_defaultNOS & 4) == 4;
 		default:
-			return PageBase::controlBit(b);
+			return PageX26Base::controlBit(b);
 	}
 }
 
@@ -323,7 +323,7 @@ bool LevelOnePage::setControlBit(int b, bool active)
 				m_defaultNOS |= 0x04;
 			return true;
 		default:
-			return PageBase::setControlBit(b, active);
+			return PageX26Base::setControlBit(b, active);
 	}
 }
 
