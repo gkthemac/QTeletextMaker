@@ -36,6 +36,7 @@ public:
 	enum CycleTypeEnum { CTcycles, CTseconds };
 
 	LevelOnePage();
+	// BUG this copy constructor isn't used? Parameter should be LevelOnePage
 	LevelOnePage(const PageBase &other);
 
 	bool isEmpty() const override;

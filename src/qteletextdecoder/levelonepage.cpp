@@ -33,6 +33,7 @@ LevelOnePage::LevelOnePage()
 	clearPage();
 }
 
+// BUG this copy constructor isn't used? Parameter should be LevelOnePage
 LevelOnePage::LevelOnePage(const PageBase &other)
 {
 	m_enhancements.reserve(maxEnhancements());
@@ -186,7 +187,9 @@ bool LevelOnePage::setPacket(int packetNumber, QByteArray packetContents)
 	}
 
 	qDebug("LevelOnePage unhandled setPacket X/%d", packetNumber);
-	return PageBase::setPacket(packetNumber, packetContents);
+	// BUG can't store unhandled packets as default copy constructor uses pointers
+	//return PageBase::setPacket(packetNumber, packetContents);
+	return false;
 }
 
 bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
@@ -253,7 +256,9 @@ bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray p
 	}
 
 	qDebug("LevelOnePage unhandled setPacket X/%d/%d", packetNumber, designationCode);
-	return PageBase::setPacket(packetNumber, designationCode, packetContents);
+	// BUG can't store unhandled packets as default copy constructor uses pointers
+	//return PageBase::setPacket(packetNumber, designationCode, packetContents);
+	return false;
 }
 
 bool LevelOnePage::packetExists(int packetNumber) const
