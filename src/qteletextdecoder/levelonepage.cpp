@@ -33,24 +33,6 @@ LevelOnePage::LevelOnePage()
 	clearPage();
 }
 
-// BUG this copy constructor isn't used? Parameter should be LevelOnePage
-LevelOnePage::LevelOnePage(const PageBase &other)
-{
-	m_enhancements.reserve(maxEnhancements());
-	clearPage();
-
-	for (int y=0; y<26; y++)
-		if (other.packetExists(y))
-			setPacket(y, other.packet(y));
-	for (int y=26; y<29; y++)
-		for (int d=0; d<16; d++)
-			if (other.packetExists(y, d))
-				setPacket(y, d, other.packet(y, d));
-
-	for (int b=PageBase::C4ErasePage; b<=PageBase::C14NOS; b++)
-		setControlBit(b, other.controlBit(b));
-}
-
 // So far we only call clearPage() once, within the constructor
 void LevelOnePage::clearPage()
 {
