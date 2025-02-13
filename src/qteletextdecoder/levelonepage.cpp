@@ -169,9 +169,7 @@ bool LevelOnePage::setPacket(int y, QByteArray pkt)
 	}
 
 	qDebug("LevelOnePage unhandled setPacket X/%d", y);
-	// BUG can't store unhandled packets as default copy constructor uses pointers
-	//return PageX26Base::setPacket(y, pkt);
-	return false;
+	return PageX26Base::setPacket(y, pkt);
 }
 
 bool LevelOnePage::setPacket(int y, int d, QByteArray pkt)
@@ -238,9 +236,7 @@ bool LevelOnePage::setPacket(int y, int d, QByteArray pkt)
 	}
 
 	qDebug("LevelOnePage unhandled setPacket X/%d/%d", y, d);
-	// BUG can't store unhandled packets as default copy constructor uses pointers
-	//return PageX26Base::setPacket(y, d, pkt);
-	return false;
+	return PageX26Base::setPacket(y, d, pkt);
 }
 
 bool LevelOnePage::packetExists(int y) const
