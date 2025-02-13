@@ -33,18 +33,19 @@ class LevelOnePage : public PageX26Base //: public QObject
 	//Q_OBJECT
 
 public:
+	using PageX26Base::packet;
+	using PageX26Base::setPacket;
+	using PageX26Base::packetExists;
+
 	enum CycleTypeEnum { CTcycles, CTseconds };
 
 	LevelOnePage();
 
 	bool isEmpty() const override;
 
-	QByteArray packet(int y) const override;
 	QByteArray packet(int y, int d) const override;
-	bool packetExists(int y) const override;
-	bool packetExists(int y, int d) const override;
-	bool setPacket(int y, QByteArray pkt) override;
 	bool setPacket(int y, int d, QByteArray pkt) override;
+	bool packetExists(int y, int d) const override;
 
 	bool controlBit(int b) const override;
 	bool setControlBit(int b, bool active) override;
@@ -66,8 +67,8 @@ public:
 	void setSecondCharSet(int newSecondCharSet);
 	int secondNOS() const { return m_secondNOS; }
 	void setSecondNOS(int newSecondNOS);
-	unsigned char character(int row, int column) const { return m_level1Page[row][column]; }
-	void setCharacter(int row, int column, unsigned char newCharacter);
+	unsigned char character(int r, int c) const { return PageX26Base::packetExists(r) ? PageX26Base::packet(r).at(c) : 0x20; }
+	void setCharacter(int r, int c, unsigned char newChar);
 	int defaultScreenColour() const { return m_defaultScreenColour; }
 	void setDefaultScreenColour(int newDefaultScreenColour);
 	int defaultRowColour() const { return m_defaultRowColour; }
@@ -104,7 +105,6 @@ public:
 	void setComposeLinkSubPageCodes(int linkNumber, int newSubPageCodes);
 
 private:
-	unsigned char m_level1Page[25][40];
 /*	int m_subPageNumber; */
 	int m_cycleValue;
 	CycleTypeEnum m_cycleType;

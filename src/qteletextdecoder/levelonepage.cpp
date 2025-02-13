@@ -36,9 +36,6 @@ LevelOnePage::LevelOnePage()
 // So far we only call clearPage() once, within the constructor
 void LevelOnePage::clearPage()
 {
-	for (int r=0; r<25; r++)
-		for (int c=0; c<40; c++)
-			m_level1Page[r][c] = 0x20;
 	for (int b=C4ErasePage; b<=C14NOS; b++)
 		setControlBit(b, false);
 	for (int i=0; i<8; i++)
@@ -74,24 +71,10 @@ bool LevelOnePage::isEmpty() const
 		return false;
 
 	for (int r=0; r<25; r++)
-		for (int c=0; c<40; c++)
-			if (m_level1Page[r][c] != 0x20)
-				return false;
+		if (!PageX26Base::packet(r).isEmpty())
+			return false;
 
 	return true;
-}
-
-QByteArray LevelOnePage::packet(int y) const
-{
-	QByteArray result(40, 0x00);
-
-	if (y <= 24) {
-		for (int c=0; c<40; c++)
-			result[c] = m_level1Page[y][c];
-		return result;
-	}
-
-	return PageX26Base::packet(y);
 }
 
 QByteArray LevelOnePage::packet(int y, int d) const
@@ -160,17 +143,15 @@ QByteArray LevelOnePage::packet(int y, int d) const
 	return PageX26Base::packet(y, d);
 }
 
+/*
 bool LevelOnePage::setPacket(int y, QByteArray pkt)
 {
-	if (y <= 24) {
-		for (int c=0; c<40; c++)
-			m_level1Page[y][c] = pkt.at(c);
-		return true;
-	}
+	if (y == 25)
+		qDebug("LevelOnePage unhandled setPacket X/25");
 
-	qDebug("LevelOnePage unhandled setPacket X/%d", y);
 	return PageX26Base::setPacket(y, pkt);
 }
+*/
 
 bool LevelOnePage::setPacket(int y, int d, QByteArray pkt)
 {
@@ -237,18 +218,6 @@ bool LevelOnePage::setPacket(int y, int d, QByteArray pkt)
 
 	qDebug("LevelOnePage unhandled setPacket X/%d/%d", y, d);
 	return PageX26Base::setPacket(y, d, pkt);
-}
-
-bool LevelOnePage::packetExists(int y) const
-{
-	if (y <= 24) {
-		for (int c=0; c<40; c++)
-			if (m_level1Page[y][c] != 0x20)
-				return true;
-		return false;
-	}
-
-	return PageX26Base::packetExists(y);
 }
 
 bool LevelOnePage::packetExists(int y, int d) const
@@ -341,7 +310,27 @@ void LevelOnePage::setSecondCharSet(int newSecondCharSet)
 }
 
 void LevelOnePage::setSecondNOS(int newSecondNOS) { m_secondNOS = newSecondNOS; }
-void LevelOnePage::setCharacter(int row, int column, unsigned char newCharacter) { m_level1Page[row][column] = newCharacter; }
+
+void LevelOnePage::setCharacter(int r, int c, unsigned char newCharacter)
+{
+	QByteArray pkt;
+
+	if (!packetExists(r)) {
+		if (newCharacter == 0x20)
+			return;
+		pkt = QByteArray(40, 0x20);
+		pkt[c] = newCharacter;
+		setPacket(r, pkt);
+	} else {
+		pkt = packet(r);
+		pkt[c] = newCharacter;
+		if (pkt == QByteArray(40, 0x20))
+			clearPacket(r);
+		else
+			setPacket(r, pkt);
+	}
+}
+
 void LevelOnePage::setDefaultScreenColour(int newDefaultScreenColour) { m_defaultScreenColour = newDefaultScreenColour; }
 void LevelOnePage::setDefaultRowColour(int newDefaultRowColour) { m_defaultRowColour = newDefaultRowColour; }
 void LevelOnePage::setColourTableRemap(int newColourTableRemap) { m_colourTableRemap = newColourTableRemap; }
