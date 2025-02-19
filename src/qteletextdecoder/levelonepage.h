@@ -47,7 +47,6 @@ public:
 	bool setPacket(int y, int d, QByteArray pkt) override;
 	bool packetExists(int y, int d) const override;
 
-	bool controlBit(int b) const override;
 	bool setControlBit(int b, bool active) override;
 
 	void clearPage();

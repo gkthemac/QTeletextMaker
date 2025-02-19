@@ -255,41 +255,27 @@ bool LevelOnePage::packetExists(int y, int d) const
 	return PageX26Base::packetExists(y, d);
 }
 
-bool LevelOnePage::controlBit(int b) const
-{
-	switch (b) {
-		case C12NOS:
-			return (m_defaultNOS & 1) == 1;
-		case C13NOS:
-			return (m_defaultNOS & 2) == 2;
-		case C14NOS:
-			return (m_defaultNOS & 4) == 4;
-		default:
-			return PageX26Base::controlBit(b);
-	}
-}
-
 bool LevelOnePage::setControlBit(int b, bool active)
 {
 	switch (b) {
 		case C12NOS:
-			m_defaultNOS &= 0x06;
+			m_defaultNOS &= 0x6;
 			if (active)
-				m_defaultNOS |= 0x01;
-			return true;
+				m_defaultNOS |= 0x1;
+			break;
 		case C13NOS:
-			m_defaultNOS &= 0x05;
+			m_defaultNOS &= 0x5;
 			if (active)
-				m_defaultNOS |= 0x02;
-			return true;
+				m_defaultNOS |= 0x2;
+			break;
 		case C14NOS:
-			m_defaultNOS &= 0x03;
+			m_defaultNOS &= 0x3;
 			if (active)
-				m_defaultNOS |= 0x04;
-			return true;
-		default:
-			return PageX26Base::setControlBit(b, active);
+				m_defaultNOS |= 0x4;
+			break;
 	}
+
+	return PageX26Base::setControlBit(b, active);
 }
 
 /* void LevelOnePage::setSubPageNumber(int newSubPageNumber) { m_subPageNumber = newSubPageNumber; } */
@@ -300,6 +286,10 @@ void LevelOnePage::setDefaultCharSet(int newDefaultCharSet) { m_defaultCharSet =
 void LevelOnePage::setDefaultNOS(int defaultNOS)
 {
 	m_defaultNOS = defaultNOS;
+
+	PageX26Base::setControlBit(C12NOS, m_defaultNOS & 0x1);
+	PageX26Base::setControlBit(C13NOS, m_defaultNOS & 0x2);
+	PageX26Base::setControlBit(C14NOS, m_defaultNOS & 0x4);
 }
 
 void LevelOnePage::setSecondCharSet(int newSecondCharSet)
