@@ -190,10 +190,12 @@ void SaveTTIFormat::writeSubPageStart(const PageBase &subPage, int subPageNumber
 
 	writeString(QString("PS,%1").arg(0x8000 | statusBits, 4, 16, QChar('0')));
 
-	if (m_document->pageFunction() == TeletextDocument::PFLevelOnePage)
+	if (m_document->pageFunction() == TeletextDocument::PFLevelOnePage) {
+		// Level One Page: page region and cycle
+		writeString(QString("RE,%1").arg(static_cast<const LevelOnePage *>(&subPage)->defaultCharSet()));
 		writeString(QString("CT,%1,%2").arg(static_cast<const LevelOnePage *>(&subPage)->cycleValue()).arg(static_cast<const LevelOnePage *>(&subPage)->cycleType()==LevelOnePage::CTcycles ? 'C' : 'T'));
-	else
-		// X/28/0 specifies page function and coding but the PF command
+	} else
+		// Not a Level One Page: X/28/0 specifies page function and coding but the PF command
 		// should make it obvious to a human that this is not a Level One Page
 		writeString(QString("PF,%1,%2").arg(m_document->pageFunction()).arg(m_document->packetCoding()));
 }

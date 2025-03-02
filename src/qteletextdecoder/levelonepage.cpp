@@ -297,7 +297,7 @@ bool LevelOnePage::packetExists(int packetNumber, int designationCode) const
 
 	if (packetNumber == 28) {
 		if (designationCode == 0) {
-			if (m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf)
+			if (m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour != 0 || m_defaultRowColour != 0 || m_blackBackgroundSubst || m_colourTableRemap != 0 || m_secondCharSet != 0xf)
 				return true;
 			return !isPaletteDefault(16, 31);
 		}

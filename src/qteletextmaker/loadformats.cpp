@@ -79,6 +79,12 @@ bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document)
 				loadingPage->setDefaultNOS(((pageStatusRead & 0x0200) >> 9) | ((pageStatusRead & 0x0100) >> 7) | ((pageStatusRead & 0x0080) >> 5));
 			}
 		}
+		if (inLine.startsWith("RE,")) {
+			bool regionValueOk;
+			int regionValueRead = inLine.remove(0, 3).toInt(&regionValueOk);
+			if (regionValueOk)
+				loadingPage->setDefaultCharSet(regionValueRead);
+		}
 		if (inLine.startsWith("CT,") && (inLine.endsWith(",C") || inLine.endsWith(",T"))) {
 			bool cycleValueOk;
 			int cycleValueRead = inLine.mid(3, inLine.size()-5).toInt(&cycleValueOk);
