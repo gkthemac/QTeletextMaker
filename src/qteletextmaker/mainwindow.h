@@ -30,11 +30,13 @@
 #include <QSlider>
 #include <QToolButton>
 
+#include "loadformats.h"
 #include "mainwidget.h"
 #include "pagecomposelinksdockwidget.h"
 #include "pageenhancementsdockwidget.h"
 #include "pageoptionsdockwidget.h"
 #include "palettedockwidget.h"
+#include "saveformats.h"
 #include "x26dockwidget.h"
 
 class QAction;
@@ -61,7 +63,7 @@ private slots:
 	bool saveAs();
 	void reload();
 	void exportAuto();
-	void exportT42(bool fromAuto);
+	void exportFile(bool fromAuto);
 	void exportZXNet();
 	void exportEditTF();
 	void exportImage();
@@ -138,6 +140,9 @@ private:
 
 	QString m_curFile, m_exportAutoFileName, m_exportImageFileName;
 	bool m_isUntitled;
+
+	LoadFormats m_loadFormats;
+	SaveFormats m_saveFormats;
 };
 
 #endif

@@ -41,13 +41,15 @@
 
 #include "mainwindow.h"
 
+#include "hashformats.h"
 #include "levelonecommands.h"
-#include "loadsave.h"
+#include "loadformats.h"
 #include "mainwidget.h"
 #include "pagecomposelinksdockwidget.h"
 #include "pageenhancementsdockwidget.h"
 #include "pageoptionsdockwidget.h"
 #include "palettedockwidget.h"
+#include "saveformats.h"
 #include "x26dockwidget.h"
 
 #include "gifimage/qgifimage.h"
@@ -84,7 +86,7 @@ void MainWindow::newFile()
 
 void MainWindow::open()
 {
-	const QString fileName = QFileDialog::getOpenFileName(this);
+	const QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QString(), m_loadFormats.filters());
 	if (!fileName.isEmpty())
 		openFile(fileName);
 }
@@ -114,39 +116,37 @@ void MainWindow::openFile(const QString &fileName)
 	other->show();
 }
 
-static inline bool hasTTISuffix(const QString &filename)
-{
-	return filename.endsWith(".tti", Qt::CaseInsensitive) || filename.endsWith(".ttix", Qt::CaseInsensitive);
-}
-
-static inline void changeSuffixFromTTI(QString &filename, const QString &newSuffix)
-{
-	if (filename.endsWith(".tti", Qt::CaseInsensitive)) {
-		filename.chop(4);
-		filename.append("." + newSuffix);
-	} else if (filename.endsWith(".ttix", Qt::CaseInsensitive)) {
-		filename.chop(5);
-		filename.append("." + newSuffix);
-	}
-}
-
 bool MainWindow::save()
 {
-	// If imported from non-.tti, force "Save As" so we don't clobber the original imported file
-	return m_isUntitled || !hasTTISuffix(m_curFile) ? saveAs() : saveFile(m_curFile);
+	// If imported from a format we only export, force "Save As" so we don't clobber the original imported file
+	if (m_isUntitled || m_saveFormats.isExportOnly(QFileInfo(m_curFile).suffix()))
+		return saveAs();
+	else
+		return saveFile(m_curFile);
 }
 
 bool MainWindow::saveAs()
 {
 	QString suggestedName = m_curFile;
 
-	// If imported from non-.tti, change extension so we don't clobber the original imported file
-	if (suggestedName.endsWith(".t42", Qt::CaseInsensitive)) {
-		suggestedName.chop(4);
+	// If imported from a format we only export, change suffix so we don't clobber the original imported file
+	if (m_saveFormats.isExportOnly(QFileInfo(suggestedName).suffix())) {
+		const int pos = suggestedName.lastIndexOf(QChar('.'));
+		if (pos != -1)
+			suggestedName.truncate(pos);
+
 		suggestedName.append(".tti");
 	}
 
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), suggestedName, "TTI teletext page (*.tti *.ttix)");
+	// Set the filter in the file dialog to the same as the current filename extension
+	QString dialogFilter;
+
+	SaveFormat *savingFormat = m_saveFormats.findExportFormat(QFileInfo(suggestedName).suffix());
+
+	if (savingFormat != nullptr)
+		dialogFilter = savingFormat->fileDialogFilter();
+
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), suggestedName, m_saveFormats.filters(), &dialogFilter);
 	if (fileName.isEmpty())
 		return false;
 
@@ -461,9 +461,9 @@ void MainWindow::createActions()
 	connect(fileMenu, &QMenu::aboutToShow, this, &MainWindow::updateExportAutoAction);
 	connect(m_exportAutoAct, &QAction::triggered, this, &MainWindow::exportAuto);
 
-	QAction *exportT42Act = fileMenu->addAction(tr("Export subpage as t42..."));
-	exportT42Act->setStatusTip("Export this subpage as a t42 file");
-	connect(exportT42Act, &QAction::triggered, this, [=]() { exportT42(false); });
+	QAction *exportFileAct = fileMenu->addAction(tr("Export subpage as..."));
+	exportFileAct->setStatusTip("Export this subpage to various formats");
+	connect(exportFileAct, &QAction::triggered, this, [=]() { exportFile(false); });
 
 	QMenu *exportHashStringSubMenu = fileMenu->addMenu(tr("Export subpage to online editor"));
 
@@ -1043,27 +1043,36 @@ void MainWindow::loadFile(const QString &fileName)
 
 	QFile file(fileName);
 	const QFileInfo fileInfo(file);
-	QIODevice::OpenMode fileOpenMode;
 
-	if (fileInfo.suffix() == "t42")
-		fileOpenMode = QFile::ReadOnly;
-	else
-		fileOpenMode = QFile::ReadOnly | QFile::Text;
+	LoadFormat *loadingFormat = m_loadFormats.findFormat(QFileInfo(fileName).suffix());
+	if (loadingFormat == nullptr) {
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot load file %1:\nUnknown file format or extension").arg(QDir::toNativeSeparators(fileName)));
+		setCurrentFile(QString());
 
-	if (!file.open(fileOpenMode)) {
+		return;
+	}
+
+	if (!file.open(QFile::ReadOnly)) {
 		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
 		setCurrentFile(QString());
+
 		return;
 	}
 
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 
-	if (fileInfo.suffix() == "t42") {
-		importT42(&file, m_textWidget->document());
-		m_exportAutoFileName = fileName;
+	if (loadingFormat->load(&file, m_textWidget->document())) {
+		// TODO put "native format" into class?
+		if (fileInfo.suffix() == "tti" || fileInfo.suffix() == "ttix")
+			m_exportAutoFileName.clear();
+		else
+			m_exportAutoFileName = fileName;
 	} else {
-		loadTTI(&file, m_textWidget->document());
-		m_exportAutoFileName.clear();
+		QApplication::restoreOverrideCursor();
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot load file %1\n%2").arg(QDir::toNativeSeparators(fileName), loadingFormat->errorString()));
+		setCurrentFile(QString());
+
+		return;
 	}
 
 	levelSeen = m_textWidget->document()->levelRequired();
@@ -1074,6 +1083,9 @@ void MainWindow::loadFile(const QString &fileName)
 	updatePageWidgets();
 
 	QApplication::restoreOverrideCursor();
+
+	if (!loadingFormat->warningStrings().isEmpty())
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("The following issues were encountered when loading<br>%1:<ul><li>%2</li></ul>").arg(QDir::toNativeSeparators(fileName), loadingFormat->warningStrings().join("</li><li>")));
 
 	setCurrentFile(fileName);
 	statusBar()->showMessage(tr("File loaded"), 2000);
@@ -1172,14 +1184,23 @@ bool MainWindow::saveFile(const QString &fileName)
 {
 	QString errorMessage;
 
+	SaveFormat *savingFormat = m_saveFormats.findFormat(QFileInfo(fileName).suffix());
+	if (savingFormat == nullptr) {
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot save file %1:\nUnknown file format or extension").arg(QDir::toNativeSeparators(fileName)));
+		return false;
+	}
+
 	QApplication::setOverrideCursor(Qt::WaitCursor);
+
 	QSaveFile file(fileName);
-	if (file.open(QFile::WriteOnly | QFile::Text)) {
-		saveTTI(file, *m_textWidget->document());
+	if (file.open(QFile::WriteOnly)) {
+		savingFormat->saveAllPages(file, *m_textWidget->document());
+
 		if (!file.commit())
 			errorMessage = tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString());
 	} else
 		errorMessage = tr("Cannot open file %1 for writing:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString());
+
 	QApplication::restoreOverrideCursor();
 
 	if (!errorMessage.isEmpty()) {
@@ -1198,33 +1219,61 @@ void MainWindow::exportAuto()
 	if (m_exportAutoFileName.isEmpty())
 		return;
 
-	exportT42(true);
+	exportFile(true);
 }
 
-void MainWindow::exportT42(bool fromAuto)
+void MainWindow::exportFile(bool fromAuto)
 {
 	QString errorMessage;
 	QString exportFileName;
+	SaveFormat *exportFormat = nullptr;
 
 	if (fromAuto)
 		exportFileName = m_exportAutoFileName;
 	else {
-		exportFileName = m_curFile;
-		changeSuffixFromTTI(exportFileName, "t42");
+		if (m_exportAutoFileName.isEmpty())
+			exportFileName = m_curFile;
+		else
+			exportFileName = m_exportAutoFileName;
 
-		exportFileName = QFileDialog::getSaveFileName(this, tr("Export t42"), exportFileName, "t42 stream (*.t42)");
+		// Set the filter in the file dialog to the same as the current filename extension
+		QString dialogFilter;
+
+		exportFormat = m_saveFormats.findExportFormat(QFileInfo(exportFileName).suffix());
+
+		if (exportFormat != nullptr)
+			dialogFilter = exportFormat->fileDialogFilter();
+
+		exportFileName = QFileDialog::getSaveFileName(this, tr("Export subpage"), exportFileName, m_saveFormats.exportFilters(), &dialogFilter);
 		if (exportFileName.isEmpty())
 			return;
 	}
 
+	exportFormat = m_saveFormats.findExportFormat(QFileInfo(exportFileName).suffix());
+	if (exportFormat == nullptr) {
+		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot export file %1:\nUnknown file format or extension").arg(QDir::toNativeSeparators(exportFileName)));
+		return;
+	}
+
+	if (!fromAuto && exportFormat->getWarnings(*m_textWidget->document()->currentSubPage())) {
+		const QMessageBox::StandardButton ret = QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("The following issues will be encountered when exporting<br>%1:<ul><li>%2</li></ul>Do you want to export?").arg(strippedName(exportFileName)).arg(exportFormat->warningStrings().join("</li><li>")), QMessageBox::Yes | QMessageBox::No);
+
+		if (ret != QMessageBox::Yes)
+			return;
+	}
+
 	QApplication::setOverrideCursor(Qt::WaitCursor);
+
 	QSaveFile file(exportFileName);
+
 	if (file.open(QFile::WriteOnly)) {
-		exportT42File(file, *m_textWidget->document());
+		exportFormat->saveCurrentSubPage(file, *m_textWidget->document());
+
 		if (!file.commit())
 			errorMessage = tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
 	} else
-		errorMessage = tr("Cannot open file %1 for writing:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
+			errorMessage = tr("Cannot open file %1 for writing:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
+
 	QApplication::restoreOverrideCursor();
 
 	if (!errorMessage.isEmpty()) {
@@ -1271,18 +1320,23 @@ void MainWindow::exportM29()
 		exportFileName = QDir(QFileInfo(m_curFile).absoluteDir()).filePath(exportFileName);
 	}
 
-	exportFileName = QFileDialog::getSaveFileName(this, tr("Export M/29 tti"), exportFileName, "TTI teletext page (*.tti *.ttix)");
+	exportFileName = QFileDialog::getSaveFileName(this, tr("Export M/29 tti"), exportFileName, "MRG Systems TTI (*.tti *.ttix)");
 	if (exportFileName.isEmpty())
 		return;
 
 	QApplication::setOverrideCursor(Qt::WaitCursor);
+
 	QSaveFile file(exportFileName);
-	if (file.open(QFile::WriteOnly | QFile::Text)) {
-		exportM29File(file, *m_textWidget->document());
+	if (file.open(QFile::WriteOnly)) {
+		SaveM29Format saveM29Format;
+
+		saveM29Format.saveCurrentSubPage(file, *m_textWidget->document());
+
 		if (!file.commit())
 			errorMessage = tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
 	} else
 		errorMessage = tr("Cannot open file %1 for writing:\n%2.").arg(QDir::toNativeSeparators(exportFileName), file.errorString());
+
 	QApplication::restoreOverrideCursor();
 
 	if (!errorMessage.isEmpty())
