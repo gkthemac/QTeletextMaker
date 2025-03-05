@@ -43,11 +43,13 @@ public:
 	QString fileDialogFilter() const { return QString(description() + " (*." + extensions().join(" *.") + ')'); };
 	QStringList warningStrings() const { return m_warnings; };
 	QString errorString() const { return m_error; };
+	bool reExportWarning() const { return m_reExportWarning; };
 
 protected:
 	TeletextDocument const *m_document;
 	QStringList m_warnings;
 	QString m_error;
+	bool m_reExportWarning = false;
 };
 
 class LoadTTIFormat : public LoadFormat

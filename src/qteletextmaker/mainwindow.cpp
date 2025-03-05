@@ -332,6 +332,7 @@ void MainWindow::init()
 	setAttribute(Qt::WA_DeleteOnClose);
 
 	m_isUntitled = true;
+	m_reExportWarning = false;
 
 	m_textWidget = new TeletextWidget;
 
@@ -1087,6 +1088,8 @@ void MainWindow::loadFile(const QString &fileName)
 	if (!loadingFormat->warningStrings().isEmpty())
 		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("The following issues were encountered when loading<br>%1:<ul><li>%2</li></ul>").arg(QDir::toNativeSeparators(fileName), loadingFormat->warningStrings().join("</li><li>")));
 
+	m_reExportWarning = loadingFormat->reExportWarning();
+
 	setCurrentFile(fileName);
 	statusBar()->showMessage(tr("File loaded"), 2000);
 }
@@ -1228,9 +1231,14 @@ void MainWindow::exportFile(bool fromAuto)
 	QString exportFileName;
 	SaveFormat *exportFormat = nullptr;
 
-	if (fromAuto)
+	if (fromAuto) {
+		if (m_reExportWarning) {
+			QMessageBox::StandardButton ret = QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Will not overwrite imported file %1:\nAll other subpages in that file would be erased.\nPlease save or export to a different file.").arg(strippedName(m_exportAutoFileName)));
+
+			return;
+		}
 		exportFileName = m_exportAutoFileName;
-	else {
+	} else {
 		if (m_exportAutoFileName.isEmpty())
 			exportFileName = m_curFile;
 		else
@@ -1284,6 +1292,7 @@ void MainWindow::exportFile(bool fromAuto)
 	MainWindow::prependToRecentFiles(exportFileName);
 
 	m_exportAutoFileName = exportFileName;
+	m_reExportWarning = false;
 	statusBar()->showMessage(tr("File exported"), 2000);
 }
 

@@ -206,6 +206,7 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document)
 
 	m_warnings.clear();
 	m_error.clear();
+	m_reExportWarning = false;
 
 	for (;;) {
 		if (!readPacket())
@@ -247,6 +248,7 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document)
 				if (readPageNumber != foundPageNumber) {
 					// More than one page in .t42 file - end of current page reached
 					m_warnings.append("More than one page in .t42 file, only first full page loaded.");
+					m_reExportWarning = true;
 					break;
 				}
 				// Could get here if X/0 with same page number was found with no body packets inbetween
@@ -421,6 +423,7 @@ bool LoadEP1Format::load(QFile *inFile, TeletextDocument *document)
 {
 	m_warnings.clear();
 	m_error.clear();
+	m_reExportWarning = false;
 
 	unsigned char inLine[42];
 	unsigned char numOfSubPages = 1;
@@ -440,6 +443,7 @@ bool LoadEP1Format::load(QFile *inFile, TeletextDocument *document)
 				return false;
 
 			m_warnings.append("More than one page in EP1/EPX file, only first full page loaded.");
+			m_reExportWarning = true;
 		}
 
 		// Check for header of a (sub)page

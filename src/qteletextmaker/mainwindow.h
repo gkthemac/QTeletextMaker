@@ -139,7 +139,7 @@ private:
 	QRadioButton *m_levelRadioButton[4];
 
 	QString m_curFile, m_exportAutoFileName, m_exportImageFileName;
-	bool m_isUntitled;
+	bool m_isUntitled, m_reExportWarning;
 
 	LoadFormats m_loadFormats;
 	SaveFormats m_saveFormats;
