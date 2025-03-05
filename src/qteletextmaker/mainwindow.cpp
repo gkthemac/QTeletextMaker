@@ -590,7 +590,7 @@ void MainWindow::createActions()
 	gridAct->setStatusTip(tr("Toggle the text grid"));
 	connect(gridAct, &QAction::toggled, m_textScene, &LevelOneScene::toggleGrid);
 
-	QAction *showControlCodesAct = viewMenu->addAction(tr("Show control codes"));
+	QAction *showControlCodesAct = viewMenu->addAction(tr("Control codes"));
 	showControlCodesAct->setCheckable(true);
 	showControlCodesAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_T));
 	showControlCodesAct->setStatusTip(tr("Toggle showing of control codes"));
