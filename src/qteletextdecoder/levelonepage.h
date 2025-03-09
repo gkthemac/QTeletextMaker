@@ -33,23 +33,21 @@ class LevelOnePage : public PageX26Base //: public QObject
 	//Q_OBJECT
 
 public:
+	using PageX26Base::packet;
+	using PageX26Base::setPacket;
+	using PageX26Base::packetExists;
+
 	enum CycleTypeEnum { CTcycles, CTseconds };
 
 	LevelOnePage();
-	// BUG this copy constructor isn't used? Parameter should be LevelOnePage
-	LevelOnePage(const PageBase &other);
 
 	bool isEmpty() const override;
 
-	QByteArray packet(int packetNumber) const override;
-	QByteArray packet(int packetNumber, int designationCode) const override;
-	bool packetExists(int packetNumber) const override;
-	bool packetExists(int packetNumber, int designationCode) const override;
-	bool setPacket(int packetNumber, QByteArray packetContents) override;
-	bool setPacket(int packetNumber, int designationCode, QByteArray packetContents) override;
+	QByteArray packet(int y, int d) const override;
+	bool setPacket(int y, int d, QByteArray pkt) override;
+	bool packetExists(int y, int d) const override;
 
-	bool controlBit(int bitNumber) const override;
-	bool setControlBit(int bitNumber, bool active) override;
+	bool setControlBit(int b, bool active) override;
 
 	void clearPage();
 
@@ -68,8 +66,8 @@ public:
 	void setSecondCharSet(int newSecondCharSet);
 	int secondNOS() const { return m_secondNOS; }
 	void setSecondNOS(int newSecondNOS);
-	unsigned char character(int row, int column) const { return m_level1Page[row][column]; }
-	void setCharacter(int row, int column, unsigned char newCharacter);
+	unsigned char character(int r, int c) const { return PageX26Base::packetExists(r) ? PageX26Base::packet(r).at(c) : 0x20; }
+	void setCharacter(int r, int c, unsigned char newChar);
 	int defaultScreenColour() const { return m_defaultScreenColour; }
 	void setDefaultScreenColour(int newDefaultScreenColour);
 	int defaultRowColour() const { return m_defaultRowColour; }
@@ -106,7 +104,6 @@ public:
 	void setComposeLinkSubPageCodes(int linkNumber, int newSubPageCodes);
 
 private:
-	unsigned char m_level1Page[25][40];
 /*	int m_subPageNumber; */
 	int m_cycleValue;
 	CycleTypeEnum m_cycleType;

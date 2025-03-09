@@ -33,32 +33,11 @@ LevelOnePage::LevelOnePage()
 	clearPage();
 }
 
-// BUG this copy constructor isn't used? Parameter should be LevelOnePage
-LevelOnePage::LevelOnePage(const PageBase &other)
-{
-	m_enhancements.reserve(maxEnhancements());
-	clearPage();
-
-	for (int i=0; i<26; i++)
-		if (other.packetExists(i))
-			setPacket(i, other.packet(i));
-	for (int i=26; i<30; i++)
-		for (int j=0; j<16; j++)
-			if (other.packetExists(i, j))
-				setPacket(i, j, other.packet(i));
-
-	for (int i=PageBase::C4ErasePage; i<=PageBase::C14NOS; i++)
-		setControlBit(i, other.controlBit(i));
-}
-
 // So far we only call clearPage() once, within the constructor
 void LevelOnePage::clearPage()
 {
-	for (int r=0; r<25; r++)
-		for (int c=0; c<40; c++)
-			m_level1Page[r][c] = 0x20;
-	for (int i=C4ErasePage; i<=C14NOS; i++)
-		setControlBit(i, false);
+	for (int b=C4ErasePage; b<=C14NOS; b++)
+		setControlBit(b, false);
 	for (int i=0; i<8; i++)
 		m_composeLink[i] = { (i<4) ? i : 0, false, i>=4, 0x0ff, 0x0000 };
 	for (int i=0; i<6; i++)
@@ -92,38 +71,24 @@ bool LevelOnePage::isEmpty() const
 		return false;
 
 	for (int r=0; r<25; r++)
-		for (int c=0; c<40; c++)
-			if (m_level1Page[r][c] != 0x20)
-				return false;
+		if (!PageX26Base::packet(r).isEmpty())
+			return false;
 
 	return true;
 }
 
-QByteArray LevelOnePage::packet(int packetNumber) const
+QByteArray LevelOnePage::packet(int y, int d) const
 {
 	QByteArray result(40, 0x00);
 
-	if (packetNumber <= 24) {
-		for (int c=0; c<40; c++)
-			result[c] = m_level1Page[packetNumber][c];
-		return result;
-	}
-
-	return PageBase::packet(packetNumber);
-}
-
-QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
-{
-	QByteArray result(40, 0x00);
-
-	if (packetNumber == 26) {
-		if (!packetFromEnhancementListNeeded(designationCode))
+	if (y == 26) {
+		if (!packetFromEnhancementListNeeded(d))
 			return result; // Blank result
 
-		return packetFromEnhancementList(designationCode);
+		return packetFromEnhancementList(d);
 	}
 
-	if (packetNumber == 27 && designationCode == 0) {
+	if (y == 27 && d == 0) {
 		for (int i=0; i<6; i++) {
 			result[i*6+1] = m_fastTextLink[i].pageNumber & 0x00f;
 			result[i*6+2] = (m_fastTextLink[i].pageNumber & 0x0f0) >> 4;
@@ -138,9 +103,9 @@ QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
 		return result;
 	}
 
-	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
-		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
-			int pageLinkNumber = i+(designationCode == 4 ? 0 : 6);
+	if (y == 27 && (d == 4 || d == 5)) {
+		for (int i=0; i<(d == 4 ? 6 : 2); i++) {
+			int pageLinkNumber = i+(d == 4 ? 0 : 6);
 
 			result[i*6+1] = (m_composeLink[pageLinkNumber].level3p5 << 3) | (m_composeLink[pageLinkNumber].level2p5 << 2) | m_composeLink[pageLinkNumber].function;
 			result[i*6+2] = ((m_composeLink[pageLinkNumber].pageNumber & 0x100) >> 3) | 0x10 | (m_composeLink[pageLinkNumber].pageNumber & 0x00f);
@@ -154,8 +119,8 @@ QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
 		return result;
 	}
 
-	if (packetNumber == 28 && (designationCode == 0 || designationCode == 4)) {
-		int CLUToffset = (designationCode == 0) ? 16 : 0;
+	if (y == 28 && (d == 0 || d == 4)) {
+		int CLUToffset = (d == 0) ? 16 : 0;
 
 		result[1] = 0x00;
 		result[2] = ((m_defaultCharSet & 0x3) << 4) | (m_defaultNOS << 1);
@@ -175,36 +140,32 @@ QByteArray LevelOnePage::packet(int packetNumber, int designationCode) const
 		return result;
 	}
 
-	return PageBase::packet(packetNumber, designationCode);
+	return PageX26Base::packet(y, d);
 }
 
-bool LevelOnePage::setPacket(int packetNumber, QByteArray packetContents)
+/*
+bool LevelOnePage::setPacket(int y, QByteArray pkt)
 {
-	if (packetNumber <= 24) {
-		for (int c=0; c<40; c++)
-			m_level1Page[packetNumber][c] = packetContents.at(c);
+	if (y == 25)
+		qDebug("LevelOnePage unhandled setPacket X/25");
+
+	return PageX26Base::setPacket(y, pkt);
+}
+*/
+
+bool LevelOnePage::setPacket(int y, int d, QByteArray pkt)
+{
+	if (y == 26) {
+		setEnhancementListFromPacket(d, pkt);
 		return true;
 	}
 
-	qDebug("LevelOnePage unhandled setPacket X/%d", packetNumber);
-	// BUG can't store unhandled packets as default copy constructor uses pointers
-	//return PageBase::setPacket(packetNumber, packetContents);
-	return false;
-}
-
-bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray packetContents)
-{
-	if (packetNumber == 26) {
-		setEnhancementListFromPacket(designationCode, packetContents);
-		return true;
-	}
-
-	if (packetNumber == 27 && designationCode == 0) {
+	if (y == 27 && d == 0) {
 		for (int i=0; i<6; i++) {
-			int relativeMagazine = (packetContents.at(i*6+4) >> 3) | ((packetContents.at(i*6+6) & 0xc) >> 1);
-			int pageNumber = (packetContents.at(i*6+2) << 4) | packetContents.at(i*6+1);
+			int relativeMagazine = (pkt.at(i*6+4) >> 3) | ((pkt.at(i*6+6) & 0xc) >> 1);
+			int pageNumber = (pkt.at(i*6+2) << 4) | pkt.at(i*6+1);
 			m_fastTextLink[i].pageNumber = (relativeMagazine << 8) | pageNumber;
-			m_fastTextLink[i].subPageNumber = packetContents.at(i*6+3) | ((packetContents.at(i*6+4) & 0x7) << 4) | (packetContents.at(i*6+5) << 8) | ((packetContents.at(i*6+6) & 0x3) << 12);
+			m_fastTextLink[i].subPageNumber = pkt.at(i*6+3) | ((pkt.at(i*6+4) & 0x7) << 4) | (pkt.at(i*6+5) << 8) | ((pkt.at(i*6+6) & 0x3) << 12);
 			// TODO remove this warning when we can preserve FastText subpage links
 			if (m_fastTextLink[i].subPageNumber != 0x3f7f)
 				qDebug("FastText link %d has custom subPageNumber %x - will NOT be saved!", i, m_fastTextLink[i].subPageNumber);
@@ -212,73 +173,59 @@ bool LevelOnePage::setPacket(int packetNumber, int designationCode, QByteArray p
 		return true;
 	}
 
-	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
-		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
-			int pageLinkNumber = i+(designationCode == 4 ? 0 : 6);
-			int pageFunction = packetContents.at(i*6+1) & 0x03;
+	if (y == 27 && (d == 4 || d == 5)) {
+		for (int i=0; i<(d == 4 ? 6 : 2); i++) {
+			int pageLinkNumber = i+(d == 4 ? 0 : 6);
+			int pageFunction = pkt.at(i*6+1) & 0x03;
 			if (i >= 4)
 				m_composeLink[pageLinkNumber].function = pageFunction;
 			else if (i != pageFunction)
 				qDebug("X/27/4 link number %d fixed at function %d. Attempted to set to %d.", pageLinkNumber, pageLinkNumber, pageFunction);
 
-			m_composeLink[pageLinkNumber].level2p5 = packetContents.at(i*6+1) & 0x04;
-			m_composeLink[pageLinkNumber].level3p5 = packetContents.at(i*6+1) & 0x08;
+			m_composeLink[pageLinkNumber].level2p5 = pkt.at(i*6+1) & 0x04;
+			m_composeLink[pageLinkNumber].level3p5 = pkt.at(i*6+1) & 0x08;
 
-			m_composeLink[pageLinkNumber].pageNumber = ((packetContents.at(i*6+3) & 0x03) << 9) | ((packetContents.at(i*6+2) & 0x20) << 3) | ((packetContents.at(i*6+3) & 0x3c) << 2) | (packetContents.at(i*6+2) & 0x0f);
+			m_composeLink[pageLinkNumber].pageNumber = ((pkt.at(i*6+3) & 0x03) << 9) | ((pkt.at(i*6+2) & 0x20) << 3) | ((pkt.at(i*6+3) & 0x3c) << 2) | (pkt.at(i*6+2) & 0x0f);
 
-			m_composeLink[pageLinkNumber].subPageCodes = (packetContents.at(i*6+4) >> 2) | (packetContents.at(i*6+5) << 4) | (packetContents.at(i*6+6) << 10);
+			m_composeLink[pageLinkNumber].subPageCodes = (pkt.at(i*6+4) >> 2) | (pkt.at(i*6+5) << 4) | (pkt.at(i*6+6) << 10);
 		}
 		return true;
 	}
 
-	if (packetNumber == 28 && (designationCode == 0 || designationCode == 4)) {
-		int CLUToffset = (designationCode == 0) ? 16 : 0;
+	if (y == 28 && (d == 0 || d == 4)) {
+		int CLUToffset = (d == 0) ? 16 : 0;
 
-		m_defaultCharSet = ((packetContents.at(2) >> 4) & 0x3) | ((packetContents.at(3) << 2) & 0xc);
-		m_defaultNOS = (packetContents.at(2) >> 1) & 0x7;
-		m_secondCharSet = ((packetContents.at(3) >> 5) & 0x1) | ((packetContents.at(4) << 1) & 0xe);
-		m_secondNOS = (packetContents.at(3) >> 2) & 0x7;
+		m_defaultCharSet = ((pkt.at(2) >> 4) & 0x3) | ((pkt.at(3) << 2) & 0xc);
+		m_defaultNOS = (pkt.at(2) >> 1) & 0x7;
+		m_secondCharSet = ((pkt.at(3) >> 5) & 0x1) | ((pkt.at(4) << 1) & 0xe);
+		m_secondNOS = (pkt.at(3) >> 2) & 0x7;
 
-		m_leftSidePanelDisplayed = (packetContents.at(4) >> 3) & 1;
-		m_rightSidePanelDisplayed = (packetContents.at(4) >> 4) & 1;
-		m_sidePanelStatusL25 = (packetContents.at(4) >> 5) & 1;
-		m_sidePanelColumns = packetContents.at(5) & 0xf;
+		m_leftSidePanelDisplayed = (pkt.at(4) >> 3) & 1;
+		m_rightSidePanelDisplayed = (pkt.at(4) >> 4) & 1;
+		m_sidePanelStatusL25 = (pkt.at(4) >> 5) & 1;
+		m_sidePanelColumns = pkt.at(5) & 0xf;
 
 		for (int c=0; c<16; c++)
-			m_CLUT[CLUToffset+c] = ((packetContents.at(c*2+5) << 4) & 0x300) | ((packetContents.at(c*2+6) << 10) & 0xc00) | ((packetContents.at(c*2+6) << 2) & 0x0f0) | (packetContents.at(c*2+7) & 0x00f);
+			m_CLUT[CLUToffset+c] = ((pkt.at(c*2+5) << 4) & 0x300) | ((pkt.at(c*2+6) << 10) & 0xc00) | ((pkt.at(c*2+6) << 2) & 0x0f0) | (pkt.at(c*2+7) & 0x00f);
 
-		m_defaultScreenColour = (packetContents.at(37) >> 4) | ((packetContents.at(38) << 2) & 0x1c);
-		m_defaultRowColour = ((packetContents.at(38)) >> 3) | ((packetContents.at(39) << 3) & 0x18);
-		m_blackBackgroundSubst = (packetContents.at(39) >> 2) & 1;
-		m_colourTableRemap = (packetContents.at(39) >> 3) & 7;
+		m_defaultScreenColour = (pkt.at(37) >> 4) | ((pkt.at(38) << 2) & 0x1c);
+		m_defaultRowColour = ((pkt.at(38)) >> 3) | ((pkt.at(39) << 3) & 0x18);
+		m_blackBackgroundSubst = (pkt.at(39) >> 2) & 1;
+		m_colourTableRemap = (pkt.at(39) >> 3) & 7;
 
 		return true;
 	}
 
-	qDebug("LevelOnePage unhandled setPacket X/%d/%d", packetNumber, designationCode);
-	// BUG can't store unhandled packets as default copy constructor uses pointers
-	//return PageBase::setPacket(packetNumber, designationCode, packetContents);
-	return false;
+	qDebug("LevelOnePage unhandled setPacket X/%d/%d", y, d);
+	return PageX26Base::setPacket(y, d, pkt);
 }
 
-bool LevelOnePage::packetExists(int packetNumber) const
+bool LevelOnePage::packetExists(int y, int d) const
 {
-	if (packetNumber <= 24) {
-		for (int c=0; c<40; c++)
-			if (m_level1Page[packetNumber][c] != 0x20)
-				return true;
-		return false;
-	}
+	if (y == 26)
+		return packetFromEnhancementListNeeded(d);
 
-	return PageBase::packetExists(packetNumber);
-}
-
-bool LevelOnePage::packetExists(int packetNumber, int designationCode) const
-{
-	if (packetNumber == 26)
-		return packetFromEnhancementListNeeded(designationCode);
-
-	if (packetNumber == 27 && designationCode == 0) {
+	if (y == 27 && d == 0) {
 		for (int i=0; i<6; i++)
 			if ((m_fastTextLink[i].pageNumber & 0x0ff) != 0xff)
 				return true;
@@ -286,63 +233,49 @@ bool LevelOnePage::packetExists(int packetNumber, int designationCode) const
 		return false;
 	}
 
-	if (packetNumber == 27 && (designationCode == 4 || designationCode == 5)) {
-		for (int i=0; i<(designationCode == 4 ? 6 : 2); i++) {
-			int pageLinkNumber = i+(designationCode == 4 ? 0 : 6);
+	if (y == 27 && (d == 4 || d == 5)) {
+		for (int i=0; i<(d == 4 ? 6 : 2); i++) {
+			int pageLinkNumber = i+(d == 4 ? 0 : 6);
 			if ((m_composeLink[pageLinkNumber].pageNumber & 0x0ff) != 0x0ff)
 				return true;
 		}
 		return false;
 	}
 
-	if (packetNumber == 28) {
-		if (designationCode == 0) {
+	if (y == 28) {
+		if (d == 0) {
 			if (m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour != 0 || m_defaultRowColour != 0 || m_blackBackgroundSubst || m_colourTableRemap != 0 || m_secondCharSet != 0xf)
 				return true;
 			return !isPaletteDefault(16, 31);
 		}
-		if (designationCode == 4)
+		if (d == 4)
 			return !isPaletteDefault(0, 15);
 	}
 
-	return PageBase::packetExists(packetNumber, designationCode);
+	return PageX26Base::packetExists(y, d);
 }
 
-bool LevelOnePage::controlBit(int bitNumber) const
+bool LevelOnePage::setControlBit(int b, bool active)
 {
-	switch (bitNumber) {
+	switch (b) {
 		case C12NOS:
-			return (m_defaultNOS & 1) == 1;
+			m_defaultNOS &= 0x6;
+			if (active)
+				m_defaultNOS |= 0x1;
+			break;
 		case C13NOS:
-			return (m_defaultNOS & 2) == 2;
+			m_defaultNOS &= 0x5;
+			if (active)
+				m_defaultNOS |= 0x2;
+			break;
 		case C14NOS:
-			return (m_defaultNOS & 4) == 4;
-		default:
-			return PageBase::controlBit(bitNumber);
+			m_defaultNOS &= 0x3;
+			if (active)
+				m_defaultNOS |= 0x4;
+			break;
 	}
-}
 
-bool LevelOnePage::setControlBit(int bitNumber, bool active)
-{
-	switch (bitNumber) {
-		case C12NOS:
-			m_defaultNOS &= 0x06;
-			if (active)
-				m_defaultNOS |= 0x01;
-			return true;
-		case C13NOS:
-			m_defaultNOS &= 0x05;
-			if (active)
-				m_defaultNOS |= 0x02;
-			return true;
-		case C14NOS:
-			m_defaultNOS &= 0x03;
-			if (active)
-				m_defaultNOS |= 0x04;
-			return true;
-		default:
-			return PageBase::setControlBit(bitNumber, active);
-	}
+	return PageX26Base::setControlBit(b, active);
 }
 
 /* void LevelOnePage::setSubPageNumber(int newSubPageNumber) { m_subPageNumber = newSubPageNumber; } */
@@ -353,6 +286,10 @@ void LevelOnePage::setDefaultCharSet(int newDefaultCharSet) { m_defaultCharSet =
 void LevelOnePage::setDefaultNOS(int defaultNOS)
 {
 	m_defaultNOS = defaultNOS;
+
+	PageX26Base::setControlBit(C12NOS, m_defaultNOS & 0x1);
+	PageX26Base::setControlBit(C13NOS, m_defaultNOS & 0x2);
+	PageX26Base::setControlBit(C14NOS, m_defaultNOS & 0x4);
 }
 
 void LevelOnePage::setSecondCharSet(int newSecondCharSet)
@@ -363,7 +300,27 @@ void LevelOnePage::setSecondCharSet(int newSecondCharSet)
 }
 
 void LevelOnePage::setSecondNOS(int newSecondNOS) { m_secondNOS = newSecondNOS; }
-void LevelOnePage::setCharacter(int row, int column, unsigned char newCharacter) { m_level1Page[row][column] = newCharacter; }
+
+void LevelOnePage::setCharacter(int r, int c, unsigned char newCharacter)
+{
+	QByteArray pkt;
+
+	if (!packetExists(r)) {
+		if (newCharacter == 0x20)
+			return;
+		pkt = QByteArray(40, 0x20);
+		pkt[c] = newCharacter;
+		setPacket(r, pkt);
+	} else {
+		pkt = packet(r);
+		pkt[c] = newCharacter;
+		if (pkt == QByteArray(40, 0x20))
+			clearPacket(r);
+		else
+			setPacket(r, pkt);
+	}
+}
+
 void LevelOnePage::setDefaultScreenColour(int newDefaultScreenColour) { m_defaultScreenColour = newDefaultScreenColour; }
 void LevelOnePage::setDefaultRowColour(int newDefaultRowColour) { m_defaultRowColour = newDefaultRowColour; }
 void LevelOnePage::setColourTableRemap(int newColourTableRemap) { m_colourTableRemap = newColourTableRemap; }

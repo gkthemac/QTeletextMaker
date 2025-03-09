@@ -21,20 +21,19 @@
 
 #include "pagex26base.h"
 
-QByteArray PageX26Base::packetFromEnhancementList(int packetNumber) const
+QByteArray PageX26Base::packetFromEnhancementList(int p) const
 {
 	QByteArray result(40, 0x00);
 
-	int enhanceListPointer;
 	X26Triplet lastTriplet;
 
-	for (int i=0; i<13; i++) {
-		enhanceListPointer = packetNumber*13+i;
+	for (int t=0; t<13; t++) {
+		const int enhanceListPointer = p*13+t;
 
 		if (enhanceListPointer < m_enhancements.size()) {
-			result[i*3+1] = m_enhancements.at(enhanceListPointer).address();
-			result[i*3+2] = m_enhancements.at(enhanceListPointer).mode() | ((m_enhancements.at(enhanceListPointer).data() & 1) << 5);
-			result[i*3+3] = m_enhancements.at(enhanceListPointer).data() >> 1;
+			result[t*3+1] = m_enhancements.at(enhanceListPointer).address();
+			result[t*3+2] = m_enhancements.at(enhanceListPointer).mode() | ((m_enhancements.at(enhanceListPointer).data() & 1) << 5);
+			result[t*3+3] = m_enhancements.at(enhanceListPointer).data() >> 1;
 
 			// If this is the last triplet, get a copy to repeat to the end of the packet
 			if (enhanceListPointer == m_enhancements.size()-1) {
@@ -48,32 +47,31 @@ QByteArray PageX26Base::packetFromEnhancementList(int packetNumber) const
 			}
 		} else {
 			// We've gone past the end of the triplet list, so repeat the Termination Marker to the end
-			result[i*3+1] = lastTriplet.address();
-			result[i*3+2] = lastTriplet.mode() | ((lastTriplet.data() & 1) << 5);
-			result[i*3+3] = lastTriplet.data() >> 1;
+			result[t*3+1] = lastTriplet.address();
+			result[t*3+2] = lastTriplet.mode() | ((lastTriplet.data() & 1) << 5);
+			result[t*3+3] = lastTriplet.data() >> 1;
 		}
 	}
 
 	return result;
 }
 
-void PageX26Base::setEnhancementListFromPacket(int packetNumber, QByteArray packetContents)
+void PageX26Base::setEnhancementListFromPacket(int p, QByteArray pkt)
 {
 	// Preallocate entries in the m_enhancements list to hold our incoming triplets.
 	// We write "dummy" reserved 11110 Row Triplets in the allocated entries which then get overwritten by the packet contents.
 	// This is in case of missing packets so we can keep Local Object pointers valid.
-	while (m_enhancements.size() < (packetNumber+1)*13)
+	while (m_enhancements.size() < (p+1)*13)
 		m_enhancements.append(m_paddingX26Triplet);
 
-	int enhanceListPointer;
 	X26Triplet newX26Triplet;
 
-	for (int i=0; i<13; i++) {
-		enhanceListPointer = packetNumber*13+i;
+	for (int t=0; t<13; t++) {
+		const int enhanceListPointer = p*13+t;
 
-		newX26Triplet.setAddress(packetContents.at(i*3+1) & 0x3f);
-		newX26Triplet.setMode(packetContents.at(i*3+2) & 0x1f);
-		newX26Triplet.setData(((packetContents.at(i*3+3) & 0x3f) << 1) | ((packetContents.at(i*3+2) & 0x20) >> 5));
+		newX26Triplet.setAddress(pkt.at(t*3+1) & 0x3f);
+		newX26Triplet.setMode(pkt.at(t*3+2) & 0x1f);
+		newX26Triplet.setData(((pkt.at(t*3+3) & 0x3f) << 1) | ((pkt.at(t*3+2) & 0x20) >> 5));
 		m_enhancements.replace(enhanceListPointer, newX26Triplet);
 	}
 	if (newX26Triplet.mode() == 0x1f && newX26Triplet.address() == 0x3f && newX26Triplet.data() & 0x01)
