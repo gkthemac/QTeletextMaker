@@ -810,7 +810,7 @@ PasteCommand::PasteCommand(TeletextDocument *teletextDocument, int pageCharSet, 
 			imageData.convertTo(QImage::Format_MonoLSB);
 		else
 			// Only pure black and white images convert reliably this way...
-			imageData = imageData.convertToFormat(QImage::Format_MonoLSB, QVector<QRgb>{0x000000ff, 0xffffffff});
+			imageData = imageData.convertToFormat(QImage::Format_MonoLSB, QList<QRgb>{0x000000ff, 0xffffffff});
 
 		for (int r=0; r<m_clipboardDataHeight; r++)
 			m_pastingCharacters.append(QByteArray(m_clipboardDataWidth, 0x00));

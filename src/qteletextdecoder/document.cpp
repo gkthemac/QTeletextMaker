@@ -52,7 +52,7 @@ void ClutModel::setSubPage(LevelOnePage *subPage)
 {
 	if (subPage != m_subPage) {
 		m_subPage = subPage;
-		emit dataChanged(createIndex(0, 0), createIndex(31, 0), QVector<int>(Qt::DecorationRole));
+		emit dataChanged(createIndex(0, 0), createIndex(31, 0), QList<int>(Qt::DecorationRole));
 	}
 }
 

@@ -74,7 +74,7 @@ void CharacterListModel::setCharacterSet(int characterSet)
 	if (characterSet != m_characterSet || m_mosaic) {
 		m_characterSet = characterSet;
 		m_mosaic = false;
-		emit dataChanged(createIndex(0, 0), createIndex(95, 0), QVector<int>(Qt::DecorationRole));
+		emit dataChanged(createIndex(0, 0), createIndex(95, 0), QList<int>(Qt::DecorationRole));
 	}
 }
 
@@ -83,7 +83,7 @@ void CharacterListModel::setG1AndBlastCharacterSet(int characterSet)
 	if (characterSet != m_characterSet || !m_mosaic) {
 		m_characterSet = characterSet;
 		m_mosaic = true;
-		emit dataChanged(createIndex(0, 0), createIndex(95, 0), QVector<int>(Qt::DecorationRole));
+		emit dataChanged(createIndex(0, 0), createIndex(95, 0), QList<int>(Qt::DecorationRole));
 	}
 }
 

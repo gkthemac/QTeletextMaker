@@ -161,7 +161,7 @@ inline void TeletextPageRender::drawCharacter(QPainter &painter, int r, int c, u
 	else if ((m_decoder->cellBold(r, c) || m_decoder->cellItalic(r, c)) && characterSet < 24)
 		drawBoldOrItalicCharacter(painter, r, c, characterCode, characterSet, characterFragment);
 	else {
-		m_fontBitmap.image()->setColorTable(QVector<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
+		m_fontBitmap.image()->setColorTable(QList<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
 		drawFromFontBitmap(painter, r, c, characterCode, characterSet, characterFragment);
 	}
 
@@ -185,7 +185,7 @@ inline void TeletextPageRender::drawCharacter(QPainter &painter, int r, int c, u
 
 	if (characterDiacritical != 0) {
 		painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-		m_fontBitmap.image()->setColorTable(QVector<QRgb>{0x00000000, m_foregroundQColor.rgba()});
+		m_fontBitmap.image()->setColorTable(QList<QRgb>{0x00000000, m_foregroundQColor.rgba()});
 		drawFromFontBitmap(painter, r, c, characterDiacritical+64, 7, characterFragment);
 		painter.setCompositionMode(QPainter::CompositionMode_Source);
 	}
@@ -196,8 +196,8 @@ inline void TeletextPageRender::drawBoldOrItalicCharacter(QPainter &painter, int
 	QImage styledImage = QImage(12, 10, QImage::Format_Mono);
 	QPainter styledPainter;
 
-	m_fontBitmap.image()->setColorTable(QVector<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
-	styledImage.setColorTable(QVector<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
+	m_fontBitmap.image()->setColorTable(QList<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
+	styledImage.setColorTable(QList<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
 
 	if (m_decoder->cellItalic(r, c)) {
 		styledImage.fill(0);
@@ -217,7 +217,7 @@ inline void TeletextPageRender::drawBoldOrItalicCharacter(QPainter &painter, int
 		boldeningImage = styledImage.copy();
 		styledPainter.begin(&styledImage);
 		styledPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-		boldeningImage.setColorTable(QVector<QRgb>{0x00000000, m_foregroundQColor.rgba()});
+		boldeningImage.setColorTable(QList<QRgb>{0x00000000, m_foregroundQColor.rgba()});
 		styledPainter.drawImage(1, 0, boldeningImage);
 		styledPainter.end();
 	}
@@ -324,7 +324,7 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 
 			if (m_showControlCodes && c < 40 && m_decoder->teletextPage()->character(r, c) < 0x20) {
 				painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-				m_fontBitmap.image()->setColorTable(QVector<QRgb>{0x7f000000, 0xe0ffffff});
+				m_fontBitmap.image()->setColorTable(QList<QRgb>{0x7f000000, 0xe0ffffff});
 				painter.drawImage(c*12, r*10, *m_fontBitmap.image(), (m_decoder->teletextPage()->character(r, c)+32)*12, 250, 12, 10);
 				painter.setCompositionMode(QPainter::CompositionMode_Source);
 			}
