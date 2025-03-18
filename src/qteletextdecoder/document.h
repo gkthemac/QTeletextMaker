@@ -21,9 +21,9 @@
 #define DOCUMENT_H
 
 #include <QAbstractListModel>
+#include <QList>
 #include <QObject>
 #include <QUndoStack>
-#include <vector>
 
 #include "levelonepage.h"
 
@@ -121,8 +121,8 @@ private:
 	int m_pageNumber, m_currentSubPageIndex;
 	PageFunctionEnum m_pageFunction;
 	PacketCodingEnum m_packetCoding;
-	std::vector<LevelOnePage *> m_subPages;
-	std::vector<LevelOnePage *> m_recycleSubPages;
+	QList<LevelOnePage *> m_subPages;
+	QList<LevelOnePage *> m_recycleSubPages;
 	QUndoStack *m_undoStack;
 	int m_cursorRow, m_cursorColumn, m_selectionCornerRow, m_selectionCornerColumn;
 	bool m_rowZeroAllowed;

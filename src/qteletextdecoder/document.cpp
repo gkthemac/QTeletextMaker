@@ -18,7 +18,7 @@
  */
 
 #include <QAbstractListModel>
-#include <vector>
+#include <QList>
 
 #include "document.h"
 
@@ -63,7 +63,7 @@ TeletextDocument::TeletextDocument()
 	m_description.clear();
 	m_pageFunction = PFLevelOnePage;
 	m_packetCoding = Coding7bit;
-	m_subPages.push_back(new LevelOnePage);
+	m_subPages.append(new LevelOnePage);
 	m_currentSubPageIndex = 0;
 	m_undoStack = new QUndoStack(this);
 	m_cursorRow = 1;
@@ -97,9 +97,7 @@ bool TeletextDocument::isEmpty() const
 
 void TeletextDocument::clear()
 {
-	LevelOnePage *blankSubPage = new LevelOnePage;
-
-	m_subPages.insert(m_subPages.begin(), blankSubPage);
+	m_subPages.prepend(new LevelOnePage);
 
 	emit aboutToChangeSubPage();
 	m_currentSubPageIndex = 0;
@@ -110,7 +108,7 @@ void TeletextDocument::clear()
 
 	for (int i=m_subPages.size()-1; i>0; i--) {
 		delete(m_subPages[i]);
-		m_subPages.erase(m_subPages.begin()+i);
+		m_subPages.remove(i);
 	}
 }
 
@@ -177,9 +175,9 @@ void TeletextDocument::insertSubPage(int beforeSubPageIndex, bool copySubPage)
 		insertedSubPage = new LevelOnePage;
 
 	if (beforeSubPageIndex == m_subPages.size())
-		m_subPages.push_back(insertedSubPage);
+		m_subPages.append(insertedSubPage);
 	else
-		m_subPages.insert(m_subPages.begin()+beforeSubPageIndex, insertedSubPage);
+		m_subPages.insert(beforeSubPageIndex, insertedSubPage);
 }
 
 void TeletextDocument::deleteSubPage(int subPageToDelete)
@@ -187,19 +185,19 @@ void TeletextDocument::deleteSubPage(int subPageToDelete)
 	m_clutModel->setSubPage(nullptr);
 
 	delete(m_subPages[subPageToDelete]);
-	m_subPages.erase(m_subPages.begin()+subPageToDelete);
+	m_subPages.remove(subPageToDelete);
 }
 
 void TeletextDocument::deleteSubPageToRecycle(int subPageToRecycle)
 {
-	m_recycleSubPages.push_back(m_subPages[subPageToRecycle]);
-	m_subPages.erase(m_subPages.begin()+subPageToRecycle);
+	m_recycleSubPages.append(m_subPages[subPageToRecycle]);
+	m_subPages.remove(subPageToRecycle);
 }
 
 void TeletextDocument::unDeleteSubPageFromRecycle(int subPage)
 {
-	m_subPages.insert(m_subPages.begin()+subPage, m_recycleSubPages.back());
-	m_recycleSubPages.pop_back();
+	m_subPages.insert(subPage, m_recycleSubPages.last());
+	m_recycleSubPages.removeLast();
 }
 
 void TeletextDocument::setPageNumber(int pageNumber)
