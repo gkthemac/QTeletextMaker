@@ -543,8 +543,10 @@ QPair<int, int> TeletextWidget::mouseToRowAndColumn(const QPoint &mousePosition)
 {
 	int row = mousePosition.y() / 10;
 	int column = mousePosition.x() / 12 - m_pageDecode.leftSidePanelColumns();
-	if (row < 1)
-		row = 1;
+	const int topRow = (int)!m_teletextDocument->rowZeroAllowed();
+
+	if (row < topRow)
+		row = topRow;
 	if (row > 24)
 		row = 24;
 	if (column < 0)
@@ -647,6 +649,9 @@ LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphi
 	m_mainGridItemGroup = new QGraphicsItemGroup;
 	m_mainGridItemGroup->setVisible(false);
 	addItem(m_mainGridItemGroup);
+	m_rowZeroGridItemGroup = new QGraphicsItemGroup;
+	m_rowZeroGridItemGroup->setVisible(false);
+	addItem(m_rowZeroGridItemGroup);
 	// Additional vertical pieces of grid for side panels
 	for (int i=0; i<32; i++) {
 		m_sidePanelGridNeeded[i] = false;
@@ -654,14 +659,17 @@ LevelOneScene::LevelOneScene(QWidget *levelOneWidget, QObject *parent) : QGraphi
 		m_sidePanelGridItemGroup[i]->setVisible(false);
 		addItem(m_sidePanelGridItemGroup[i]);
 	}
-	for (int r=1; r<25; r++) {
+	for (int r=0; r<25; r++) {
 		for (int c=0; c<40; c++) {
 			QGraphicsRectItem *gridPiece = new QGraphicsRectItem(c*12, r*10, 12, 10);
-			gridPiece->setPen(QPen(QBrush(QColor(128, 128, 128, r<24 ? 192 : 128)), 0));
-			m_mainGridItemGroup->addToGroup(gridPiece);
+			gridPiece->setPen(QPen(QBrush(QColor(128, 128, 128, (r != 0 && r != 24) ? 192 : 128)), 0));
+			if (r == 0)
+				m_rowZeroGridItemGroup->addToGroup(gridPiece);
+			else
+				m_mainGridItemGroup->addToGroup(gridPiece);
 		}
 
-		if (r < 24)
+		if (r != 0 && r != 24)
 			for (int c=0; c<32; c++) {
 				QGraphicsRectItem *gridPiece = new QGraphicsRectItem(0, r*10, 12, 10);
 				gridPiece->setPen(QPen(QBrush(QColor(128, 128, 128, 64)), 0));
@@ -686,6 +694,7 @@ void LevelOneScene::setBorderDimensions(int sceneWidth, int sceneHeight, int wid
 
 	// Position grid to cover central 40 columns
 	m_mainGridItemGroup->setPos(leftRightBorders + leftSidePanelColumns*12, topBottomBorders);
+	m_rowZeroGridItemGroup->setPos(leftRightBorders + leftSidePanelColumns*12, topBottomBorders);
 
 	updateCursor();
 	updateSelection();
@@ -772,10 +781,21 @@ void LevelOneScene::setRenderMode(TeletextPageRender::RenderMode renderMode)
 void LevelOneScene::toggleGrid(bool gridOn)
 {
 	m_grid = gridOn;
+
 	m_mainGridItemGroup->setVisible(gridOn);
+	if (static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->rowZeroAllowed())
+		m_rowZeroGridItemGroup->setVisible(gridOn);
 	for (int i=0; i<32; i++)
 		if (m_sidePanelGridNeeded[i])
 			m_sidePanelGridItemGroup[i]->setVisible(gridOn);
+}
+
+void LevelOneScene::toggleRowZeroAllowed(bool allowed)
+{
+	static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->document()->setRowZeroAllowed(allowed);
+
+	if (m_grid)
+		m_rowZeroGridItemGroup->setVisible(allowed);
 }
 
 void LevelOneScene::hideGUIElements(bool hidden)

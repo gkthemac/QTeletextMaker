@@ -202,6 +202,10 @@ void SaveTTIFormat::writeSubPageStart(const PageBase &subPage, int subPageNumber
 
 void SaveTTIFormat::writeSubPageBody(const PageBase &subPage)
 {
+	// Header row
+	if (subPage.packetExists(0))
+		writePacket(format7BitPacket(subPage.packet(0)), 0);
+
 	// FLOF links
 	bool writeFLCommand = false;
 	if (m_document->pageFunction() == TeletextDocument::PFLevelOnePage && subPage.packetExists(27,0)) {
@@ -358,19 +362,27 @@ int SaveT42Format::writePacket(QByteArray packet, int packetNumber, int designat
 
 void SaveT42Format::writeSubPageStart(const PageBase &subPage, int subPageNumber)
 {
+	QByteArray packet;
+
 	// Convert integer to Binary Coded Decimal
 	subPageNumber = QString::number(subPageNumber).toInt(nullptr, 16);
-
-	// Displayable row header we export as spaces, hence the (odd parity valid) 0x20 init value
-	QByteArray packet(42, 0x20);
 
 	m_magazineNumber = (m_document->pageNumber() & 0xf00) >> 8;
 	if (m_magazineNumber == 8)
 		m_magazineNumber = 0;
 
-	// Write X/0 separately as it features both Hamming 8/4 and 7-bit odd parity within
-	packet[0] = m_magazineNumber & 0x07;
-	packet[1] = 0; // Packet number 0
+	// Retrieve and apply odd parity to header row if there's text there,
+	// otherwise create an initial packet of (odd parity valid) spaces
+	if (subPage.packetExists(0))
+		packet = format7BitPacket(subPage.packet(0));
+	else
+		packet.fill(0x20, 40);
+
+	// Byte 1 of MRAG - packet number 0
+	packet.prepend((char)0);
+	// Byte 0 of MRAG - magazine number, and packet number 0
+	packet.prepend(m_magazineNumber & 0x07);
+
 	packet[2] = m_document->pageNumber() & 0x00f;
 	packet[3] = (m_document->pageNumber() & 0x0f0) >> 4;
 	packet[4] = subPageNumber & 0xf;

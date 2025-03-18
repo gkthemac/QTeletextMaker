@@ -125,6 +125,7 @@ public slots:
 	void updateSelection();
 	void setRenderMode(TeletextPageRender::RenderMode renderMode);
 	void toggleGrid(bool gridOn);
+	void toggleRowZeroAllowed(bool allowed);
 	void hideGUIElements(bool hidden);
 	void setFullScreenColour(const QColor &newColor);
 	void setFullRowColour(int row, const QColor &newColor);
@@ -143,7 +144,7 @@ private:
 	QGraphicsRectItem *m_fullRowLeftRectItem[25], *m_fullRowRightRectItem[25];
 	QGraphicsProxyWidget *m_levelOneProxyWidget;
 	QGraphicsRectItem *m_cursorRectItem, *m_selectionRectItem;
-	QGraphicsItemGroup *m_mainGridItemGroup, *m_sidePanelGridItemGroup[32];
+	QGraphicsItemGroup *m_mainGridItemGroup, *m_rowZeroGridItemGroup, *m_sidePanelGridItemGroup[32];
 	bool m_grid, m_sidePanelGridNeeded[32];
 };
 

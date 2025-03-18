@@ -131,6 +131,7 @@ private:
 	QAction *m_borderActs[3];
 	QAction *m_aspectRatioActs[4];
 	QAction *m_smoothTransformAction;
+	QAction *m_rowZeroAct;
 
 	QLabel *m_subPageLabel, *m_cursorPositionLabel;
 	QToolButton *m_previousSubPageButton, *m_nextSubPageButton;

@@ -89,6 +89,8 @@ public:
 	void cursorLeft(bool shiftKey=false);
 	void cursorRight(bool shiftKey=false);
 	void moveCursor(int cursorRow, int cursorColumn, bool selectionInProgress=false);
+	bool rowZeroAllowed() const { return m_rowZeroAllowed; };
+	void setRowZeroAllowed(bool allowed);
 	int selectionTopRow() const { return m_selectionCornerRow == -1 ? m_cursorRow : qMin(m_selectionCornerRow, m_cursorRow); }
 	int selectionBottomRow() const { return qMax(m_selectionCornerRow, m_cursorRow); }
 	int selectionLeftColumn() const { return m_selectionCornerColumn == -1 ? m_cursorColumn : qMin(m_selectionCornerColumn, m_cursorColumn); }
@@ -123,6 +125,7 @@ private:
 	std::vector<LevelOnePage *> m_recycleSubPages;
 	QUndoStack *m_undoStack;
 	int m_cursorRow, m_cursorColumn, m_selectionCornerRow, m_selectionCornerColumn;
+	bool m_rowZeroAllowed;
 	LevelOnePage *m_selectionSubPage;
 	ClutModel *m_clutModel;
 };

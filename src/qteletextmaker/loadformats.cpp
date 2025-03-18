@@ -274,6 +274,22 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document)
 				document->subPage(0)->setControlBit(PageBase::C13NOS, m_inLine[9] & 0x04);
 				document->subPage(0)->setControlBit(PageBase::C14NOS, m_inLine[9] & 0x02);
 
+				// See if there's text in the header row
+				bool headerText = false;
+
+				for (int i=10; i<42; i++)
+					if (m_inLine[i] != 0x20) {
+						// TODO - obey odd parity?
+						m_inLine[i] &= 0x7f;
+						headerText = true;
+					}
+				if (headerText) {
+					// Clear the page address and control bits to spaces before putting the row in
+					for (int i=0; i<10; i++)
+						m_inLine[i] = 0x20;
+
+					document->subPage(0)->setPacket(0, QByteArray((const char *)&m_inLine[2], 40));
+				}
 				continue;
 			}
 		}

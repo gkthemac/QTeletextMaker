@@ -576,6 +576,13 @@ void MainWindow::createActions()
 	m_deleteSubPageAction->setStatusTip(tr("Delete this subpage"));
 	connect(m_deleteSubPageAction, &QAction::triggered, this, &MainWindow::deleteSubPage);
 
+	editMenu->addSeparator();
+
+	m_rowZeroAct = editMenu->addAction(tr("Edit header row"));
+	m_rowZeroAct->setCheckable(true);
+	m_rowZeroAct->setStatusTip(tr("Allow editing of header row"));
+	connect(m_rowZeroAct, &QAction::toggled, m_textScene, &LevelOneScene::toggleRowZeroAllowed);
+
 	QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
 
 	QAction *revealAct = viewMenu->addAction(tr("&Reveal"));
@@ -1089,6 +1096,12 @@ void MainWindow::loadFile(const QString &fileName)
 		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("The following issues were encountered when loading<br>%1:<ul><li>%2</li></ul>").arg(QDir::toNativeSeparators(fileName), loadingFormat->warningStrings().join("</li><li>")));
 
 	m_reExportWarning = loadingFormat->reExportWarning();
+
+	for (int i=0; i<m_textWidget->document()->numberOfSubPages(); i++)
+		if (m_textWidget->document()->subPage(i)->packetExists(0)) {
+			m_rowZeroAct->setChecked(true);
+			break;
+		}
 
 	setCurrentFile(fileName);
 	statusBar()->showMessage(tr("File loaded"), 2000);

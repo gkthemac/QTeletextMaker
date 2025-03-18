@@ -68,6 +68,7 @@ TeletextDocument::TeletextDocument()
 	m_undoStack = new QUndoStack(this);
 	m_cursorRow = 1;
 	m_cursorColumn = 0;
+	m_rowZeroAllowed = false;
 	m_selectionCornerRow = m_selectionCornerColumn = -1;
 	m_selectionSubPage = nullptr;
 
@@ -252,7 +253,7 @@ void TeletextDocument::cursorUp(bool shiftKey)
 	if (shiftKey && !selectionActive())
 		setSelectionCorner(m_cursorRow, m_cursorColumn);
 
-	if (--m_cursorRow == 0)
+	if (--m_cursorRow == 0 - (int)m_rowZeroAllowed)
 		m_cursorRow = 24;
 
 	if (shiftKey)
@@ -269,7 +270,7 @@ void TeletextDocument::cursorDown(bool shiftKey)
 		setSelectionCorner(m_cursorRow, m_cursorColumn);
 
 	if (++m_cursorRow == 25)
-		m_cursorRow = 1;
+		m_cursorRow = (int)!m_rowZeroAllowed;
 
 	if (shiftKey)
 		emit selectionMoved();
@@ -331,6 +332,13 @@ void TeletextDocument::moveCursor(int cursorRow, int cursorColumn, bool selectio
 		cancelSelection();
 
 	emit cursorMoved();
+}
+
+void TeletextDocument::setRowZeroAllowed(bool allowed)
+{
+	m_rowZeroAllowed = allowed;
+	if (m_cursorRow == 0 && !allowed)
+		cursorDown();
 }
 
 void TeletextDocument::setSelectionCorner(int row, int column)
