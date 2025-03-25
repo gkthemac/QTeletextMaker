@@ -1050,7 +1050,6 @@ void MainWindow::loadFile(const QString &fileName)
 	int levelSeen;
 
 	QFile file(fileName);
-	const QFileInfo fileInfo(file);
 
 	LoadFormat *loadingFormat = m_loadFormats.findFormat(QFileInfo(fileName).suffix());
 	if (loadingFormat == nullptr) {
@@ -1070,11 +1069,10 @@ void MainWindow::loadFile(const QString &fileName)
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 
 	if (loadingFormat->load(&file, m_textWidget->document())) {
-		// TODO put "native format" into class?
-		if (fileInfo.suffix() == "tti" || fileInfo.suffix() == "ttix")
-			m_exportAutoFileName.clear();
-		else
+		if (m_saveFormats.isExportOnly(QFileInfo(file).suffix()))
 			m_exportAutoFileName = fileName;
+		else
+			m_exportAutoFileName.clear();
 	} else {
 		QApplication::restoreOverrideCursor();
 		QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot load file %1\n%2").arg(QDir::toNativeSeparators(fileName), loadingFormat->errorString()));
