@@ -4,17 +4,17 @@ QTeletextMaker is a teletext page editor with an emphasis on Level 2.5 enhanceme
 It is written in C++ using the Qt 6 widget libraries.
 
 Features
-- Load and save teletext pages in .tti format.
-- Rendering of teletext pages in Levels 1, 1.5, 2.5 and 3.5
-- Rendering of Local Objects and side panels.
-- Import and export of single pages in .t42 format.
-- Export PNG and animated GIF images of teletext pages.
+- Load and save pages in TTI format.
+- Rendering of pages in Levels 1, 1.5, 2.5 and 3.5 including Local Objects and side panels.
+- Import and export of single pages in t42, EP1 and HTT formats.
+- Export PNG and animated GIF images of pages.
 - Undo and redo of editing actions.
 - Interactive X/26 Local Enhancement Data triplet editor.
 - Editing of X/27/4 and X/27/5 compositional links to enhancement data pages.
 - Palette editor.
 - Configurable zoom.
-- View teletext pages in 4:3, 16:9 pillar-box and 16:9 stretch aspect ratios.
+- View pages in 4:3, 16:9 pillar-box and 16:9 stretch aspect ratios.
+- View pages in mix and attribute-less monochrome modes.
 
 Although designed on and developed for Linux, the Qt libraries are cross platform so a Windows executable can be built. A Windows executable can be found within the "Releases" link, compiled on a Linux host using [MXE](https://github.com/mxe/mxe) based on [these instructions](https://web.archive.org/web/20230606021352/https://blog.8bitbuddhism.com/2018/08/22/cross-compiling-windows-applications-with-mxe/). After MXE is installed `make qt6-qtbase` should build and install the required dependencies to build QTeletextMaker.
 
