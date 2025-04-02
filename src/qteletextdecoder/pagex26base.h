@@ -40,7 +40,6 @@ protected:
 	bool packetFromEnhancementListNeeded(int n) const { return ((m_enhancements.size()+12) / 13) > n; };
 
 	X26TripletList m_enhancements;
-	const X26Triplet m_paddingX26Triplet { 41, 0x1e, 0 };
 };
 
 #endif

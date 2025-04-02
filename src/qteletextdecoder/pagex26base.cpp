@@ -62,7 +62,7 @@ void PageX26Base::setEnhancementListFromPacket(int p, QByteArray pkt)
 	// We write "dummy" reserved 11110 Row Triplets in the allocated entries which then get overwritten by the packet contents.
 	// This is in case of missing packets so we can keep Local Object pointers valid.
 	while (m_enhancements.size() < (p+1)*13)
-		m_enhancements.append(m_paddingX26Triplet);
+		m_enhancements.append( X26Triplet{ 41, 0x1e, 0 } );
 
 	X26Triplet newX26Triplet;
 
