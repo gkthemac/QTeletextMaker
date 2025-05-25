@@ -62,8 +62,6 @@ TeletextDocument::TeletextDocument()
 {
 	m_pageNumber = 0x199;
 	m_description.clear();
-	m_pageFunction = PFLevelOnePage;
-	m_packetCoding = Coding7bit;
 	m_subPages.append(new LevelOnePage);
 	m_currentSubPageIndex = 0;
 	m_undoStack = new QUndoStack(this);
@@ -112,18 +110,6 @@ void TeletextDocument::clear()
 		m_subPages.remove(i);
 	}
 }
-
-/*
-void TeletextDocument::setPageFunction(PageFunctionEnum newPageFunction)
-{
-	m_pageFunction = newPageFunction;
-}
-
-void TeletextDocument::setPacketCoding(PacketCodingEnum newPacketEncoding)
-{
-	m_packetCoding = newPacketEncoding;
-}
-*/
 
 void TeletextDocument::selectSubPageIndex(int newSubPageIndex, bool forceRefresh)
 {

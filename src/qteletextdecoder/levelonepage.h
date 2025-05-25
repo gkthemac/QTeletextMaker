@@ -41,6 +41,9 @@ public:
 
 	LevelOnePage();
 
+	PageFunctionEnum pageFunction() const override { return PFLevelOnePage; }
+	PacketCodingEnum packetCoding() const override { return Coding7bit; }
+
 	bool isEmpty() const override;
 
 	QByteArray packet(int y, int d) const override;

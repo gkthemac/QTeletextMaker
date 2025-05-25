@@ -72,7 +72,7 @@ void SaveFormat::writeSubPageBody(const PageBase &subPage)
 {
 	writeX27Packets(subPage);
 	writeX28Packets(subPage);
-	if (m_document->pageFunction() == TeletextDocument::PFLevelOnePage) {
+	if (subPage.pageFunction() == PageBase::PFLevelOnePage) {
 		writeX26Packets(subPage);
 		writeX1to25Packets(subPage);
 	} else {
@@ -173,7 +173,7 @@ void SaveTTIFormat::writeSubPageStart(const PageBase &subPage, int subPageNumber
 
 	// Subpage
 	// Magazine Organisation Table and Magazine Inventory Page don't have subpages
-	if (m_document->pageFunction() != TeletextDocument::PFMOT && m_document->pageFunction() != TeletextDocument::PFMIP)
+	if (subPage.pageFunction() != PageBase::PFMOT && subPage.pageFunction() != PageBase::PFMIP)
 		writeString(QString("SC,%1").arg(subPageNumber, 4, 10, QChar('0')));
 
 	// Status bits
@@ -190,14 +190,14 @@ void SaveTTIFormat::writeSubPageStart(const PageBase &subPage, int subPageNumber
 
 	writeString(QString("PS,%1").arg(0x8000 | statusBits, 4, 16, QChar('0')));
 
-	if (m_document->pageFunction() == TeletextDocument::PFLevelOnePage) {
+	if (subPage.pageFunction() == PageBase::PFLevelOnePage) {
 		// Level One Page: page region and cycle
 		writeString(QString("RE,%1").arg(static_cast<const LevelOnePage *>(&subPage)->defaultCharSet()));
 		writeString(QString("CT,%1,%2").arg(static_cast<const LevelOnePage *>(&subPage)->cycleValue()).arg(static_cast<const LevelOnePage *>(&subPage)->cycleType()==LevelOnePage::CTcycles ? 'C' : 'T'));
 	} else
 		// Not a Level One Page: X/28/0 specifies page function and coding but the PF command
 		// should make it obvious to a human that this is not a Level One Page
-		writeString(QString("PF,%1,%2").arg(m_document->pageFunction()).arg(m_document->packetCoding()));
+		writeString(QString("PF,%1,%2").arg(subPage.pageFunction()).arg(subPage.packetCoding()));
 }
 
 void SaveTTIFormat::writeSubPageBody(const PageBase &subPage)
@@ -208,7 +208,7 @@ void SaveTTIFormat::writeSubPageBody(const PageBase &subPage)
 
 	// FLOF links
 	bool writeFLCommand = false;
-	if (m_document->pageFunction() == TeletextDocument::PFLevelOnePage && subPage.packetExists(27,0)) {
+	if (subPage.pageFunction() == PageBase::PFLevelOnePage && subPage.packetExists(27,0)) {
 		// Subpage has FLOF links - if any link to a specific subpage we need to write X/27/0
 		// as raw, otherwise we write the links as a human-readable FL command later on
 		writeFLCommand = true;
@@ -231,7 +231,7 @@ void SaveTTIFormat::writeSubPageBody(const PageBase &subPage)
 
 	// Now write the other packets like the rest of writeSubPageBody does
 	writeX28Packets(subPage);
-	if (m_document->pageFunction() == TeletextDocument::PFLevelOnePage) {
+	if (subPage.pageFunction() == PageBase::PFLevelOnePage) {
 		writeX26Packets(subPage);
 		writeX1to25Packets(subPage);
 	} else {
