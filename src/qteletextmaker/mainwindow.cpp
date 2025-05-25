@@ -37,6 +37,7 @@
 #include <QStatusBar>
 #include <QToolBar>
 #include <QToolButton>
+#include <QVariant>
 #include <iostream>
 
 #include "mainwindow.h"
@@ -1068,7 +1069,11 @@ void MainWindow::loadFile(const QString &fileName)
 
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 
-	if (loadingFormat->load(&file, m_textWidget->document())) {
+	QVariantHash metadata;
+
+	if (loadingFormat->load(&file, m_textWidget->document(), &metadata)) {
+		m_textWidget->document()->loadMetaData(metadata);
+
 		if (m_saveFormats.isExportOnly(QFileInfo(file).suffix()))
 			m_exportAutoFileName = fileName;
 		else

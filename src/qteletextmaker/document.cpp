@@ -19,6 +19,7 @@
 
 #include <QAbstractListModel>
 #include <QList>
+#include <QVariant>
 
 #include "document.h"
 
@@ -198,6 +199,39 @@ void TeletextDocument::unDeleteSubPageFromRecycle(int subPage)
 {
 	m_subPages.insert(subPage, m_recycleSubPages.last());
 	m_recycleSubPages.removeLast();
+}
+
+void TeletextDocument::loadMetaData(QVariantHash const &metadata)
+{
+	bool valueOk;
+
+	if (const QString description = metadata.value("description").toString(); !description.isEmpty())
+		m_description = description;
+
+	if (const int pageNumber = metadata.value("pageNumber").toInt(&valueOk); valueOk)
+		m_pageNumber = pageNumber;
+
+	if (metadata.value("fastextAbsolute").toBool()) {
+		const int magazineFlip = m_pageNumber & 0x700;
+
+		for (auto &subPage : m_subPages)
+			for (int i=0; i<6; i++)
+				subPage->setFastTextLinkPageNumber(i, subPage->fastTextLinkPageNumber(i) ^ magazineFlip);
+	}
+
+	for (int i=0; i<numberOfSubPages(); i++) {
+		const QString subPageStr = QString("%1").arg(i, 3, QChar('0'));
+
+		if (int region = metadata.value("region" + subPageStr).toInt(&valueOk); valueOk)
+			subPage(i)->setDefaultCharSet(region);
+		if (int cycleValue = metadata.value("cycleValue" + subPageStr).toInt(&valueOk); valueOk)
+			subPage(i)->setCycleValue(cycleValue);
+		QChar cycleType = metadata.value("cycleType" + subPageStr).toChar();
+		if (cycleType == 'C')
+			subPage(i)->setCycleType(LevelOnePage::CTcycles);
+		else if (cycleType == 'T')
+			subPage(i)->setCycleType(LevelOnePage::CTseconds);
+	}
 }
 
 void TeletextDocument::setPageNumber(int pageNumber)

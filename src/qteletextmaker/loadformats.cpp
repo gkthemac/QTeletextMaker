@@ -24,24 +24,23 @@
 #include <QFile>
 #include <QString>
 #include <QStringList>
-#include <QTextStream>
+#include <QVariant>
 
 #include "document.h"
 #include "hamming.h"
 #include "levelonepage.h"
 #include "pagebase.h"
 
-bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document)
+bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata)
 {
 	m_warnings.clear();
 	m_error.clear();
 
 	QByteArray inLine;
+	int pageNum = 0;
+	int currentSubPageNum = 0;
 	bool firstSubPageAlreadyFound = false;
 	bool pageBodyPacketsFound = false;
-	int cycleCommandsFound = 0;
-	int mostRecentCycleValue = -1;
-	LevelOnePage::CycleTypeEnum mostRecentCycleType;
 
 	LevelOnePage* loadingPage = document->subPage(0);
 
@@ -49,17 +48,27 @@ bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document)
 		inLine = inFile->readLine(160).trimmed();
 		if (inLine.isEmpty())
 			break;
-		if (inLine.startsWith("DE,"))
-			document->setDescription(QString(inLine.remove(0, 3)));
+		if (inLine.startsWith("DE,") && metadata != nullptr)
+			metadata->insert("description", QString(inLine.remove(0, 3)));
 		if (inLine.startsWith("PN,")) {
-			// When second and subsequent PN commands are found, firstSubPageAlreadyFound==true at this point
-			// This assumes that PN is the first command of a new subpage...
-			if (firstSubPageAlreadyFound) {
+			if (!firstSubPageAlreadyFound) {
+				// First PN command found, set the page number
+				bool valueOk;
+
+				if (int pageNumRead = inLine.mid(3, 3).toInt(&valueOk, 16); valueOk)
+					if (pageNumRead >= 0x100 && pageNumRead <= 0x8ff) {
+						// Keep page number: to check if page is xFF if we load M/29
+						pageNum = pageNumRead;
+						if (metadata != nullptr)
+							metadata->insert("pageNumber", pageNum);
+					}
+
+				firstSubPageAlreadyFound = true;
+			} else {
+				// Subsequent PN command found; this assumes that PN is the first command of a new subpage
+				currentSubPageNum++;
 				document->insertSubPage(document->numberOfSubPages(), false);
 				loadingPage = document->subPage(document->numberOfSubPages()-1);
-			} else {
-				document->setPageNumberFromString(inLine.mid(3,3));
-				firstSubPageAlreadyFound = true;
 			}
 		}
 /*		if (lineType == "SC,") {
@@ -82,37 +91,34 @@ bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document)
 		if (inLine.startsWith("RE,")) {
 			bool regionValueOk;
 			int regionValueRead = inLine.remove(0, 3).toInt(&regionValueOk);
-			if (regionValueOk)
-				loadingPage->setDefaultCharSet(regionValueRead);
+			if (regionValueOk && metadata != nullptr)
+				metadata->insert(QString("region%1").arg(currentSubPageNum, 3, QChar('0')), regionValueRead);
 		}
 		if (inLine.startsWith("CT,") && (inLine.endsWith(",C") || inLine.endsWith(",T"))) {
 			bool cycleValueOk;
 			int cycleValueRead = inLine.mid(3, inLine.size()-5).toInt(&cycleValueOk);
-			if (cycleValueOk) {
-				cycleCommandsFound++;
-				// House-keep CT command values, in case it's the only one within multiple subpages
-				mostRecentCycleValue = cycleValueRead;
-				loadingPage->setCycleValue(cycleValueRead);
-				mostRecentCycleType = inLine.endsWith("C") ? LevelOnePage::CTcycles : LevelOnePage::CTseconds;
-				loadingPage->setCycleType(mostRecentCycleType);
+			if (cycleValueOk && metadata != nullptr) {
+				metadata->insert(QString("cycleValue%1").arg(currentSubPageNum, 3, QChar('0')), cycleValueRead);
+				metadata->insert(QString("cycleType%1").arg(currentSubPageNum, 3, QChar('0')), inLine.at(inLine.size()-1));
 			}
 		}
 		if (inLine.startsWith("FL,")) {
 			bool fastTextLinkOk;
 			int fastTextLinkRead;
 			QString flLine = QString(inLine.remove(0, 3));
-			if (flLine.count(',') == 5)
+			if (flLine.count(',') == 5) {
 				for (int i=0; i<6; i++) {
 					fastTextLinkRead = flLine.section(',', i, i).toInt(&fastTextLinkOk, 16);
 					if (fastTextLinkOk) {
 						if (fastTextLinkRead == 0)
 							fastTextLinkRead = 0x8ff;
-						// Stored as page link with relative magazine number, convert from absolute page number that was read
-						fastTextLinkRead ^= document->pageNumber() & 0x700;
-						fastTextLinkRead &= 0x7ff; // Fixes magazine 8 to 0
-						loadingPage->setFastTextLinkPageNumber(i, fastTextLinkRead);
+						else if (fastTextLinkRead >= 0x100 && fastTextLinkRead <= 0x8ff)
+							loadingPage->setFastTextLinkPageNumber(i, fastTextLinkRead);
 					}
 				}
+				if (metadata != nullptr)
+					metadata->insert(QString("fastextAbsolute"), true);
+			}
 		}
 		if (inLine.startsWith("OL,")) {
 			bool lineNumberOk;
@@ -162,7 +168,7 @@ bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document)
 						inLine[i] = inLine.at(i) & 0x3f;
 					// Import M/29 whole-magazine packets as X/28 per-page packets
 					if (lineNumber == 29) {
-						if ((document->pageNumber() & 0xff) != 0xff)
+						if ((pageNum & 0xff) != 0xff)
 							m_warnings.append(QString("M/29/%1 packet found, but page number was not xFF.").arg(designationCode));
 						lineNumber = 28;
 					}
@@ -177,14 +183,6 @@ bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document)
 		return false;
 	}
 
-	// If there's more than one subpage but only one valid CT command was found, apply it to all subpages
-	// I don't know if this is correct
-	if (cycleCommandsFound == 1 && document->numberOfSubPages()>1)
-		for (int i=0; i<document->numberOfSubPages(); i++) {
-			document->subPage(i)->setCycleValue(mostRecentCycleValue);
-			document->subPage(i)->setCycleType(mostRecentCycleType);
-		}
-
 	return true;
 }
 
@@ -194,7 +192,7 @@ bool LoadT42Format::readPacket()
 	return m_inFile->read((char *)m_inLine, 42) == 42;
 }
 
-bool LoadT42Format::load(QFile *inFile, TeletextDocument *document)
+bool LoadT42Format::load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata)
 {
 	int readMagazineNumber, readPacketNumber;
 	int foundMagazineNumber = -1;
@@ -259,10 +257,12 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document)
 				foundPageNumber = readPageNumber;
 				firstPacket0Found = true;
 
-				if (foundMagazineNumber == 0)
-					document->setPageNumber(0x800 | foundPageNumber);
-				else
-					document->setPageNumber((foundMagazineNumber << 8) | foundPageNumber);
+				if (metadata != nullptr) {
+					if (foundMagazineNumber == 0)
+						metadata->insert("pageNumber", 0x800 | foundPageNumber);
+					else
+						metadata->insert("pageNumber", (foundMagazineNumber << 8) | foundPageNumber);
+				}
 
 				document->subPage(0)->setControlBit(PageBase::C4ErasePage, m_inLine[5] & 0x08);
 				document->subPage(0)->setControlBit(PageBase::C5Newsflash, m_inLine[7] & 0x04);
@@ -435,7 +435,7 @@ bool LoadHTTFormat::readPacket()
 }
 
 
-bool LoadEP1Format::load(QFile *inFile, TeletextDocument *document)
+bool LoadEP1Format::load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata)
 {
 	m_warnings.clear();
 	m_error.clear();

@@ -25,7 +25,7 @@
 #include <QFile>
 #include <QString>
 #include <QStringList>
-#include <QTextStream>
+#include <QVariant>
 
 #include "document.h"
 #include "levelonepage.h"
@@ -36,7 +36,7 @@ class LoadFormat
 public:
 	virtual ~LoadFormat() {};
 
-	virtual bool load(QFile *inFile, TeletextDocument *document) =0;
+	virtual bool load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata = nullptr) =0;
 
 	virtual QString description() const =0;
 	virtual QStringList extensions() const =0;
@@ -55,7 +55,7 @@ protected:
 class LoadTTIFormat : public LoadFormat
 {
 public:
-	bool load(QFile *inFile, TeletextDocument *document) override;
+	bool load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata = nullptr) override;
 
 	QString description() const override { return QString("MRG Systems TTI"); };
 	QStringList extensions() const override { return QStringList { "tti", "ttix" }; };
@@ -64,7 +64,7 @@ public:
 class LoadT42Format : public LoadFormat
 {
 public:
-	bool load(QFile *inFile, TeletextDocument *document) override;
+	bool load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata = nullptr) override;
 
 	QString description() const override { return QString("t42 packet stream"); };
 	QStringList extensions() const override { return QStringList { "t42" }; };
@@ -89,7 +89,7 @@ protected:
 class LoadEP1Format : public LoadFormat
 {
 public:
-	bool load(QFile *inFile, TeletextDocument *document) override;
+	bool load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata = nullptr) override;
 
 	QString description() const override { return QString("Softel EP1"); };
 	QStringList extensions() const override { return QStringList { "ep1", "epx" }; };

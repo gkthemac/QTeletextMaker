@@ -24,6 +24,7 @@
 #include <QList>
 #include <QObject>
 #include <QUndoStack>
+#include <QVariant>
 
 #include "levelonepage.h"
 
@@ -74,6 +75,7 @@ public:
 	void deleteSubPage(int subPageToDelete);
 	void deleteSubPageToRecycle(int subPageToRecycle);
 	void unDeleteSubPageFromRecycle(int subPage);
+	void loadMetaData(QVariantHash const &metadata);
 	int pageNumber() const { return m_pageNumber; }
 	void setPageNumber(int pageNumber);
 	void setPageNumberFromString(QString pageNumberString);
