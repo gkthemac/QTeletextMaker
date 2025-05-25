@@ -83,9 +83,13 @@ bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document, QVariantHash
 			int pageStatusRead = inLine.mid(3, 4).toInt(&pageStatusOk, 16);
 			if (pageStatusOk) {
 				loadingPage->setControlBit(PageBase::C4ErasePage, pageStatusRead & 0x4000);
+
 				for (int i=PageBase::C5Newsflash, pageStatusBit=0x0001; i<=PageBase::C11SerialMagazine; i++, pageStatusBit<<=1)
 					loadingPage->setControlBit(i, pageStatusRead & pageStatusBit);
-				loadingPage->setDefaultNOS(((pageStatusRead & 0x0200) >> 9) | ((pageStatusRead & 0x0100) >> 7) | ((pageStatusRead & 0x0080) >> 5));
+
+				loadingPage->setControlBit(PageBase::C12NOS, pageStatusRead & 0x0200);
+				loadingPage->setControlBit(PageBase::C13NOS, pageStatusRead & 0x0100);
+				loadingPage->setControlBit(PageBase::C14NOS, pageStatusRead & 0x0080);
 			}
 		}
 		if (inLine.startsWith("RE,")) {
@@ -103,17 +107,29 @@ bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document, QVariantHash
 			}
 		}
 		if (inLine.startsWith("FL,")) {
-			bool fastTextLinkOk;
-			int fastTextLinkRead;
 			QString flLine = QString(inLine.remove(0, 3));
 			if (flLine.count(',') == 5) {
+				// Init packet to all 0xf's as page xFF:3F7F means no page is specified
+				QByteArray fastTextPacket(40, 0xf);
+				fastTextPacket[0] = 0x0;  // Designation code
+				fastTextPacket[38] = 0x0; // CRC word
+				fastTextPacket[39] = 0x0; // CRC word
+
 				for (int i=0; i<6; i++) {
-					fastTextLinkRead = flLine.section(',', i, i).toInt(&fastTextLinkOk, 16);
+					bool fastTextLinkOk;
+					int fastTextLinkRead = flLine.section(',', i, i).toInt(&fastTextLinkOk, 16);
+
 					if (fastTextLinkOk) {
 						if (fastTextLinkRead == 0)
 							fastTextLinkRead = 0x8ff;
-						else if (fastTextLinkRead >= 0x100 && fastTextLinkRead <= 0x8ff)
-							loadingPage->setFastTextLinkPageNumber(i, fastTextLinkRead);
+						else if (fastTextLinkRead >= 0x100 && fastTextLinkRead <= 0x8ff) {
+							fastTextPacket[i*6+1] = fastTextLinkRead & 0x00f;
+							fastTextPacket[i*6+2] = (fastTextLinkRead & 0x0f0) >> 4;
+							fastTextPacket[i*6+4] = 0x7 | ((fastTextLinkRead & 0x100) >> 5);
+							fastTextPacket[i*6+6] = 0x3 | ((fastTextLinkRead & 0x600) >> 7);
+
+							loadingPage->setPacket(27, 0, fastTextPacket);
+						}
 					}
 				}
 				if (metadata != nullptr)
@@ -467,8 +483,14 @@ bool LoadEP1Format::load(QFile *inFile, TeletextDocument *document, QVariantHash
 			return false;
 
 		// Deal with language code unique to EP1 - unknown values are mapped to English
-		loadingPage->setDefaultCharSet(m_languageCode.key(inLine[2], 0x09) >> 3);
-		loadingPage->setDefaultNOS(m_languageCode.key(inLine[2], 0x09) & 0x7);
+		if (metadata != nullptr)
+			metadata->insert(QString("region%1").arg(0, 3, QChar('0')), m_languageCode.key(inLine[2], 0x09) >> 3);
+
+		const int nationalOption = m_languageCode.key(inLine[2], 0x09) & 0x7;
+
+		loadingPage->setControlBit(PageBase::C12NOS, nationalOption & 0x1);
+		loadingPage->setControlBit(PageBase::C13NOS, nationalOption & 0x2);
+		loadingPage->setControlBit(PageBase::C14NOS, nationalOption & 0x4);
 
 		// If fourth byte is 0xca then "X/26 enhancements header" follows
 		// Otherwise Level 1 page data follows
