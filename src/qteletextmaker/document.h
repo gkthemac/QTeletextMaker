@@ -65,6 +65,7 @@ public:
 	void deleteSubPage(int subPageToDelete);
 	void deleteSubPageToRecycle(int subPageToRecycle);
 	void unDeleteSubPageFromRecycle(int subPage);
+	void loadFromList(QList<PageBase> const &subPageList);
 	void loadMetaData(QVariantHash const &metadata);
 	int pageNumber() const { return m_pageNumber; }
 	void setPageNumber(int pageNumber);

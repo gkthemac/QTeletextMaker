@@ -1069,9 +1069,11 @@ void MainWindow::loadFile(const QString &fileName)
 
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 
+	QList<PageBase> subPages;
 	QVariantHash metadata;
 
-	if (loadingFormat->load(&file, m_textWidget->document(), &metadata)) {
+	if (loadingFormat->load(&file, subPages, &metadata)) {
+		m_textWidget->document()->loadFromList(subPages);
 		m_textWidget->document()->loadMetaData(metadata);
 
 		if (m_saveFormats.isExportOnly(QFileInfo(file).suffix()))

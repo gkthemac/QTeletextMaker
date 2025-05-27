@@ -23,12 +23,11 @@
 #include <QByteArray>
 #include <QDataStream>
 #include <QFile>
+#include <QList>
 #include <QString>
 #include <QStringList>
 #include <QVariant>
 
-#include "document.h"
-#include "levelonepage.h"
 #include "pagebase.h"
 
 class LoadFormat
@@ -36,7 +35,7 @@ class LoadFormat
 public:
 	virtual ~LoadFormat() {};
 
-	virtual bool load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata = nullptr) =0;
+	virtual bool load(QFile *inFile, QList<PageBase> &subPages, QVariantHash *metadata = nullptr) =0;
 
 	virtual QString description() const =0;
 	virtual QStringList extensions() const =0;
@@ -46,7 +45,6 @@ public:
 	bool reExportWarning() const { return m_reExportWarning; };
 
 protected:
-	TeletextDocument const *m_document;
 	QStringList m_warnings;
 	QString m_error;
 	bool m_reExportWarning = false;
@@ -55,7 +53,7 @@ protected:
 class LoadTTIFormat : public LoadFormat
 {
 public:
-	bool load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata = nullptr) override;
+	bool load(QFile *inFile, QList<PageBase> &subPages, QVariantHash *metadata = nullptr) override;
 
 	QString description() const override { return QString("MRG Systems TTI"); };
 	QStringList extensions() const override { return QStringList { "tti", "ttix" }; };
@@ -64,7 +62,7 @@ public:
 class LoadT42Format : public LoadFormat
 {
 public:
-	bool load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata = nullptr) override;
+	bool load(QFile *inFile, QList<PageBase> &subPages, QVariantHash *metadata = nullptr) override;
 
 	QString description() const override { return QString("t42 packet stream"); };
 	QStringList extensions() const override { return QStringList { "t42" }; };
@@ -89,7 +87,7 @@ protected:
 class LoadEP1Format : public LoadFormat
 {
 public:
-	bool load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata = nullptr) override;
+	bool load(QFile *inFile, QList<PageBase> &subPages, QVariantHash *metadata = nullptr) override;
 
 	QString description() const override { return QString("Softel EP1"); };
 	QStringList extensions() const override { return QStringList { "ep1", "epx" }; };

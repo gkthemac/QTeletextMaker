@@ -40,6 +40,7 @@ public:
 	enum CycleTypeEnum { CTcycles, CTseconds };
 
 	LevelOnePage();
+	LevelOnePage(const PageBase &other);
 
 	PageFunctionEnum pageFunction() const override { return PFLevelOnePage; }
 	PacketCodingEnum packetCoding() const override { return Coding7bit; }

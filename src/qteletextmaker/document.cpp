@@ -187,6 +187,14 @@ void TeletextDocument::unDeleteSubPageFromRecycle(int subPage)
 	m_recycleSubPages.removeLast();
 }
 
+void TeletextDocument::loadFromList(QList<PageBase> const &subPageList)
+{
+	*m_subPages[0] = subPageList.at(0);
+
+	for (int i=1; i<subPageList.size(); i++)
+		m_subPages.append(new LevelOnePage(subPageList.at(i)));
+}
+
 void TeletextDocument::loadMetaData(QVariantHash const &metadata)
 {
 	bool valueOk;

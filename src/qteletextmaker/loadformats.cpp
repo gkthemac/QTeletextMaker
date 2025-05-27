@@ -22,16 +22,16 @@
 #include <QByteArray>
 #include <QDataStream>
 #include <QFile>
+#include <QList>
 #include <QString>
 #include <QStringList>
 #include <QVariant>
 
-#include "document.h"
 #include "hamming.h"
 #include "levelonepage.h"
 #include "pagebase.h"
 
-bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata)
+bool LoadTTIFormat::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash *metadata)
 {
 	m_warnings.clear();
 	m_error.clear();
@@ -42,7 +42,10 @@ bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document, QVariantHash
 	bool firstSubPageAlreadyFound = false;
 	bool pageBodyPacketsFound = false;
 
-	LevelOnePage* loadingPage = document->subPage(0);
+//	subPages.clear();
+	subPages.append(PageBase { } );
+
+	PageBase* loadingPage = &subPages[0];
 
 	for (;;) {
 		inLine = inFile->readLine(160).trimmed();
@@ -67,8 +70,8 @@ bool LoadTTIFormat::load(QFile *inFile, TeletextDocument *document, QVariantHash
 			} else {
 				// Subsequent PN command found; this assumes that PN is the first command of a new subpage
 				currentSubPageNum++;
-				document->insertSubPage(document->numberOfSubPages(), false);
-				loadingPage = document->subPage(document->numberOfSubPages()-1);
+				subPages.append(PageBase { } );
+				loadingPage = &subPages[subPages.size()-1];
 			}
 		}
 /*		if (lineType == "SC,") {
@@ -208,7 +211,7 @@ bool LoadT42Format::readPacket()
 	return m_inFile->read((char *)m_inLine, 42) == 42;
 }
 
-bool LoadT42Format::load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata)
+bool LoadT42Format::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash *metadata)
 {
 	int readMagazineNumber, readPacketNumber;
 	int foundMagazineNumber = -1;
@@ -221,6 +224,11 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document, QVariantHash
 	m_warnings.clear();
 	m_error.clear();
 	m_reExportWarning = false;
+
+//	subPages.clear();
+	subPages.append(PageBase { });
+
+	PageBase* loadingPage = &subPages[0];
 
 	for (;;) {
 		if (!readPacket())
@@ -280,15 +288,15 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document, QVariantHash
 						metadata->insert("pageNumber", (foundMagazineNumber << 8) | foundPageNumber);
 				}
 
-				document->subPage(0)->setControlBit(PageBase::C4ErasePage, m_inLine[5] & 0x08);
-				document->subPage(0)->setControlBit(PageBase::C5Newsflash, m_inLine[7] & 0x04);
-				document->subPage(0)->setControlBit(PageBase::C6Subtitle, m_inLine[7] & 0x08);
+				loadingPage->setControlBit(PageBase::C4ErasePage, m_inLine[5] & 0x08);
+				loadingPage->setControlBit(PageBase::C5Newsflash, m_inLine[7] & 0x04);
+				loadingPage->setControlBit(PageBase::C6Subtitle, m_inLine[7] & 0x08);
 				for (int i=0; i<4; i++)
-					document->subPage(0)->setControlBit(PageBase::C7SuppressHeader+i, m_inLine[8] & (1 << i));
-				document->subPage(0)->setControlBit(PageBase::C11SerialMagazine, m_inLine[9] & 0x01);
-				document->subPage(0)->setControlBit(PageBase::C12NOS, m_inLine[9] & 0x08);
-				document->subPage(0)->setControlBit(PageBase::C13NOS, m_inLine[9] & 0x04);
-				document->subPage(0)->setControlBit(PageBase::C14NOS, m_inLine[9] & 0x02);
+					loadingPage->setControlBit(PageBase::C7SuppressHeader+i, m_inLine[8] & (1 << i));
+				loadingPage->setControlBit(PageBase::C11SerialMagazine, m_inLine[9] & 0x01);
+				loadingPage->setControlBit(PageBase::C12NOS, m_inLine[9] & 0x08);
+				loadingPage->setControlBit(PageBase::C13NOS, m_inLine[9] & 0x04);
+				loadingPage->setControlBit(PageBase::C14NOS, m_inLine[9] & 0x02);
 
 				// See if there's text in the header row
 				bool headerText = false;
@@ -304,7 +312,7 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document, QVariantHash
 					for (int i=0; i<10; i++)
 						m_inLine[i] = 0x20;
 
-					document->subPage(0)->setPacket(0, QByteArray((const char *)&m_inLine[2], 40));
+					loadingPage->setPacket(0, QByteArray((const char *)&m_inLine[2], 40));
 				}
 				continue;
 			}
@@ -327,7 +335,7 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document, QVariantHash
 			for (int i=2; i<42; i++)
 				// TODO - obey odd parity?
 				m_inLine[i] &= 0x7f;
-			document->subPage(0)->setPacket(readPacketNumber, QByteArray((const char *)&m_inLine[2], 40));
+			loadingPage->setPacket(readPacketNumber, QByteArray((const char *)&m_inLine[2], 40));
 			continue;
 		}
 
@@ -365,7 +373,7 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document, QVariantHash
 					m_inLine[b+5] = 0x3;
 				}
 			}
-			document->subPage(0)->setPacket(readPacketNumber, readDesignationCode, QByteArray((const char *)&m_inLine[2], 40));
+			loadingPage->setPacket(readPacketNumber, readDesignationCode, QByteArray((const char *)&m_inLine[2], 40));
 
 			continue;
 		}
@@ -415,7 +423,7 @@ bool LoadT42Format::load(QFile *inFile, TeletextDocument *document, QVariantHash
 				m_inLine[b+2] = d >> 12;
 			}
 		}
-		document->subPage(0)->setPacket(readPacketNumber, readDesignationCode, QByteArray((const char *)&m_inLine[2], 40));
+		loadingPage->setPacket(readPacketNumber, readDesignationCode, QByteArray((const char *)&m_inLine[2], 40));
 	}
 
 	if (!firstPacket0Found) {
@@ -451,7 +459,7 @@ bool LoadHTTFormat::readPacket()
 }
 
 
-bool LoadEP1Format::load(QFile *inFile, TeletextDocument *document, QVariantHash *metadata)
+bool LoadEP1Format::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash *metadata)
 {
 	m_warnings.clear();
 	m_error.clear();
@@ -460,7 +468,10 @@ bool LoadEP1Format::load(QFile *inFile, TeletextDocument *document, QVariantHash
 	unsigned char inLine[42];
 	unsigned char numOfSubPages = 1;
 
-	LevelOnePage* loadingPage = document->subPage(0);
+//	subPages.clear();
+	subPages.append(PageBase { } );
+
+	PageBase* loadingPage = &subPages[0];
 
 	for (;;) {
 		// Read six bytes, will either be a header for a (sub)page
@@ -564,8 +575,8 @@ bool LoadEP1Format::load(QFile *inFile, TeletextDocument *document, QVariantHash
 		if (inFile->read((char *)inLine, 42) != 42)
 			return false;
 
-		document->insertSubPage(document->numberOfSubPages(), false);
-		loadingPage = document->subPage(document->numberOfSubPages()-1);
+		subPages.append(PageBase { } );
+		loadingPage = &subPages[subPages.size()-1];
 	}
 	return true;
 }
