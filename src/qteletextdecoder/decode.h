@@ -38,6 +38,7 @@ public:
 	~TeletextPageDecode();
 	bool refresh(int r, int c) const { return m_refresh[r][c]; }
 	void setRefresh(int r, int c, bool refresh);
+	int level() const { return m_level; }
 	void decodePage();
 	LevelOnePage *teletextPage() const { return m_levelOnePage; };
 	void setTeletextPage(LevelOnePage *newCurrentPage);
