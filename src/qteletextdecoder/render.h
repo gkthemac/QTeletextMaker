@@ -79,9 +79,10 @@ protected:
 	int m_flashingRow[25];
 
 private:
-	inline void drawFromBitmap(QPainter &, int, int, const QImage, TeletextPageDecode::CharacterFragment);
+	inline void drawFromBitmap(QPainter &painter, int r, int c, const QImage image, TeletextPageDecode::CharacterFragment characterFragment);
 	inline void drawFromFontBitmap(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment);
 	inline void drawCharacter(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, int characterDiacritical, TeletextPageDecode::CharacterFragment characterFragment);
+	inline bool drawDRCSCharacter(QPainter &painter, int r, int c, TeletextPageDecode::DRCSSource drcsSource, int drcsSubTable, int drcsChar, TeletextPageDecode::CharacterFragment characterFragment, bool flashPhOn = true);
 	inline void drawBoldOrItalicCharacter(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment);
 	void renderRow(int r, int ph, bool force=false);
 	void setRowFlashStatus(int r, int rowFlashHz);

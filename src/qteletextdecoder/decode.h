@@ -20,11 +20,14 @@
 #ifndef DECODE_H
 #define DECODE_H
 
+#include <QImage>
 #include <QList>
 #include <QMap>
 #include <QMultiMap>
 
+#include "drcspage.h"
 #include "levelonepage.h"
+#include "pagebase.h"
 
 class TeletextPageDecode : public QObject
 {
@@ -32,6 +35,9 @@ class TeletextPageDecode : public QObject
 
 public:
 	enum CharacterFragment { NormalSize, DoubleHeightTopHalf, DoubleHeightBottomHalf, DoubleWidthLeftHalf, DoubleWidthRightHalf, DoubleSizeTopLeftQuarter, DoubleSizeTopRightQuarter, DoubleSizeBottomLeftQuarter, DoubleSizeBottomRightQuarter };
+	enum DRCSPageType { NormalDRCSPage, GlobalDRCSPage };
+//	enum ObjectPageType { NormalPOPage = 2, GlobalPOPage };
+	enum DRCSSource { NoDRCS, NormalDRCS, GlobalDRCS };
 	enum RowHeight { NormalHeight, TopHalf, BottomHalf };
 
 	TeletextPageDecode();
@@ -42,6 +48,9 @@ public:
 	void decodePage();
 	LevelOnePage *teletextPage() const { return m_levelOnePage; };
 	void setTeletextPage(LevelOnePage *newCurrentPage);
+	QList<DRCSPage> *drcsPage(DRCSPageType pageType) const { return m_drcsPage[pageType]; };
+	void setDRCSPage(DRCSPageType pageType, QList<DRCSPage> *pages);
+	void clearDRCSPage(DRCSPageType pageType);
 	void updateSidePanels();
 
 	unsigned char cellCharacterCode(int r, int c) const { return m_cell[r][c].character.code; };
@@ -49,6 +58,13 @@ public:
 	int cellCharacterDiacritical(int r, int c) const { return m_cell[r][c].character.diacritical; };
 	int cellG0CharacterSet(int r, int c) const { return m_cell[r][c].g0Set; };
 	int cellG2CharacterSet(int r, int c) const { return m_cell[r][c].g2Set; };
+
+	DRCSSource cellDrcsSource(int r, int c) const { return m_cell[r][c].character.drcsSource; };
+	int cellDrcsSubTable(int r, int c) const { return m_cell[r][c].character.drcsSubTable; };
+	int cellDrcsCharacter(int r, int c) const { return m_cell[r][c].character.drcsChar; };
+
+	QImage drcsImage(DRCSSource pageType, int subTable, int chr, bool flashPhOn = true);
+
 	int cellForegroundCLUT(int r, int c) const { return m_cell[r][c].attribute.foregroundCLUT; };
 	int cellBackgroundCLUT(int r, int c) const { return m_cell[r][c].attribute.backgroundCLUT; };
 	QColor cellForegroundQColor(int r, int c);
@@ -103,13 +119,19 @@ private:
 		unsigned char code=0x20;
 		int set=0;
 		int diacritical=0;
+		DRCSSource drcsSource=NoDRCS;
+		int drcsSubTable=0;
+		int drcsChar=0;
 	};
 
 	friend inline bool operator!=(const textCharacter &lhs, const textCharacter &rhs)
 	{
-		return lhs.code        != rhs.code ||
-	           lhs.set         != rhs.set  ||
-	           lhs.diacritical != rhs.diacritical;
+		return lhs.code         != rhs.code         ||
+		       lhs.set          != rhs.set          ||
+		       lhs.diacritical  != rhs.diacritical  ||
+		       lhs.drcsSource   != rhs.drcsSource   ||
+		       lhs.drcsSubTable != rhs.drcsSubTable ||
+		       lhs.drcsChar     != rhs.drcsChar;
 	}
 
 	struct flashFunctions {
@@ -179,11 +201,20 @@ private:
 		       lhs.fragment  != rhs.fragment;
 	}
 
+	struct drcsMode {
+		bool level2p5=true;
+		bool level3p5=true;
+		bool used=false;
+		int subTable=0;
+	};
+
 	struct textPainter {
 		textAttributes attribute;
 		textCell result;
 		textCell rightHalfCell;
 		textCell bottomHalfCell[72];
+
+		drcsMode gDrcs, nDrcs;
 
 		int styleSpreadRows=0;
 		int setProportionalRows[72], clearProportionalRows[72];
@@ -267,6 +298,7 @@ private:
 	bool m_cellLevel1MosaicChar[25][40];
 	int m_cellLevel1CharSet[25][40];
 	LevelOnePage* m_levelOnePage;
+	QList<DRCSPage>* m_drcsPage[2];
 	int m_fullRowColour[25];
 	QColor m_fullRowQColor[25];
 	QList<Invocation> m_invocations[3];

@@ -191,6 +191,23 @@ inline void TeletextPageRender::drawCharacter(QPainter &painter, int r, int c, u
 	}
 }
 
+inline bool TeletextPageRender::drawDRCSCharacter(QPainter &painter, int r, int c, TeletextPageDecode::DRCSSource drcsSource, int drcsSubTable, int drcsChar, TeletextPageDecode::CharacterFragment characterFragment, bool flashPhOn)
+{
+	QImage drcsImage = m_decoder->drcsImage(drcsSource, drcsSubTable, drcsChar, flashPhOn);
+
+	if (drcsImage.isNull())
+		return false;
+
+	if (drcsImage.format() == QImage::Format_Mono)
+		// mode 0 (12x10x1) returned here has no colours of its own
+		// so apply the foreground and background colours of the cell it appears in
+		drcsImage.setColorTable(QVector<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
+
+	drawFromBitmap(painter, r, c, drcsImage, characterFragment);
+
+	return true;
+}
+
 inline void TeletextPageRender::drawBoldOrItalicCharacter(QPainter &painter, int r, int c, unsigned char characterCode, int characterSet, TeletextPageDecode::CharacterFragment characterFragment)
 {
 	QImage styledImage = QImage(12, 10, QImage::Format_Mono);
@@ -306,7 +323,7 @@ void TeletextPageRender::renderRow(int r, int ph, bool force)
 				drawCharacter(painter, r, c, 0x00, 0, 0, m_decoder->cellCharacterFragment(r, c));
 			else if (concealed)
 				drawCharacter(painter, r, c, 0x20, 0, 0, m_decoder->cellCharacterFragment(r, c));
-			else
+			else if (m_decoder->cellDrcsSource(r, c) == TeletextPageDecode::NoDRCS || !drawDRCSCharacter(painter, r, c, m_decoder->cellDrcsSource(r, c), m_decoder->cellDrcsSubTable(r, c), m_decoder->cellDrcsCharacter(r, c), m_decoder->cellCharacterFragment(r, c), flashPhOn))
 				drawCharacter(painter, r, c, m_decoder->cellCharacterCode(r, c), m_decoder->cellCharacterSet(r, c), m_decoder->cellCharacterDiacritical(r, c), m_decoder->cellCharacterFragment(r, c));
 
 			if (m_showControlCodes && c < 40 && m_decoder->teletextPage()->character(r, c) < 0x20) {
@@ -422,6 +439,13 @@ void TeletextPageRender::colourChanged(int index)
 			if (m_decoder->cellFlashMode(r, c) == 3 && ((m_decoder->cellForegroundCLUT(r, c) ^ 8) == index || (m_decoder->cellForegroundCLUT(r, c) ^ 8) == 8))
 				m_decoder->setRefresh(r, c, true);
 		}
+
+	if (m_decoder->level() == 3)
+		// TODO don't refresh mode 0 DRCS
+		for (int r=0; r<25; r++)
+			for (int c=0; c<72; c++)
+				if (m_decoder->cellDrcsSource(r, c) != TeletextPageDecode::NoDRCS)
+					m_decoder->setRefresh(r, c, true);
 }
 
 void TeletextPageRender::setReveal(bool reveal)

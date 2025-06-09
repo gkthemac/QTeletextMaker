@@ -19,8 +19,15 @@
 
 #include "decode.h"
 
+#include <QByteArray>
+#include <QImage>
 #include <QList>
 #include <QMultiMap>
+
+#include "drcspage.h"
+#include "levelonepage.h"
+#include "pagebase.h"
+
 
 TeletextPageDecode::Invocation::Invocation()
 {
@@ -113,6 +120,7 @@ void TeletextPageDecode::Invocation::buildMap(int level)
 				if (targetRow == 0)
 					m_fullRowCLUTMap.insert(targetRow, triplet);
 				break;
+			case 0x18: // DRCS mode
 			case 0x20: // Foreground colour
 			case 0x23: // Background colour
 			case 0x27: // Additional flash functions
@@ -128,6 +136,7 @@ void TeletextPageDecode::Invocation::buildMap(int level)
 			case 0x22: // G3 character at Level 1.5
 			case 0x29: // G0 character
 			case 0x2b: // G3 character at Level 2.5
+			case 0x2d: // DRCS character
 			case 0x2f: // G2 character
 				m_characterMap.insert(qMakePair(targetRow, targetColumn), triplet);
 				m_rightMostColumn.insert(targetRow, targetColumn);
@@ -184,6 +193,9 @@ TeletextPageDecode::TeletextPageDecode()
 		m_fullRowQColor[r].setRgb(0, 0, 0);
 	}
 	m_leftSidePanelColumns = m_rightSidePanelColumns = 0;
+
+	m_drcsPage[GlobalDRCSPage] = nullptr;
+	m_drcsPage[NormalDRCSPage] = nullptr;
 }
 
 TeletextPageDecode::~TeletextPageDecode()
@@ -203,6 +215,28 @@ void TeletextPageDecode::setTeletextPage(LevelOnePage *newCurrentPage)
 	updateSidePanels();
 }
 
+void TeletextPageDecode::setDRCSPage(DRCSPageType pageType, QList<DRCSPage> *pages)
+{
+	m_drcsPage[pageType] = pages;
+
+	bool refreshRequired = false;
+
+	for (int r=0; r<25; r++)
+		for (int c=0; c<72; c++)
+			if (m_cell[r][c].character.drcsSource != NoDRCS) {
+				m_refresh[r][c] = true;
+				refreshRequired = true;
+			}
+
+	if (refreshRequired)
+		decodePage();
+}
+
+void TeletextPageDecode::clearDRCSPage(DRCSPageType pageType)
+{
+	setDRCSPage(pageType, nullptr);
+}
+
 void TeletextPageDecode::setLevel(int level)
 {
 	if (level == m_level)
@@ -216,6 +250,116 @@ void TeletextPageDecode::setLevel(int level)
 
 	updateSidePanels();
 	decodePage();
+}
+
+QImage TeletextPageDecode::drcsImage(DRCSSource pageType, int subTable, int chr, bool flashPhOn)
+{
+	if (pageType == NoDRCS)
+		return QImage();
+
+	// Check if page is loaded and if the subpage exists
+	const QList<DRCSPage>* drcsPage = m_drcsPage[pageType-1];
+	if (drcsPage == nullptr || subTable >= drcsPage->size())
+		return QImage();
+
+	// Level 2.5: only and always mode 0 (12x10x1) and doesn't use X/28/3
+	// Level 3.5: if X/28/3 is absent, drcsMode below returns mode 0
+	if (m_level == 2 || drcsPage->at(subTable).drcsMode(chr) == 0) {
+		uchar rawData[20];
+
+		if (!drcsPage->at(subTable).ptu(chr, rawData))
+			return QImage();
+
+		QImage result = QImage(rawData, 12, 10, 2, QImage::Format_Mono);
+		return result.copy();
+	}
+
+	// Level 3.5: obey X/28/3 "subsequent PTU" and "no data" values, ignore reserved values
+	const int drcsMode = drcsPage->at(subTable).drcsMode(chr);
+	if (drcsMode > 3)
+		return QImage();
+
+	uchar rawData[120];
+
+	if (drcsMode != 3) {
+		// mode 1 (12x10x2) or mode 2 (12x10x4)
+		// Each complete bitplane stored sequentially across multiple PTUs
+
+		uchar bitplaneArr[4][20] = { };
+
+		// Get the PTUs for each bitplane
+		drcsPage->at(subTable).ptu(chr, bitplaneArr[0]);
+		if (chr < 47)
+			drcsPage->at(subTable).ptu(chr+1, bitplaneArr[1]);
+		if (drcsMode == 2) {
+			if (chr < 46)
+				drcsPage->at(subTable).ptu(chr+2, bitplaneArr[2]);
+			if (chr < 45)
+				drcsPage->at(subTable).ptu(chr+3, bitplaneArr[3]);
+		}
+
+		// Now assemble the bitplanes into byte-per-pixel data
+		for (int x=0; x<12; x++)
+			for (int y=0; y<10; y++) {
+				const int scanByte = y*2 + (x > 7);
+				const int scanBit = 7 - x%8;
+
+				rawData[x + y*12] = bitplaneArr[0][scanByte] >> scanBit & 1;
+				rawData[x + y*12] |= (bitplaneArr[1][scanByte] >> scanBit & 1) << 1;
+				if (drcsMode == 2) {
+					rawData[x + y*12] |= (bitplaneArr[2][scanByte] >> scanBit & 1) << 2;
+					rawData[x + y*12] |= (bitplaneArr[3][scanByte] >> scanBit & 1) << 3;
+				}
+			}
+	} else {
+		// mode 3 (6x5x4)
+		// Interleaved: First row of six pixels is stored four times sequentially, one for
+		// each bitplane, then second row of pixels four times, and so on
+		const int pktNo = (chr+2)/2;
+
+		if (!drcsPage->at(subTable).packetExists(pktNo))
+			return QImage();
+
+		QByteArray pkt;
+
+		if (chr % 2 == 0)
+			pkt = drcsPage->at(subTable).packet(pktNo).first(20);
+		else
+			pkt = drcsPage->at(subTable).packet(pktNo).last(20);
+
+		for (int x=0; x<6; x++)
+			for (int y=0; y<5; y++) {
+				const int scanByte = y * 4;
+				const int scanBit = 5 - x;
+				uchar pixel;
+
+				pixel = pkt.at(scanByte) >> scanBit & 1;
+				pixel |= (pkt.at(scanByte+1) >> scanBit & 1) << 1;
+				pixel |= (pkt.at(scanByte+2) >> scanBit & 1) << 2;
+				pixel |= (pkt.at(scanByte+3) >> scanBit & 1) << 3;
+
+				rawData[x*2   + y*24   ] = pixel;
+				rawData[x*2+1 + y*24   ] = pixel;
+				rawData[x*2   + y*24+12] = pixel;
+				rawData[x*2+1 + y*24+12] = pixel;
+			}
+	}
+
+	QImage result = QImage(rawData, 12, 10, 12, QImage::Format_Indexed8);
+
+	// Now put in the colours
+	// TODO read colours from X/28/1, for now we put in the default colours
+	for (int i=0; i<16; i++) {
+		if (flashPhOn)
+			result.setColor(i, m_levelOnePage->CLUTtoQColor(i).rgb());
+		else
+			result.setColor(i, m_levelOnePage->CLUTtoQColor(i ^ 8).rgb());
+
+		if (i == 3 && drcsMode == 1)
+			break;
+	}
+
+	return result.copy();
 }
 
 void TeletextPageDecode::updateSidePanels()
@@ -315,7 +459,8 @@ TeletextPageDecode::textCharacter TeletextPageDecode::characterFromTriplets(cons
 	for (int a=triplets.size()-1; a>=0; a--) {
 		const X26Triplet triplet = triplets.at(a);
 
-		if (triplet.data() < 0x20)
+		// Data values below 0x20 are reserved, except for DRCS character
+		if (triplet.data() < 0x20 && triplet.modeExt() != 0x2d)
 			continue;
 
 		const unsigned char charCode = triplet.data();
@@ -353,6 +498,9 @@ TeletextPageDecode::textCharacter TeletextPageDecode::characterFromTriplets(cons
 			case 0x2b: // G3 character at Level 2.5
 				result = { charCode, 26, 0 };
 				break;
+			case 0x2d: // DRCS character
+				result.drcsSource = (charCode & 0x40) == 0x40 ? NormalDRCS : GlobalDRCS;
+				result.drcsChar = charCode & 0x3f;
 		}
 	}
 
@@ -631,6 +779,7 @@ void TeletextPageDecode::decodeRow(int r)
 
 						bool applyAdapt = false;
 
+						drcsMode *drcsModePtr;
 						// Adaptive Invocation that is applying an attribute
 						// If we're not tracking an Adaptive Invocation yet, start tracking this one
 						// Otherwise check if this Invocation is the the same one as we are tracking
@@ -645,6 +794,16 @@ void TeletextPageDecode::decodeRow(int r)
 						}
 
 						switch (triplet.modeExt()) {
+							case 0x18: // DRCS mode
+								drcsModePtr = (triplet.data() & 0x40) == 0x40 ? &painter->nDrcs : &painter->gDrcs;
+								if ((triplet.data() & 0x30) != 0x00) {
+									drcsModePtr->level2p5 = triplet.data() & 0x10;
+									drcsModePtr->level3p5 = triplet.data() & 0x20;
+									// "used" is never set to true on Level 3.5, to allow all 16 sub-tables
+									if (!drcsModePtr->used)
+										drcsModePtr->subTable = triplet.data() & 0x0f;
+								}
+								break;
 							case 0x20: // Foreground colour
 								if (applyAdapt)
 									adapForeground = true;
@@ -733,6 +892,7 @@ void TeletextPageDecode::decodeRow(int r)
 
 		if (c < 40 && m_rowHeight[r] != BottomHalf) {
 			m_level1ActivePainter.result.character.diacritical = 0;
+			m_level1ActivePainter.result.character.drcsSource = NoDRCS;
 			if (m_levelOnePage->character(r, c) >= 0x20) {
 				m_level1ActivePainter.result.character.code = m_levelOnePage->character(r, c);
 				if (m_cellLevel1MosaicChar[r][c]) {
@@ -773,7 +933,36 @@ void TeletextPageDecode::decodeRow(int r)
 				for (int i=0; i<m_invocations[t].size(); i++) {
 					painter = (t == 0) ? &m_level1ActivePainter : &m_adapPassPainter[t-1][i];
 
-					const textCharacter result = characterFromTriplets(m_invocations[t].at(i).charactersMappedAt(r, c));
+					textCharacter result = characterFromTriplets(m_invocations[t].at(i).charactersMappedAt(r, c));
+
+					if (result.drcsSource) {
+						drcsMode *drcsModePtr = result.drcsSource == NormalDRCS ? &painter->nDrcs : &painter->gDrcs;
+
+						if ((m_level == 2 && drcsModePtr->level2p5) || (m_level == 3 && drcsModePtr->level3p5)) {
+							// "code" is zero if an X/26 character is NOT invoked in the same cell
+							if (result.code == 0x00)
+								result.code = 0x20;
+							result.drcsSubTable = drcsModePtr->subTable;
+							if (m_level < 3)
+								drcsModePtr->used = true;
+						} else
+							// DRCS character not required at the current level
+							result.drcsSource = NoDRCS;
+					}
+
+					// If the DRCS character in question is not downloaded, scrap all that hard work
+					// looking it up.
+					// Ideally we'd leave it in case somebody wants to find which character was meant
+					// to be invoked, but things like underlying Level 1 characters still needing to
+					// appear when the DRCS characters are not (yet) downloaded are too complex to
+					// figure out with this too complex decoder.
+					if (result.drcsSource) {
+						const QList<DRCSPage>* drcsPage = m_drcsPage[result.drcsSource-1];
+						if (drcsPage == nullptr || result.drcsSubTable >= drcsPage->size() || !drcsPage->at(result.drcsSubTable).ptu(result.drcsChar, nullptr)) {
+							result.drcsSource = NoDRCS;
+							result.code = 0x00;
+						}
+					}
 
 					if (t == 0 && result.code == 0x00)
 						continue;

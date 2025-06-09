@@ -21,6 +21,7 @@
 #include <QApplication>
 #include <QDesktopServices>
 #include <QFileDialog>
+#include <QFileSystemWatcher>
 #include <QImage>
 #include <QList>
 #include <QMenuBar>
@@ -42,6 +43,7 @@
 
 #include "mainwindow.h"
 
+#include "drcspage.h"
 #include "hashformats.h"
 #include "levelonecommands.h"
 #include "loadformats.h"
@@ -378,6 +380,8 @@ void MainWindow::init()
 	connect(m_textScene, &LevelOneScene::mouseZoomIn, this, &MainWindow::zoomIn);
 	connect(m_textScene, &LevelOneScene::mouseZoomOut, this, &MainWindow::zoomOut);
 
+	connect(&m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &MainWindow::updateWatchedFile);
+
 	QShortcut *blockShortCut = new QShortcut(QKeySequence(Qt::Key_Escape, Qt::Key_J), m_textView);
 	connect(blockShortCut, &QShortcut::activated, [=]() { m_textWidget->setCharacter(0x7f); });
 
@@ -678,6 +682,35 @@ void MainWindow::createActions()
 	zoomResetAct->setStatusTip(tr("Reset zoom level"));
 	connect(zoomResetAct, &QAction::triggered, this, &MainWindow::zoomReset);
 
+	viewMenu->addSeparator();
+
+	QMenu *drcsSubMenu = viewMenu->addMenu(tr("DRCS pages"));
+	m_drcsSeparator[1] = drcsSubMenu->addSeparator();
+	m_drcsSeparator[1]->setText("Global DRCS");
+	QAction *gDrcsFileSelect = drcsSubMenu->addAction(tr("Load file..."));
+	gDrcsFileSelect->setStatusTip(tr("Load a file to use for Global DRCS definitions"));
+	connect(gDrcsFileSelect, &QAction::triggered, [=]() { loadDRCSFile(1); });
+	m_drcsClear[1] = drcsSubMenu->addAction(tr("Clear"));
+	m_drcsClear[1]->setStatusTip(tr("Clear Global DRCS definitions"));
+	m_drcsClear[1]->setEnabled(false);
+	connect(m_drcsClear[1], &QAction::triggered, [=]() { clearDRCSFile(1); });
+
+	m_drcsSeparator[0] = drcsSubMenu->addSeparator();
+	m_drcsSeparator[0]->setText("Normal DRCS");
+	QAction *nDrcsFileSelect = drcsSubMenu->addAction(tr("Load file..."));
+	nDrcsFileSelect->setStatusTip(tr("Load a file to use for Normal DRCS definitions"));
+	connect(nDrcsFileSelect, &QAction::triggered, [=]() { loadDRCSFile(0); });
+	m_drcsClear[0] = drcsSubMenu->addAction(tr("Clear"));
+	m_drcsClear[0]->setStatusTip(tr("Clear Normal DRCS definitions"));
+	m_drcsClear[0]->setEnabled(false);
+	connect(m_drcsClear[0], &QAction::triggered, [=]() { clearDRCSFile(0); });
+
+	drcsSubMenu->addSeparator();
+	m_drcsSwap = drcsSubMenu->addAction(tr("Swap Global and Normal"));
+	m_drcsSwap->setStatusTip(tr("Swap the files used for Global and Normal DRCS definitions"));
+	m_drcsSwap->setEnabled(false);
+	connect(m_drcsSwap, &QAction::triggered, this, &MainWindow::swapDRCS);
+
 	QMenu *insertMenu = menuBar()->addMenu(tr("&Insert"));
 
 	QMenu *alphaColourSubMenu = insertMenu->addMenu(tr("Alphanumeric colour"));
@@ -898,6 +931,119 @@ void MainWindow::zoomReset()
 {
 	m_viewZoom = 2;
 	m_zoomSlider->setValue(2);
+}
+
+void MainWindow::loadDRCSFile(int drcsType, QString fileName)
+{
+	const QString drcsTypeName = drcsType == 1 ? "Global DRCS" : "Normal DRCS";
+
+	const bool updatingWatched = !fileName.isEmpty();
+
+	if (!updatingWatched)
+		fileName = QFileDialog::getOpenFileName(this, tr("Select %1 file").arg(drcsTypeName), m_drcsFileName[drcsType], m_loadFormats.filters());
+
+	if (!fileName.isEmpty()) {
+		QFile file(fileName);
+
+		LoadFormat *loadingFormat = m_loadFormats.findFormat(QFileInfo(fileName).suffix());
+		if (loadingFormat == nullptr) {
+			if (updatingWatched)
+				clearDRCSFile(drcsType);
+			else
+				QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot load file %1:\nUnknown file format or extension").arg(QDir::toNativeSeparators(fileName)));
+
+			return;
+		}
+
+		if (!file.open(QFile::ReadOnly)) {
+			if (updatingWatched)
+				clearDRCSFile(drcsType);
+			else
+				QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
+
+			return;
+		}
+
+		QList<PageBase> loadedPages;
+
+		if (loadingFormat->load(&file, loadedPages, nullptr)) {
+			if (!m_drcsFileName[drcsType].isEmpty())
+				m_fileWatcher.removePath(m_drcsFileName[drcsType]);
+
+			m_textWidget->pageDecode()->clearDRCSPage((TeletextPageDecode::DRCSPageType)drcsType);
+			m_drcsPage[drcsType].clear();
+
+			for (int i=0; i<loadedPages.size(); i++)
+				m_drcsPage[drcsType].append(loadedPages.at(i));
+
+			m_textWidget->pageDecode()->setDRCSPage((TeletextPageDecode::DRCSPageType)drcsType, &m_drcsPage[drcsType]);
+			m_textWidget->refreshPage();
+
+			m_fileWatcher.addPath(fileName);
+			m_drcsFileName[drcsType] = fileName;
+			m_drcsSeparator[drcsType]->setText(QString("%1: %2").arg(drcsTypeName).arg(QFileInfo(fileName).fileName()));
+			m_drcsClear[drcsType]->setEnabled(true);
+			m_drcsSwap->setEnabled(true);
+		} else {
+			if (updatingWatched)
+				clearDRCSFile(drcsType);
+			else
+				QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot load file %1\n%2").arg(QDir::toNativeSeparators(fileName), loadingFormat->errorString()));
+
+			return;
+		}
+	}
+}
+
+void MainWindow::clearDRCSFile(int drcsType)
+{
+	m_fileWatcher.removePath(m_drcsFileName[drcsType]);
+
+	m_textWidget->pageDecode()->clearDRCSPage((TeletextPageDecode::DRCSPageType)drcsType);
+	m_drcsPage[drcsType].clear();
+
+	m_textWidget->refreshPage();
+
+	m_drcsFileName[drcsType].clear();
+	m_drcsSeparator[drcsType]->setText(drcsType == 1 ? "Global DRCS" : "Normal DRCS");
+	m_drcsClear[drcsType]->setEnabled(false);
+	m_drcsSwap->setEnabled(m_drcsClear[0]->isEnabled() || m_drcsClear[1]->isEnabled());
+}
+
+void MainWindow::swapDRCS()
+{
+	m_drcsPage[0].swap(m_drcsPage[1]);
+	m_drcsFileName[0].swap(m_drcsFileName[1]);
+
+	for (int i=0; i<2; i++) {
+		const QString drcsTypeName = i == 1 ? "Global DRCS" : "Normal DRCS";
+
+		if (m_drcsPage[i].isEmpty()) {
+			m_textWidget->pageDecode()->clearDRCSPage((TeletextPageDecode::DRCSPageType)i);
+			m_drcsSeparator[i]->setText(drcsTypeName);
+		} else {
+			m_textWidget->pageDecode()->setDRCSPage((TeletextPageDecode::DRCSPageType)i, &m_drcsPage[i]);
+			m_drcsSeparator[i]->setText(QString("%1: %2").arg(drcsTypeName).arg(QFileInfo(m_drcsFileName[i]).fileName()));
+		}
+
+		m_drcsClear[i]->setEnabled(!m_drcsPage[i].isEmpty());
+	}
+
+	m_textWidget->refreshPage();
+}
+
+void MainWindow::updateWatchedFile(const QString &path)
+{
+	int drcsType;
+
+	if (path == m_drcsFileName[1])
+		drcsType = 1;
+	else if (path == m_drcsFileName[0])
+		drcsType = 0;
+	else
+		return;
+
+	loadDRCSFile(drcsType, path);
 }
 
 void MainWindow::toggleInsertMode()

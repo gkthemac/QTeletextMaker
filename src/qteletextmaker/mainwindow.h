@@ -21,15 +21,18 @@
 #define MAINWINDOW_H
 
 #include <QCheckBox>
+#include <QFileSystemWatcher>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QMainWindow>
 #include <QLabel>
+#include <QList>
 #include <QPushButton>
 #include <QSlider>
 #include <QToolButton>
 
+#include "drcspage.h"
 #include "loadformats.h"
 #include "mainwidget.h"
 #include "pagecomposelinksdockwidget.h"
@@ -89,6 +92,12 @@ private slots:
 	void zoomSet(int viewZoom);
 	void zoomReset();
 
+	void loadDRCSFile(int drcsType, QString fileName = "");
+	void clearDRCSFile(int drcsType);
+	void swapDRCS();
+
+	void updateWatchedFile(const QString &path);
+
 	void toggleInsertMode();
 
 private:
@@ -115,6 +124,10 @@ private:
 	LevelOneScene *m_textScene;
 	QGraphicsView *m_textView;
 
+	QList<DRCSPage> m_drcsPage[2];
+	QString m_drcsFileName[2];
+	QFileSystemWatcher m_fileWatcher;
+
 	int m_viewBorder, m_viewAspectRatio, m_viewZoom;
 	bool m_viewSmoothTransform;
 	PageOptionsDockWidget *m_pageOptionsDockWidget;
@@ -128,10 +141,11 @@ private:
 	QAction *m_recentFileSubMenuAct;
 	QAction *m_exportAutoAct;
 	QAction *m_deleteSubPageAction;
+	QAction *m_rowZeroAct;
 	QAction *m_borderActs[3];
 	QAction *m_aspectRatioActs[4];
 	QAction *m_smoothTransformAction;
-	QAction *m_rowZeroAct;
+	QAction *m_drcsSeparator[2], *m_drcsClear[2], *m_drcsSwap;
 
 	QLabel *m_subPageLabel, *m_cursorPositionLabel;
 	QToolButton *m_previousSubPageButton, *m_nextSubPageButton;
