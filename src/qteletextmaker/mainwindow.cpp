@@ -685,8 +685,14 @@ void MainWindow::createActions()
 	viewMenu->addSeparator();
 
 	QMenu *drcsSubMenu = viewMenu->addMenu(tr("DRCS pages"));
-	m_drcsSeparator[1] = drcsSubMenu->addSeparator();
-	m_drcsSeparator[1]->setText("Global DRCS");
+	// Apparently Qt on non-Unix GUIs won't show text on separators or sections
+	// so use a disabled menu entry instead
+#ifndef Q_OS_UNIX
+	m_drcsSection[1] = drcsSubMenu->addAction("Global DRCS");
+	m_drcsSection[1]->setEnabled(false);
+#else
+	m_drcsSection[1] = drcsSubMenu->addSection("Global DRCS");
+#endif
 	QAction *gDrcsFileSelect = drcsSubMenu->addAction(tr("Load file..."));
 	gDrcsFileSelect->setStatusTip(tr("Load a file to use for Global DRCS definitions"));
 	connect(gDrcsFileSelect, &QAction::triggered, [=]() { loadDRCSFile(1); });
@@ -695,8 +701,13 @@ void MainWindow::createActions()
 	m_drcsClear[1]->setEnabled(false);
 	connect(m_drcsClear[1], &QAction::triggered, [=]() { clearDRCSFile(1); });
 
-	m_drcsSeparator[0] = drcsSubMenu->addSeparator();
-	m_drcsSeparator[0]->setText("Normal DRCS");
+#ifndef Q_OS_UNIX
+	QAction *separator = drcsSubMenu->addSeparator();
+	m_drcsSection[0] = drcsSubMenu->addAction("Normal DRCS");
+	m_drcsSection[0]->setEnabled(false);
+#else
+	m_drcsSection[0] = drcsSubMenu->addSection("Normal DRCS");
+#endif
 	QAction *nDrcsFileSelect = drcsSubMenu->addAction(tr("Load file..."));
 	nDrcsFileSelect->setStatusTip(tr("Load a file to use for Normal DRCS definitions"));
 	connect(nDrcsFileSelect, &QAction::triggered, [=]() { loadDRCSFile(0); });
@@ -981,7 +992,7 @@ void MainWindow::loadDRCSFile(int drcsType, QString fileName)
 
 			m_fileWatcher.addPath(fileName);
 			m_drcsFileName[drcsType] = fileName;
-			m_drcsSeparator[drcsType]->setText(QString("%1: %2").arg(drcsTypeName).arg(QFileInfo(fileName).fileName()));
+			m_drcsSection[drcsType]->setText(QString("%1: %2").arg(drcsTypeName).arg(QFileInfo(fileName).fileName()));
 			m_drcsClear[drcsType]->setEnabled(true);
 			m_drcsSwap->setEnabled(true);
 		} else {
@@ -1005,7 +1016,7 @@ void MainWindow::clearDRCSFile(int drcsType)
 	m_textWidget->refreshPage();
 
 	m_drcsFileName[drcsType].clear();
-	m_drcsSeparator[drcsType]->setText(drcsType == 1 ? "Global DRCS" : "Normal DRCS");
+	m_drcsSection[drcsType]->setText(drcsType == 1 ? "Global DRCS" : "Normal DRCS");
 	m_drcsClear[drcsType]->setEnabled(false);
 	m_drcsSwap->setEnabled(m_drcsClear[0]->isEnabled() || m_drcsClear[1]->isEnabled());
 }
@@ -1020,10 +1031,10 @@ void MainWindow::swapDRCS()
 
 		if (m_drcsPage[i].isEmpty()) {
 			m_textWidget->pageDecode()->clearDRCSPage((TeletextPageDecode::DRCSPageType)i);
-			m_drcsSeparator[i]->setText(drcsTypeName);
+			m_drcsSection[i]->setText(drcsTypeName);
 		} else {
 			m_textWidget->pageDecode()->setDRCSPage((TeletextPageDecode::DRCSPageType)i, &m_drcsPage[i]);
-			m_drcsSeparator[i]->setText(QString("%1: %2").arg(drcsTypeName).arg(QFileInfo(m_drcsFileName[i]).fileName()));
+			m_drcsSection[i]->setText(QString("%1: %2").arg(drcsTypeName).arg(QFileInfo(m_drcsFileName[i]).fileName()));
 		}
 
 		m_drcsClear[i]->setEnabled(!m_drcsPage[i].isEmpty());
