@@ -83,7 +83,7 @@ bool LoadTTIFormat::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 		}*/
 		if (inLine.startsWith("PS,")) {
 			bool pageStatusOk;
-			int pageStatusRead = inLine.mid(3, 4).toInt(&pageStatusOk, 16);
+			const int pageStatusRead = inLine.mid(3, 4).toInt(&pageStatusOk, 16);
 			if (pageStatusOk) {
 				loadingPage->setControlBit(PageBase::C4ErasePage, pageStatusRead & 0x4000);
 
@@ -97,20 +97,20 @@ bool LoadTTIFormat::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 		}
 		if (inLine.startsWith("RE,")) {
 			bool regionValueOk;
-			int regionValueRead = inLine.remove(0, 3).toInt(&regionValueOk);
-			if (regionValueOk && metadata != nullptr)
+			const int regionValueRead = inLine.remove(0, 3).toInt(&regionValueOk);
+			if (regionValueOk && metadata != nullptr && regionValueRead >= 0 && regionValueRead <= 15)
 				metadata->insert(QString("region%1").arg(currentSubPageNum, 3, QChar('0')), regionValueRead);
 		}
 		if (inLine.startsWith("CT,") && (inLine.endsWith(",C") || inLine.endsWith(",T"))) {
 			bool cycleValueOk;
-			int cycleValueRead = inLine.mid(3, inLine.size()-5).toInt(&cycleValueOk);
-			if (cycleValueOk && metadata != nullptr) {
+			const int cycleValueRead = inLine.mid(3, inLine.size()-5).toInt(&cycleValueOk);
+			if (cycleValueOk && metadata != nullptr && cycleValueRead >= 1 && cycleValueRead <= 99) {
 				metadata->insert(QString("cycleValue%1").arg(currentSubPageNum, 3, QChar('0')), cycleValueRead);
 				metadata->insert(QString("cycleType%1").arg(currentSubPageNum, 3, QChar('0')), inLine.at(inLine.size()-1));
 			}
 		}
 		if (inLine.startsWith("FL,")) {
-			QString flLine = QString(inLine.remove(0, 3));
+			const QString flLine = QString(inLine.remove(0, 3));
 			if (flLine.count(',') == 5) {
 				// Init packet to all 0xf's as page xFF:3F7F means no page is specified
 				QByteArray fastTextPacket(40, 0xf);
@@ -141,16 +141,14 @@ bool LoadTTIFormat::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 		}
 		if (inLine.startsWith("OL,")) {
 			bool lineNumberOk;
-			int lineNumber, secondCommaPosition;
+			int lineNumber;
 
-			secondCommaPosition = inLine.indexOf(",", 3);
+			const int secondCommaPosition = inLine.indexOf(',', 3);
 			if (secondCommaPosition != 4 && secondCommaPosition != 5)
 				continue;
 
 			lineNumber = inLine.mid(3, secondCommaPosition-3).toInt(&lineNumberOk, 10);
 			if (lineNumberOk && lineNumber >= 0 && lineNumber <= 29) {
-				pageBodyPacketsFound = true;
-
 				inLine.remove(0, secondCommaPosition+1);
 				if (lineNumber <= 25) {
 					for (int c=0; c<40; c++) {
@@ -167,9 +165,10 @@ bool LoadTTIFormat::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 							inLine[c] = inLine.at(c) & 0xbf;
 						}
 					}
+					pageBodyPacketsFound = true;
 					loadingPage->setPacket(lineNumber, inLine);
-				} else {
-					int designationCode = inLine.at(0) & 0x3f;
+				} else if (inLine.at(0) >= 0x40 && inLine.at(0) <= 0x4f) {
+					const int designationCode = inLine.at(0) & 0x3f;
 					if (inLine.size() < 40) {
 						// OL is too short!
 						if (lineNumber == 26) {
@@ -191,6 +190,7 @@ bool LoadTTIFormat::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 							m_warnings.append(QString("M/29/%1 packet found, but page number was not xFF.").arg(designationCode));
 						lineNumber = 28;
 					}
+					pageBodyPacketsFound = true;
 					loadingPage->setPacket(lineNumber, designationCode, inLine);
 				}
 			}
