@@ -202,6 +202,10 @@ inline bool TeletextPageRender::drawDRCSCharacter(QPainter &painter, int r, int 
 		// mode 0 (12x10x1) returned here has no colours of its own
 		// so apply the foreground and background colours of the cell it appears in
 		drcsImage.setColorTable(QVector<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
+	else if (m_renderMode >= RenderWhiteOnBlack)
+		// modes 1-3: crudely convert colours to monochrome
+		for (int i=0; i<16; i++)
+			drcsImage.setColor(i, qGray(drcsImage.color(i)) > 127 ? 0xffffffff : 0xff000000);
 
 	drawFromBitmap(painter, r, c, drcsImage, characterFragment);
 
