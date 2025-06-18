@@ -85,6 +85,7 @@ public:
 	QColor CLUTtoQColor(int index, int renderlevel=3) const;
 	bool isPaletteDefault(int colour) const;
 	bool isPaletteDefault(int fromColour, int toColour) const;
+	int dCLUT(bool globalDrcs, int mode, int index) const;
 	int levelRequired() const;
 	bool leftSidePanelDisplayed() const { return m_leftSidePanelDisplayed; }
 	void setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed);

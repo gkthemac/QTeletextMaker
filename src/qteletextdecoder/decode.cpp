@@ -348,12 +348,13 @@ QImage TeletextPageDecode::drcsImage(DRCSSource pageType, int subTable, int chr,
 	QImage result = QImage(rawData, 12, 10, 12, QImage::Format_Indexed8);
 
 	// Now put in the colours
-	// TODO read colours from X/28/1, for now we put in the default colours
 	for (int i=0; i<16; i++) {
+		const int clr = m_levelOnePage->dCLUT(pageType-1, drcsMode, i);
+
 		if (flashPhOn)
-			result.setColor(i, m_levelOnePage->CLUTtoQColor(i).rgb());
+			result.setColor(i, m_levelOnePage->CLUTtoQColor(clr).rgb());
 		else
-			result.setColor(i, m_levelOnePage->CLUTtoQColor(i ^ 8).rgb());
+			result.setColor(i, m_levelOnePage->CLUTtoQColor(clr ^ 8).rgb());
 
 		if (i == 3 && drcsMode == 1)
 			break;

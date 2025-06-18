@@ -234,7 +234,6 @@ bool LevelOnePage::setPacket(int y, int d, QByteArray pkt)
 		return true;
 	}
 
-	qDebug("LevelOnePage unhandled setPacket X/%d/%d", y, d);
 	return PageX26Base::setPacket(y, d, pkt);
 }
 
@@ -381,6 +380,42 @@ bool LevelOnePage::isPaletteDefault(int fromColour, int toColour) const
 			return false;
 
 	return true;
+}
+
+int LevelOnePage::dCLUT(bool globalDrcs, int mode, int index) const
+{
+	if (!packetExists(28, 1))
+		// Return default DCLUT as per D.1.6 and D.2.2 in the ETSI spec
+		return index;
+
+	const QByteArray pkt = packet(28, 1);
+
+	if (mode == 1) {
+		if (!globalDrcs)
+			index += 4;
+	} else if (mode == 2 || mode == 3)
+		index += globalDrcs ? 8 : 24;
+	else
+		return 0;
+
+	// Some tricky bit juggling to extract 5 bits from parts of a 6-bit triplet
+	const int l = index/6*5 + 4;
+
+	switch (index % 6) {
+		case 0:
+			return pkt.at(l) & 0x1f;
+		case 1:
+			return ((pkt.at(l+1) & 0x0f) << 1) | (pkt.at(l) >> 5);
+		case 2:
+			return ((pkt.at(l+2) & 0x07) << 2) | (pkt.at(l+1) >> 4);
+		case 3:
+			return ((pkt.at(l+3) & 0x03) << 3) | (pkt.at(l+2) >> 3);
+		case 4:
+			return ((pkt.at(l+4) & 0x01) << 4) | (pkt.at(l+3) >> 2);
+		case 5:
+			return pkt.at(l+4) >> 1;
+	}
+	return 0; // Won't get here; used to suppress a compiler warning
 }
 
 int LevelOnePage::levelRequired() const
