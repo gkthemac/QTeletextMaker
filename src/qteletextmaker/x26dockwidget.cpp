@@ -1059,16 +1059,28 @@ void X26DockWidget::insertTriplet(int modeExt, int row)
 	} else
 		row = 0;
 
-	// For character triplets, ensure Data is not reserved
-	if (modeExt == 0x21 || modeExt == 0x22 || modeExt == 0x29 || modeExt == 0x2b || modeExt >= 0x2f)
-		newTriplet.setData(0x20);
-	// For Address Row 0, set Address
-	if (modeExt == 0x07)
-		newTriplet.setAddress(63);
-	// For Termination Marker, set Address and Mode
-	if (modeExt == 0x1f) {
-		newTriplet.setAddress(63);
-		newTriplet.setData(7);
+	// Avoid reserved bits
+	switch (modeExt) {
+		case 0x07: // Address Row 0
+			newTriplet.setAddress(63); // set Address to notreserved
+			break;
+		case 0x18: // DRCS mode
+			newTriplet.setData(0x70); // Normal DRCS at Levels 2.5 and 3.5
+			break;
+		case 0x1f: // Termination Marker
+			newTriplet.setAddress(63); // set all bits to 1
+			newTriplet.setData(7);
+			break;
+		case 0x21: // G1 mosaic character
+		case 0x22: // G3 mosaic character at level 1.5
+		case 0x29: // G0 character
+		case 0x2b: // G3 mosaic character at level >=2.5
+		case 0x2f: // G2 character
+			newTriplet.setData(0x20); // ensure Data is not reserved
+			break;
+		case 0x2d: // DRCS character
+			newTriplet.setData(0x40); // Normal DRCS
+			break;
 	}
 
 	m_x26Model->insertRows(row, 1, QModelIndex(), newTriplet);
