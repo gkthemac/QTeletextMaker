@@ -219,6 +219,78 @@ void TripletDisplayAttrsQMenu::setOtherAttrChecked(int n, bool b)
 }
 
 
+TripletDRCSModeQMenu::TripletDRCSModeQMenu(QWidget *parent): QMenu(parent)
+{
+	m_actions[16] = this->addAction(tr("Global DRCS"));
+	m_actions[17] = this->addAction(tr("Normal DRCS"));
+	m_sourceActionGroup = new QActionGroup(this);
+	for (int i=0; i<2; i++) {
+		m_actions[16+i]->setCheckable(true);
+		m_sourceActionGroup->addAction(m_actions[16+i]);
+	}
+
+	QMenu *subTable = this->addMenu(tr("Subtable"));
+	m_subTableActionGroup = new QActionGroup(this);
+	for (int i=0; i<16; i++) {
+		m_actions[i] = subTable->addAction(QString("%1").arg(i));
+		m_actions[i]->setCheckable(true);
+		m_subTableActionGroup->addAction(m_actions[i]);
+	}
+
+	QMenu *levels = this->addMenu(tr("Required at"));
+	m_actions[18] = levels->addAction("Level 2.5 only");
+	m_actions[19] = levels->addAction("Level 3.5 only");
+	m_actions[20] = levels->addAction("Level 2.5 and 3.5");
+	m_levelsActionGroup = new QActionGroup(this);
+	for (int i=0; i<3; i++) {
+		m_actions[18+i]->setCheckable(true);
+		m_levelsActionGroup->addAction(m_actions[18+i]);
+	}
+}
+
+void TripletDRCSModeQMenu::setSubTableChecked(int n)
+{
+	m_actions[n]->setChecked(true);
+}
+
+void TripletDRCSModeQMenu::setSourceChecked(int n)
+{
+	m_actions[16+n]->setChecked(true);
+}
+
+void TripletDRCSModeQMenu::setLevelsChecked(int n)
+{
+	m_actions[18+n]->setChecked(true);
+}
+
+
+
+TripletDRCSCharacterQMenu::TripletDRCSCharacterQMenu(QWidget *parent): QMenu(parent)
+{
+	QMenu *charRange[4];
+
+	m_actions[48] = this->addAction(tr("Global DRCS"));
+	m_actions[49] = this->addAction(tr("Normal DRCS"));
+	m_sourceActionGroup = new QActionGroup(this);
+	for (int i=0; i<2; i++) {
+		m_actions[48+i]->setCheckable(true);
+		m_sourceActionGroup->addAction(m_actions[48+i]);
+	}
+
+	for (int r=0; r<4; r++) {
+		charRange[r] = this->addMenu(QString("%1-%2").arg(r*12).arg(r*12+11));
+
+		for (int c=0; c<12; c++)
+			m_actions[r*12+c] = charRange[r]->addAction(QString("%1").arg(r*12+c));
+	}
+}
+
+void TripletDRCSCharacterQMenu::setSourceChecked(int n)
+{
+	m_actions[48+n]->setChecked(true);
+}
+
+
 TripletFontStyleQMenu::TripletFontStyleQMenu(QWidget *parent): QMenu(parent)
 {
 	m_actions[0] = this->addAction(tr("Proportional"));

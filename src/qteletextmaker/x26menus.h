@@ -188,6 +188,39 @@ private:
 	QActionGroup *m_sizeActionGroup, *m_otherActionGroup;
 };
 
+class TripletDRCSModeQMenu : public QMenu
+{
+	Q_OBJECT
+
+public:
+	TripletDRCSModeQMenu(QWidget *parent = nullptr);
+	QAction *subTableAction(int n) const { return m_actions[n]; }
+	QAction *sourceAction(int n) const { return m_actions[n+16]; }
+	QAction *levelsAction(int n) const { return m_actions[n+18]; }
+	void setSubTableChecked(int n);
+	void setSourceChecked(int n);
+	void setLevelsChecked(int n);
+
+private:
+	QAction *m_actions[21];
+	QActionGroup *m_subTableActionGroup, *m_sourceActionGroup, *m_levelsActionGroup;
+};
+
+class TripletDRCSCharacterQMenu : public QMenu
+{
+	Q_OBJECT
+
+public:
+	TripletDRCSCharacterQMenu(QWidget *parent = nullptr);
+	QAction *characterAction(int n) const { return m_actions[n]; };
+	QAction *sourceAction(int n) const { return m_actions[n+48]; };
+	void setSourceChecked(int n);
+
+private:
+	QAction *m_actions[50];
+	QActionGroup *m_sourceActionGroup;
+};
+
 class TripletFontStyleQMenu : public QMenu
 {
 	Q_OBJECT

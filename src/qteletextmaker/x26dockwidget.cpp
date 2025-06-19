@@ -1156,6 +1156,19 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 					connect(static_cast<TripletCLUTQMenu *>(customMenu)->action(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
 				}
 				break;
+			case 0x18: // DRCS mode
+				customMenu = new TripletDRCSModeQMenu(this);
+
+				static_cast<TripletDRCSModeQMenu *>(customMenu)->setSourceChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+3).toInt());
+				static_cast<TripletDRCSModeQMenu *>(customMenu)->setSubTableChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+4).toInt());
+				static_cast<TripletDRCSModeQMenu *>(customMenu)->setLevelsChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt());
+				for (int i=0; i<2; i++)
+					connect(static_cast<TripletDRCSModeQMenu *>(customMenu)->sourceAction(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+3); updateAllCookedTripletWidgets(index); });
+				for (int i=0; i<16; i++)
+					connect(static_cast<TripletDRCSModeQMenu *>(customMenu)->subTableAction(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+4); updateAllCookedTripletWidgets(index); });
+				for (int i=0; i<3; i++)
+					connect(static_cast<TripletDRCSModeQMenu *>(customMenu)->levelsAction(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
+				break;
 			case 0x27: // Additional flash functions
 				customMenu = new TripletFlashQMenu(this);
 
@@ -1176,6 +1189,16 @@ void X26DockWidget::customMenuRequested(QPoint pos)
 					connect(static_cast<TripletDisplayAttrsQMenu *>(customMenu)->textSizeAction(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
 					connect(static_cast<TripletDisplayAttrsQMenu *>(customMenu)->otherAttrAction(i), &QAction::toggled, [=](const int checked) { updateModelFromCookedWidget(checked, Qt::UserRole+i+2); updateAllCookedTripletWidgets(index); });
 				}
+				break;
+			case 0x2d: // DRCS character
+				customMenu = new TripletDRCSCharacterQMenu(this);
+
+				static_cast<TripletDRCSCharacterQMenu *>(customMenu)->setSourceChecked(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole+1).toInt());
+				for (int i=0; i<50; i++)
+					if (i < 48)
+						connect(static_cast<TripletDRCSCharacterQMenu *>(customMenu)->characterAction(i), &QAction::triggered, [=]() { updateModelFromCookedWidget(i, Qt::UserRole+2); updateAllCookedTripletWidgets(index); });
+					else
+						connect(static_cast<TripletDRCSCharacterQMenu *>(customMenu)->sourceAction(i-48), &QAction::triggered, [=]() { updateModelFromCookedWidget(i-48, Qt::UserRole+1); updateAllCookedTripletWidgets(index); });
 				break;
 			case 0x2e: // Font style
 				customMenu = new TripletFontStyleQMenu(this);
