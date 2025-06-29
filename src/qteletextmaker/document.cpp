@@ -214,7 +214,11 @@ void TeletextDocument::loadMetaData(QVariantHash const &metadata)
 	}
 
 	for (int i=0; i<numberOfSubPages(); i++) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+		const QString subPageStr = QString("%1").arg(i, 3, '0');
+#else
 		const QString subPageStr = QString("%1").arg(i, 3, QChar('0'));
+#endif
 
 		if (int region = metadata.value("region" + subPageStr).toInt(&valueOk); valueOk)
 			subPage(i)->setDefaultCharSet(region);

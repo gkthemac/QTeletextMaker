@@ -99,14 +99,23 @@ bool LoadTTIFormat::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 			bool regionValueOk;
 			const int regionValueRead = inLine.remove(0, 3).toInt(&regionValueOk);
 			if (regionValueOk && metadata != nullptr && regionValueRead >= 0 && regionValueRead <= 15)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+				metadata->insert(QString("region%1").arg(currentSubPageNum, 3, '0'), regionValueRead);
+#else
 				metadata->insert(QString("region%1").arg(currentSubPageNum, 3, QChar('0')), regionValueRead);
+#endif
 		}
 		if (inLine.startsWith("CT,") && (inLine.endsWith(",C") || inLine.endsWith(",T"))) {
 			bool cycleValueOk;
 			const int cycleValueRead = inLine.mid(3, inLine.size()-5).toInt(&cycleValueOk);
 			if (cycleValueOk && metadata != nullptr && cycleValueRead >= 1 && cycleValueRead <= 99) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+				metadata->insert(QString("cycleValue%1").arg(currentSubPageNum, 3, '0'), cycleValueRead);
+				metadata->insert(QString("cycleType%1").arg(currentSubPageNum, 3, '0'), inLine.at(inLine.size()-1));
+#else
 				metadata->insert(QString("cycleValue%1").arg(currentSubPageNum, 3, QChar('0')), cycleValueRead);
 				metadata->insert(QString("cycleType%1").arg(currentSubPageNum, 3, QChar('0')), inLine.at(inLine.size()-1));
+#endif
 			}
 		}
 		if (inLine.startsWith("FL,")) {
@@ -495,7 +504,11 @@ bool LoadEP1Format::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 
 		// Deal with language code unique to EP1 - unknown values are mapped to English
 		if (metadata != nullptr)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+			metadata->insert(QString("region%1").arg(0, 3, '0'), m_languageCode.key(inLine[2], 0x09) >> 3);
+#else
 			metadata->insert(QString("region%1").arg(0, 3, QChar('0')), m_languageCode.key(inLine[2], 0x09) >> 3);
+#endif
 
 		const int nationalOption = m_languageCode.key(inLine[2], 0x09) & 0x7;
 
