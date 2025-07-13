@@ -25,9 +25,10 @@
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
 #include <QGraphicsView>
-#include <QMainWindow>
+#include <QImage>
 #include <QLabel>
 #include <QList>
+#include <QMainWindow>
 #include <QPushButton>
 #include <QSlider>
 #include <QToolButton>
@@ -78,6 +79,9 @@ private slots:
 	void updatePageWidgets();
 	void updateCursorPosition();
 
+#ifndef QT_NO_CLIPBOARD
+	void imageToClipboard();
+#endif // !QT_NO_CLIPBOARD
 	void insertRow(bool copyRow);
 	void deleteRow();
 	void insertSubPage(bool afterCurrentSubPage, bool copyCurrentSubPage);
@@ -112,6 +116,7 @@ private:
 	bool maybeSave();
 	void openFile(const QString &fileName);
 	void loadFile(const QString &fileName);
+	void extractImages(QImage sceneImage[], bool smooth = false, bool flashExtract = false);
 	static bool hasRecentFiles();
 	void prependToRecentFiles(const QString &fileName);
 	void setRecentFilesVisible(bool visible);

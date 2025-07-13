@@ -19,6 +19,7 @@
 
 #include <QActionGroup>
 #include <QApplication>
+#include <QClipboard>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QFileSystemWatcher>
@@ -184,6 +185,64 @@ void MainWindow::reload()
 	m_textWidget->document()->selectSubPageIndex(subPageIndex, true);
 }
 
+void MainWindow::extractImages(QImage sceneImage[], bool smooth, bool flashExtract)
+{
+	// Prepare widget image for extraction
+	m_textScene->hideGUIElements(true);
+	// Disable exporting in Mix mode as it corrupts the background
+	bool reMix = m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderMix;
+	if (reMix)
+		m_textScene->setRenderMode(TeletextPageRender::RenderNormal);
+
+	const int flashTiming = flashExtract ? m_textWidget->flashTiming() : 0;
+
+	// Allocate initial image, with additional images for flashing if necessary
+	QImage interImage[6];
+
+	interImage[0] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+	if (flashTiming != 0) {
+		interImage[3] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+		if (flashTiming == 2) {
+			interImage[1] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+			interImage[2] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+			interImage[4] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+			interImage[5] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+		}
+	}
+
+	// Now extract the image(s) from the scene
+	for (int p=0; p<6; p++)
+		if (!interImage[p].isNull()) {
+			m_textWidget->pauseFlash(p);
+			//	This ought to make the background transparent in Mix mode, but it doesn't
+			//	if (m_textWidget->pageDecode()->mix())
+			//		interImage.fill(QColor(0, 0, 0, 0));
+			QPainter interPainter(&interImage[p]);
+			m_textScene->render(&interPainter);
+		}
+
+	// Now we've extracted the image we can put the GUI things back
+	m_textScene->hideGUIElements(false);
+	if (reMix)
+		m_textScene->setRenderMode(TeletextPageRender::RenderMix);
+	m_textWidget->resumeFlash();
+
+	// Now scale the extracted image(s) to the selected aspect ratio
+	for (int p=0; p<6; p++)
+		if (!interImage[p].isNull()) {
+			if (m_viewAspectRatio == 3)
+				// Aspect ratio is Pixel 1:2 so we only need to double the vertical height
+				sceneImage[p] = interImage[p].scaled(interImage[p].width(), interImage[p].height()*2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+			else {
+				// Scale the image in two steps so that smoothing only occurs on vertical lines
+				// Double the vertical height first
+				const QImage doubleHeightImage = interImage[p].scaled(interImage[p].width(), interImage[p].height()*2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+				// then scale it horizontally to the selected aspect ratio
+				sceneImage[p] = doubleHeightImage.scaled((int)((float)doubleHeightImage.width() * aspectRatioHorizontalScaling[m_viewAspectRatio] * 2), doubleHeightImage.height(), Qt::IgnoreAspectRatio, (smooth) ? Qt::SmoothTransformation : Qt::FastTransformation);
+			}
+		}
+}
+
 void MainWindow::exportImage()
 {
 	QString exportFileName, selectedFilter, gifFilter;
@@ -222,64 +281,8 @@ void MainWindow::exportImage()
 		return;
 	}
 
-	// Disable flash exporting if extension is not GIF
-	const int flashTiming = suffix == "gif" ? m_textWidget->flashTiming() : 0;
-
-	// Prepare widget image for extraction
-	m_textScene->hideGUIElements(true);
-	// Disable exporting in Mix mode as it corrupts the background
-	bool reMix = m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderMix;
-	if (reMix)
-		m_textScene->setRenderMode(TeletextPageRender::RenderNormal);
-
-	// Allocate initial image, with additional images for flashing if necessary
-	QImage interImage[6];
-
-	interImage[0] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-	if (flashTiming != 0) {
-		interImage[3] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-		if (flashTiming == 2) {
-			interImage[1] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-			interImage[2] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-			interImage[4] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-			interImage[5] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-		}
-	}
-
-	// Now extract the image(s) from the scene
-	for (int p=0; p<6; p++)
-		if (!interImage[p].isNull()) {
-			m_textWidget->pauseFlash(p);
-			//	This ought to make the background transparent in Mix mode, but it doesn't
-			//	if (m_textWidget->pageDecode()->mix())
-			//		interImage.fill(QColor(0, 0, 0, 0));
-			QPainter interPainter(&interImage[p]);
-			m_textScene->render(&interPainter);
-		}
-
-	// Now we've extracted the image we can put the GUI things back
-	m_textScene->hideGUIElements(false);
-	if (reMix)
-		m_textScene->setRenderMode(TeletextPageRender::RenderMix);
-	m_textWidget->resumeFlash();
-
-	// Now scale the extracted image(s) to the selected aspect ratio
 	QImage scaledImage[6];
-
-	for (int p=0; p<6; p++)
-		if (!interImage[p].isNull()) {
-			if (m_viewAspectRatio == 3)
-				// Aspect ratio is Pixel 1:2 so we only need to double the vertical height
-				scaledImage[p] = interImage[p].scaled(interImage[p].width(), interImage[p].height()*2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
-			else {
-				// Scale the image in two steps so that smoothing only occurs on vertical lines
-				// Double the vertical height first
-				const QImage doubleHeightImage = interImage[p].scaled(interImage[p].width(), interImage[p].height()*2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
-				// then scale it horizontally to the selected aspect ratio
-				// Don't smooth GIF as it's bound to break the 256 colour limit
-				scaledImage[p] = doubleHeightImage.scaled((int)((float)doubleHeightImage.width() * aspectRatioHorizontalScaling[m_viewAspectRatio] * 2), doubleHeightImage.height(), Qt::IgnoreAspectRatio, (suffix == "gif") ? Qt::FastTransformation : Qt::SmoothTransformation);
-			}
-		}
+	extractImages(scaledImage, suffix != "gif", suffix == "gif");
 
 	if (suffix == "png") {
 		if (scaledImage[0].save(exportFileName, "PNG"))
@@ -294,7 +297,7 @@ void MainWindow::exportImage()
 		if (scaledImage[3].isNull())
 			// No flashing
 			gif.addFrame(scaledImage[0], 0);
-		else if (interImage[1].isNull()) {
+		else if (scaledImage[1].isNull()) {
 			// 1Hz flashing
 			gif.addFrame(scaledImage[0], 500);
 			gif.addFrame(scaledImage[3], 500);
@@ -309,6 +312,17 @@ void MainWindow::exportImage()
 			QMessageBox::warning(this, QApplication::applicationDisplayName(), tr("Cannot export image %1.").arg(QDir::toNativeSeparators(exportFileName)));
 	}
 }
+
+#ifndef QT_NO_CLIPBOARD
+void MainWindow::imageToClipboard()
+{
+	QImage scaledImage[1];
+	QClipboard *clipboard = QApplication::clipboard();
+
+	extractImages(scaledImage, true);
+	clipboard->setImage(scaledImage[0]);
+}
+#endif // !QT_NO_CLIPBOARD
 
 void MainWindow::exportZXNet()
 {
@@ -544,6 +558,11 @@ void MainWindow::createActions()
 	connect(pasteAct, &QAction::triggered, m_textWidget, &TeletextWidget::paste);
 	editMenu->addAction(pasteAct);
 	editToolBar->addAction(pasteAct);
+
+	QAction *copyImageAct = editMenu->addAction(tr("Copy as image"));
+	copyImageAct->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
+	copyImageAct->setStatusTip(tr("Copy this subpage as an image to the clipboard"));
+	connect(copyImageAct, &QAction::triggered, this, &MainWindow::imageToClipboard);
 
 	editMenu->addSeparator();
 #endif // !QT_NO_CLIPBOARD
