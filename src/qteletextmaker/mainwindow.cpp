@@ -44,6 +44,7 @@
 
 #include "mainwindow.h"
 
+#include "dclutdockwidget.h"
 #include "drcspage.h"
 #include "hashformats.h"
 #include "levelonecommands.h"
@@ -363,6 +364,8 @@ void MainWindow::init()
 	addDockWidget(Qt::RightDockWidgetArea, m_paletteDockWidget);
 	m_pageComposeLinksDockWidget = new PageComposeLinksDockWidget(m_textWidget);
 	addDockWidget(Qt::RightDockWidgetArea, m_pageComposeLinksDockWidget);
+	m_dClutDockWidget = new DClutDockWidget(m_textWidget);
+	addDockWidget(Qt::RightDockWidgetArea, m_dClutDockWidget);
 
 	m_textScene = new LevelOneScene(m_textWidget, this);
 
@@ -843,6 +846,7 @@ void MainWindow::createActions()
 	toolsMenu->addAction(m_x26DockWidget->toggleViewAction());
 	toolsMenu->addAction(m_pageEnhancementsDockWidget->toggleViewAction());
 	toolsMenu->addAction(m_paletteDockWidget->toggleViewAction());
+	toolsMenu->addAction(m_dClutDockWidget->toggleViewAction());
 	toolsMenu->addAction(m_pageComposeLinksDockWidget->toggleViewAction());
 
 	//FIXME is this main menubar separator to put help menu towards the right?
@@ -1189,6 +1193,8 @@ void MainWindow::readSettings()
 		m_x26DockWidget->setFloating(true);
 		m_paletteDockWidget->hide();
 		m_paletteDockWidget->setFloating(true);
+		m_dClutDockWidget->hide();
+		m_dClutDockWidget->setFloating(true);
 		m_pageComposeLinksDockWidget->hide();
 		m_pageComposeLinksDockWidget->setFloating(true);
 	} else
@@ -1614,4 +1620,5 @@ void MainWindow::updatePageWidgets()
 	m_x26DockWidget->loadX26List();
 	m_paletteDockWidget->updateAllColourButtons();
 	m_pageComposeLinksDockWidget->updateWidgets();
+	m_dClutDockWidget->updateAllColourButtons();
 }

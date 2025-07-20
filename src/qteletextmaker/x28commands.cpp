@@ -241,3 +241,34 @@ void ResetCLUTCommand::undo()
 
 	emit m_teletextDocument->contentsChanged();
 }
+
+
+SetDCLUTCommand::SetDCLUTCommand(TeletextDocument *teletextDocument, bool globalDrcs, int mode, int index, int colour, QUndoCommand *parent) : X28Command(teletextDocument, parent)
+{
+	m_globalDrcs = globalDrcs;
+	m_mode = mode;
+	m_index = index;
+	m_oldColour = teletextDocument->currentSubPage()->dCLUT(globalDrcs, mode, index);
+	m_newColour = colour;
+
+	setText(QObject::tr("DCLUT"));
+}
+
+void SetDCLUTCommand::redo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setDCLUT(m_globalDrcs, m_mode, m_index, m_newColour);
+
+	emit m_teletextDocument->dClutChanged(m_globalDrcs, m_mode, m_index);
+	emit m_teletextDocument->contentsChanged();
+}
+
+void SetDCLUTCommand::undo()
+{
+	m_teletextDocument->selectSubPageIndex(m_subPageIndex);
+	m_teletextDocument->currentSubPage()->setDCLUT(m_globalDrcs, m_mode, m_index, m_oldColour);
+
+	emit m_teletextDocument->dClutChanged(m_globalDrcs, m_mode, m_index);
+	// We don't emit contentsChanged() here, dClutChanged does that after
+	// marking DRCS character cells for refresh
+}

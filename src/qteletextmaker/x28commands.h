@@ -123,4 +123,17 @@ private:
 	int m_oldColourEntry[8];
 };
 
+class SetDCLUTCommand : public X28Command
+{
+public:
+	SetDCLUTCommand(TeletextDocument *teletextDocument, bool globalDrcs, int mode, int index, int colour, QUndoCommand *parent = 0);
+
+	void redo() override;
+	void undo() override;
+
+private:
+	bool m_globalDrcs;
+	int m_mode, m_index, m_oldColour, m_newColour;
+};
+
 #endif

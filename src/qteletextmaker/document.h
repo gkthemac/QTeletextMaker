@@ -102,6 +102,7 @@ signals:
 	void cursorMoved();
 	void selectionMoved();
 	void colourChanged(int i);
+	void dClutChanged(bool g, int m, int i);
 	void pageOptionsChanged();
 	void aboutToChangeSubPage();
 	void subPageSelected();

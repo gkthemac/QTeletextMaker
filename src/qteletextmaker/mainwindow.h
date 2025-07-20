@@ -33,6 +33,7 @@
 #include <QSlider>
 #include <QToolButton>
 
+#include "dclutdockwidget.h"
 #include "drcspage.h"
 #include "loadformats.h"
 #include "mainwidget.h"
@@ -140,6 +141,7 @@ private:
 	X26DockWidget *m_x26DockWidget;
 	PaletteDockWidget *m_paletteDockWidget;
 	PageComposeLinksDockWidget *m_pageComposeLinksDockWidget;
+	DClutDockWidget *m_dClutDockWidget;
 
 	QAction *m_recentFileActs[m_MaxRecentFiles];
 	QAction *m_recentFileSeparator;

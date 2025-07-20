@@ -418,6 +418,57 @@ int LevelOnePage::dCLUT(bool globalDrcs, int mode, int index) const
 	return 0; // Won't get here; used to suppress a compiler warning
 }
 
+void LevelOnePage::setDCLUT(bool globalDrcs, int mode, int index, int colour)
+{
+	const QByteArray defaultPkt = QByteArray("\x01\x00\x00\x00\x20\x20\x18\x00\x02\x22\x01\x08\x08\x06\x24\x22\x39\x20\x12\x2a\x05\x2b\x39\x1e\x20\x20\x18\x10\x0a\x26\x03\x0a\x29\x16\x2c\x26\x3b\x01\x00\x00", 40);
+
+	if (!packetExists(28, 1))
+		setPacket(28, 1, defaultPkt);
+
+	if (mode == 1) {
+		if (!globalDrcs)
+			index += 4;
+	} else if (mode == 2 || mode == 3)
+		index += globalDrcs ? 8 : 24;
+	else
+		return;
+
+	QByteArray pkt = packet(28, 1);
+
+	// Some tricky bit juggling to set 5 bits within parts of a 6-bit triplet
+	const int l = index/6*5 + 4;
+
+	switch (index % 6) {
+		case 0:
+			pkt[l] = pkt.at(l) & 0x20 | colour;
+			break;
+		case 1:
+			pkt[l+1] = (pkt.at(l+1) & 0x30) | (colour >> 1);
+			pkt[l] = (pkt.at(l) & 0x1f) | ((colour << 5) & 0x3f);
+			break;
+		case 2:
+			pkt[l+2] = (pkt.at(l+2) & 0x38) | (colour >> 2);
+			pkt[l+1] = (pkt.at(l+1) & 0x0f) | ((colour << 4) & 0x3f);
+			break;
+		case 3:
+			pkt[l+3] = (pkt.at(l+3) & 0x3c) | (colour >> 3);
+			pkt[l+2] = (pkt.at(l+2) & 0x07) | ((colour << 3) & 0x3f);
+			break;
+		case 4:
+			pkt[l+4] = (pkt.at(l+4) & 0x3e) | (colour >> 4);
+			pkt[l+3] = (pkt.at(l+3) & 0x03) | ((colour << 2) & 0x3f);
+			break;
+		case 5:
+			pkt[l+4] = (pkt.at(l+4) & 0x01) | (colour << 1);
+			break;
+	}
+
+	if (pkt == defaultPkt)
+		clearPacket(28, 1);
+	else
+		setPacket(28, 1, pkt);
+}
+
 int LevelOnePage::levelRequired() const
 {
 	// X/28/4 present i.e. CLUTs 0 or 1 redefined - Level 3.5
