@@ -154,11 +154,21 @@ inline void TeletextPageRender::drawCharacter(QPainter &painter, int r, int c, u
 	if (dontUnderline)
 		characterCode = 0x20;
 
+	// Set 24 has reduced height Latin G0 capital letters for diacritical marks to sit on top of
+	if (characterDiacritical != 0  && // Not for no-diacritical-mark
+	    characterDiacritical != 9  && // Not for these diacriticals that go under the letter
+	    characterDiacritical != 11 &&
+	    characterDiacritical != 12 &&
+	    characterDiacritical != 14 &&
+	    (characterSet == 0 || characterSet == 6) &&     // Only for Latin G0 and Hebrew G0
+	    characterCode >= 0x41 && characterCode <= 0x5a) // and only for the capital letters A-Z
+		characterSet = 24;
+
 	if (characterCode == 0x20 && characterSet < 25 && characterDiacritical == 0)
 		painter.fillRect(c*12, r*10, 12, 10, m_backgroundQColor);
 	else if (characterCode == 0x7f && characterSet == 24)
 		painter.fillRect(c*12, r*10, 12, 10, m_foregroundQColor);
-	else if ((m_decoder->cellBold(r, c) || m_decoder->cellItalic(r, c)) && characterSet < 24)
+	else if ((m_decoder->cellBold(r, c) || m_decoder->cellItalic(r, c)))
 		drawBoldOrItalicCharacter(painter, r, c, characterCode, characterSet, characterFragment);
 	else {
 		m_fontBitmap.image()->setColorTable(QList<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
@@ -217,10 +227,13 @@ inline void TeletextPageRender::drawBoldOrItalicCharacter(QPainter &painter, int
 	QImage styledImage = QImage(12, 10, QImage::Format_Mono);
 	QPainter styledPainter;
 
+	// Don't apply style to mosaics
+	const bool mosaic = characterSet > 24 || (characterSet == 24 && (characterCode < 0x41 || characterCode > 0x5a));
+
 	m_fontBitmap.image()->setColorTable(QList<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
 	styledImage.setColorTable(QList<QRgb>{m_backgroundQColor.rgba(), m_foregroundQColor.rgba()});
 
-	if (m_decoder->cellItalic(r, c)) {
+	if (!mosaic && m_decoder->cellItalic(r, c)) {
 		styledImage.fill(0);
 
 		styledPainter.begin(&styledImage);
@@ -232,7 +245,8 @@ inline void TeletextPageRender::drawBoldOrItalicCharacter(QPainter &painter, int
 	} else
 		styledImage = m_fontBitmap.image()->copy((characterCode-32)*12, characterSet*10, 12, 10);
 
-	if (m_decoder->cellBold(r, c)) {
+	// We have either an unstyled or italic character. Now bolden if needed.
+	if (!mosaic && m_decoder->cellBold(r, c)) {
 		QImage boldeningImage;
 
 		boldeningImage = styledImage.copy();
