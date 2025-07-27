@@ -190,24 +190,20 @@ void MainWindow::extractImages(QImage sceneImage[], bool smooth, bool flashExtra
 {
 	// Prepare widget image for extraction
 	m_textScene->hideGUIElements(true);
-	// Disable exporting in Mix mode as it corrupts the background
-	bool reMix = m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderMix;
-	if (reMix)
-		m_textScene->setRenderMode(TeletextPageRender::RenderNormal);
 
 	const int flashTiming = flashExtract ? m_textWidget->flashTiming() : 0;
 
 	// Allocate initial image, with additional images for flashing if necessary
 	QImage interImage[6];
 
-	interImage[0] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+	interImage[0] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_ARGB32);
 	if (flashTiming != 0) {
-		interImage[3] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+		interImage[3] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_ARGB32);
 		if (flashTiming == 2) {
-			interImage[1] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-			interImage[2] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-			interImage[4] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
-			interImage[5] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_RGB32);
+			interImage[1] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_ARGB32);
+			interImage[2] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_ARGB32);
+			interImage[4] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_ARGB32);
+			interImage[5] = QImage(m_textScene->sceneRect().size().toSize(), QImage::Format_ARGB32);
 		}
 	}
 
@@ -215,17 +211,17 @@ void MainWindow::extractImages(QImage sceneImage[], bool smooth, bool flashExtra
 	for (int p=0; p<6; p++)
 		if (!interImage[p].isNull()) {
 			m_textWidget->pauseFlash(p);
-			//	This ought to make the background transparent in Mix mode, but it doesn't
-			//	if (m_textWidget->pageDecode()->mix())
-			//		interImage.fill(QColor(0, 0, 0, 0));
+			// Alpha'd parts of image copied leave uninitialised pixels as uninitialised
+			// so prefill with the transparent "colour" first.
+			// When extracting flashing images, assume we're going to write a GIF
+			// which doesn't have alpha but instead swaps a selected colour for transparency.
+			interImage[p].fill(flashExtract ? QColor(1, 1, 1) : QColor(0, 0, 0, 0));
 			QPainter interPainter(&interImage[p]);
 			m_textScene->render(&interPainter);
 		}
 
 	// Now we've extracted the image we can put the GUI things back
 	m_textScene->hideGUIElements(false);
-	if (reMix)
-		m_textScene->setRenderMode(TeletextPageRender::RenderMix);
 	m_textWidget->resumeFlash();
 
 	// Now scale the extracted image(s) to the selected aspect ratio
@@ -283,6 +279,7 @@ void MainWindow::exportImage()
 	}
 
 	QImage scaledImage[6];
+	// Really could simplify the suffix parameter here...
 	extractImages(scaledImage, suffix != "gif", suffix == "gif");
 
 	if (suffix == "png") {
@@ -294,6 +291,34 @@ void MainWindow::exportImage()
 
 	if (suffix == "gif") {
 		QGifImage gif(scaledImage[0].size());
+
+		// Set a colourmap so we don't end up dithering into the default libgif palette
+		QList<QRgb> cTable;
+
+		if (m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderWhiteOnBlack)
+			gif.setGlobalColorTable(QList<QRgb>{ qRgb(0, 0, 0), qRgb(255, 255, 255) }, QColor(0, 0, 0));
+		else if (m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderBlackOnWhite)
+			gif.setGlobalColorTable(QList<QRgb>{ qRgb(255, 255, 255), qRgb(0, 0, 0) }, QColor(255, 255, 255));
+		else {
+			for (int i=0; i<32; i++)
+				if (i == 8) {
+					// Transparent colour mandatory for CLUT 1:0 on Level 2.5
+					// and optional on Level 1 for newsflash/subtitle or mix rendering
+					if (m_textWidget->pageDecode()->level() >= 2 ||
+					    m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderMix ||
+					    m_textWidget->document()->currentSubPage()->controlBit(PageBase::C5Newsflash) ||
+					    m_textWidget->document()->currentSubPage()->controlBit(PageBase::C6Subtitle));
+						cTable.append(qRgb(1, 1, 1));
+					if (m_textWidget->pageDecode()->level() < 2)
+						break;
+				} else
+					cTable.append(m_textWidget->document()->currentSubPage()->CLUTtoQColor(i).rgb());
+
+			gif.setGlobalColorTable(cTable, QColor(0, 0, 0));
+			// QColor(1, 1, 1) won't always be present. Here's hoping that setting transparent
+			// colour to one that isn't in the colour table doesn't have any side effects...
+			gif.setDefaultTransparentColor(QColor(1, 1, 1));
+		}
 
 		if (scaledImage[3].isNull())
 			// No flashing
