@@ -398,7 +398,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	DRCSModeLayout->addWidget(m_DRCSModeNormalRadioButton);
 	connect(m_DRCSModeGlobalRadioButton, &QAbstractButton::clicked, this, [=] { updateModelFromCookedWidget(0, Qt::UserRole+3); } );
 	connect(m_DRCSModeNormalRadioButton, &QAbstractButton::clicked, this, [=] { updateModelFromCookedWidget(1, Qt::UserRole+3); } );
-	DRCSModeLayout->addWidget(new QLabel(tr("Subpage")));
+	DRCSModeLayout->addWidget(new QLabel(tr("Subtable")));
 	m_DRCSModeSubPageSpinBox = new QSpinBox;
 	m_DRCSModeSubPageSpinBox->setMaximum(15);
 	m_DRCSModeSubPageSpinBox->setWrapping(true);
@@ -417,7 +417,7 @@ X26DockWidget::X26DockWidget(TeletextWidget *parent): QDockWidget(parent)
 	DRCSCharacterLayout->addWidget(m_DRCSCharacterNormalRadioButton);
 	connect(m_DRCSCharacterGlobalRadioButton, &QAbstractButton::clicked, this, [=] { updateModelFromCookedWidget(0, Qt::UserRole+1); } );
 	connect(m_DRCSCharacterNormalRadioButton, &QAbstractButton::clicked, this, [=] { updateModelFromCookedWidget(1, Qt::UserRole+1); } );
-	DRCSCharacterLayout->addWidget(new QLabel(tr("Character")));
+	DRCSCharacterLayout->addWidget(new QLabel(tr("PTU")));
 	m_DRCSCharacterCodeSpinBox = new QSpinBox;
 	m_DRCSCharacterCodeSpinBox->setMaximum(47);
 	m_DRCSCharacterCodeSpinBox->setWrapping(true);

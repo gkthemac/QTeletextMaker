@@ -181,7 +181,7 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				break;
 			case 0x18: // DRCS mode
 				result = (triplet.data() & 0x40) == 0x40 ? "Normal" : "Global";
-				result.append(QString(": subpage %1, ").arg(triplet.data() & 0x0f));
+				result.append(QString(": subtable %1, ").arg(triplet.data() & 0x0f));
 				switch (triplet.data() & 0x30) {
 					case 0x10:
 						result.append("L2.5 only");
