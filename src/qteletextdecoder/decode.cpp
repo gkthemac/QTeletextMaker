@@ -121,6 +121,20 @@ void TeletextPageDecode::Invocation::buildMap(int level)
 					m_fullRowCLUTMap.insert(targetRow, triplet);
 				break;
 			case 0x18: // DRCS mode
+				// If a DRCS character is already in this cell, move this DRCS mode attribute to the next cell.
+				// Need this workaround in the event of "DRCS character" immediately followed by "DRCS mode" in
+				// the X/26 list as the Active Position for the just-placed DRCS character and the mode-change
+				// for further characters is on the same cell.
+				for (int i=0; i<m_characterMap.values(qMakePair(targetRow, targetColumn)).size(); i++)
+					if (m_characterMap.values(qMakePair(targetRow, targetColumn)).at(i).modeExt() == 0x2d) {
+						targetColumn++;
+						if (targetColumn == 40 || targetColumn == 56 || targetColumn == 72) {
+							if (targetRow == 25)
+								break;
+							targetRow++;
+						}
+					}
+				// fall-through
 			case 0x20: // Foreground colour
 			case 0x23: // Background colour
 			case 0x27: // Additional flash functions
