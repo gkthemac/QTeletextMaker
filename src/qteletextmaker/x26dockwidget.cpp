@@ -1081,6 +1081,9 @@ void X26DockWidget::insertTriplet(int modeExt, int row)
 		case 0x2d: // DRCS character
 			newTriplet.setData(0x40); // Normal DRCS
 			break;
+		default:
+			if (modeExt >= 0x30) // G0 diacritical
+				newTriplet.setData(0x65); // Lower case "e"
 	}
 
 	m_x26Model->insertRows(row, 1, QModelIndex(), newTriplet);
