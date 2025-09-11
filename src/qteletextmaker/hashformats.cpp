@@ -75,6 +75,19 @@ QString exportHashStringPackets(LevelOnePage *subPage)
 	const char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 	QString result;
 
+	// Assemble PS
+	// C4 Erase page is stored in bit 14
+	int pageStatus = 0x8000 | (subPage->controlBit(PageBase::C4ErasePage) << 14);
+	// C5 to C11 stored in order from bits 1 to 6
+	for (int i=PageBase::C5Newsflash; i<=PageBase::C11SerialMagazine; i++)
+		pageStatus |= subPage->controlBit(i) << (i-1);
+	// Apparently the TTI format stores the NOS bits backwards
+	pageStatus |= subPage->controlBit(PageBase::C12NOS) << 9;
+	pageStatus |= subPage->controlBit(PageBase::C13NOS) << 8;
+	pageStatus |= subPage->controlBit(PageBase::C14NOS) << 7;
+
+	result.append(QString(":PS=%1:RE=%2").arg(0x8000 | pageStatus, 0, 16, QChar('0')).arg(subPage->defaultCharSet(), 1, 16));
+
 	if (subPage->packetExists(28,0) || subPage->packetExists(28,4)) {
 		// X/28/0 and X/28/4 are duplicates apart from the CLUT definitions
 		// Assemble the duplicate beginning and ending of both packets
@@ -101,17 +114,5 @@ QString exportHashStringPackets(LevelOnePage *subPage)
 		}
 	}
 
-	// Assemble PS
-	// C4 Erase page is stored in bit 14
-	int pageStatus = 0x8000 | (subPage->controlBit(PageBase::C4ErasePage) << 14);
-	// C5 to C11 stored in order from bits 1 to 6
-	for (int i=PageBase::C5Newsflash; i<=PageBase::C11SerialMagazine; i++)
-		pageStatus |= subPage->controlBit(i) << (i-1);
-	// Apparently the TTI format stores the NOS bits backwards
-	pageStatus |= subPage->controlBit(PageBase::C12NOS) << 9;
-	pageStatus |= subPage->controlBit(PageBase::C13NOS) << 8;
-	pageStatus |= subPage->controlBit(PageBase::C14NOS) << 7;
-
-	result.append(QString(":PS=%1").arg(0x8000 | pageStatus, 0, 16, QChar('0')));
 	return result;
 }
