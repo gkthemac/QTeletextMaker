@@ -403,7 +403,6 @@ void MainWindow::init()
 	m_textView->setScene(m_textScene);
 	if (m_viewSmoothTransform)
 		m_textView->setRenderHints(QPainter::SmoothPixmapTransform);
-	m_textView->setBackgroundBrush(QBrush(QColor(32, 48, 96)));
 	m_zoomSlider->setValue(m_viewZoom);
 	setSceneDimensions();
 	setCentralWidget(m_textView);

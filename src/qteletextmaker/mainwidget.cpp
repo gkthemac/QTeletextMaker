@@ -755,17 +755,21 @@ void LevelOneScene::setRenderMode(TeletextPageRender::RenderMode renderMode)
 
 	switch (renderMode) {
 		case TeletextPageRender::RenderNormal:
+			setBackgroundBrush(Qt::NoBrush);
 			setFullScreenColour(static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageDecode()->fullScreenQColor());
 			for (int r=0; r<25; r++)
 				setFullRowColour(r, static_cast<TeletextWidget *>(m_levelOneProxyWidget->widget())->pageDecode()->fullRowQColor(r));
 			return;
 		case TeletextPageRender::RenderMix:
+			setBackgroundBrush(QColor(40, 54, 96));
 			fullColour = Qt::transparent;
 			break;
 		case TeletextPageRender::RenderWhiteOnBlack:
+			setBackgroundBrush(Qt::black);
 			fullColour = Qt::black;
 			break;
 		case TeletextPageRender::RenderBlackOnWhite:
+			setBackgroundBrush(Qt::white);
 			fullColour = Qt::white;
 			break;
 	}
