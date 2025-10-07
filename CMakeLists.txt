@@ -54,6 +54,13 @@ install(DIRECTORY
 	DESTINATION ${EXAMPLES_INSTALL_DIR}
 )
 
+if(UNIX AND NOT APPLE)
+	install(FILES
+		${CMAKE_CURRENT_LIST_DIR}/share/qteletextmaker.desktop
+		DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+	)
+endif()
+
 qt_generate_deploy_app_script(
 	TARGET qteletextmaker
 	OUTPUT_SCRIPT deploy_script
