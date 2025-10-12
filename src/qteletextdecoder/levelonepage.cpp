@@ -475,7 +475,9 @@ int LevelOnePage::levelRequired() const
 	if (!isPaletteDefault(0, 15))
 		return 3;
 
-	// TODO Check for X/28/1 for DCLUT for mode 1-3 DRCS characters - return 3
+	// X/28/1 present i.e. DCLUTs for mode 1-3 DRCS characters - Level 3.5
+	if (packetExists(28, 1))
+		return 3;
 
 	// Assume Level 2.5 if any X/28 page enhancements are present, otherwise assume Level 1
 	int levelSeen = (!isPaletteDefault(16, 31) || m_leftSidePanelDisplayed || m_rightSidePanelDisplayed || m_defaultScreenColour !=0 || m_defaultRowColour !=0 || m_blackBackgroundSubst || m_colourTableRemap !=0 || m_defaultCharSet != 0 || m_secondCharSet != 0xf) ? 2 : 0;
