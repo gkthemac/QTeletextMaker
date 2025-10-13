@@ -1,0 +1,21 @@
+DE,Level 2.5 DRCS parrot demo display page
+PN,21000
+SC,0000
+PS,8000
+RE,0
+CT,20,T
+OL,27,D@_|@@@A_|@@@B_|@@@OPlD@@H_|@@@H_|@@@@@@
+OL,28,@@@|gpCu_@|wKpZA`UB_wLs_w}ww]_}_wM@G
+OL,26,@rD@^C@^M`_m``MaamasD@^C@^Mb_mb`McamctD@
+OL,26,A^C@^Md_md`MeameuD@^C@^Mf_mf`MgamgvD@^C@
+OL,26,B^Mh_mh`MiamiwD@^C@^Mj_mj`MkamkCCC
+OL,7, Level 2.5 DRCS                         
+OL,9, Mode 0 characters                      
+OL,10,  12x10 pixels of                 \     
+OL,11,  1 bitplane                      \     
+OL,12,                                  \     
+OL,13,                                  \     
+OL,14, 24 DRCS characters               \     
+OL,15,  over 24 PTUs                    \     
+OL,17, 6 rows of 4 columns                    
+OL,18,  or 48x60 pixels                       

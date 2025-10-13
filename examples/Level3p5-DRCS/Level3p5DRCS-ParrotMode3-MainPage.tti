@@ -1,0 +1,23 @@
+DE,Level 3.5 DRCS mode 3 parrot demo display page
+PN,21300
+SC,0000
+PS,8000
+RE,0
+CT,20,T
+OL,27,D@_|@@@A_|@@@B_|@@@OSlD@@H_|@@@H_|@@@@@@
+OL,28,@@@|g@@`DsIBGqXaUSUwSC^MfziDcxgUoywvOpF
+OL,28,A@@@@@@@@@@LJgtj}bszMo{ph\RkvKNkw|nC@@
+OL,26,@qD@^M`_m``MaamabMbcmbrD@^Mc_mc`MdamdbMe
+OL,26,AcmesD@^Mf_mf`MgamgbMhcmhtD@^Mi_mi`Mjamj
+OL,26,BbMkcmkuD@^Ml_ml`MmammbMncmnvD@^Mo_mo`Mp
+OL,26,CampbMqcmqwD@^Mr_mr`MsamsbMtcmtxD@^Mu_mu
+OL,26,D`MvamvbMwcmwCCCCCCCCC
+OL,7, Level 3.5 DRCS                         
+OL,9, Mode 3 characters                      
+OL,10,  6x5 pixels of                         
+OL,11,  4 bitplanes                           
+OL,12,  or 16 colours                         
+OL,14, 48 DRCS characters                     
+OL,15,  over 48 PTUs                          
+OL,17, 8 rows of 6 columns                    
+OL,18,  or 36x40 pixels                       

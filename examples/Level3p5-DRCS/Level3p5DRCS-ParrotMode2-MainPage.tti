@@ -1,0 +1,28 @@
+DE,Level 3.5 DRCS mode 2 parrot demo display page
+PN,21200
+SC,0000
+PS,8000
+RE,0
+CT,20,T
+OL,27,D@_|@@@A_|@@@B_|@@@ORlD@@H_|@@@H_|@@@@@@
+OL,28,@@@|g@@`DsIBGqXaUSUwSC^MfziDcxgUoywvOpF
+OL,28,A@@@@@@@@@@LJgtj}bszMo{ph\RkvKNkw|nC@@
+OL,26,@oD@^M`_Mb`MdaMfbMhcMjdMleMnpD@^Mp_Mr`Mt
+OL,26,AaMvixpbM`cMbdMdeMfqD@^Mh_Mj`MlaMnbMpcMr
+OL,26,BdMteMvrD@iXq^M`_Mb`MdaMfbMhcMjdMleMnsD@
+OL,26,C^Mp_Mr`MtaMvixqbM`cMbdMdeMftD@^Mh_Mj`Ml
+OL,26,DaMnbMpcMrdMteMvuD@iXr^M`_Mb`MdaMfbMhcMj
+OL,26,EdMleMnvD@^Mp_Mr`MtaMvixrbM`cMbdMdeMfwD@
+OL,26,F^Mh_Mj`MlaMnbMpcMrdMteMvxD@iXs^M`_Mb`Md
+OL,26,GaMfbMhcMjdMleMnyD@^Mp_Mr`MtaMvixsbM`cMb
+OL,26,HdMdeMfzD@^Mh_Mj`MlaMnbMpcMrdMteMvCC
+OL,7, Level 3.5 DRCS                         
+OL,9, Mode 2 characters                      
+OL,10,  12x10 pixels of                       
+OL,11,  4 bitplanes                           
+OL,12,  or 16 colours                         
+OL,14, 96 DRCS characters                     
+OL,15,  over 384 PTUs stored                  
+OL,16,  across 8 subtables                    
+OL,18, 12 rows of 8 columns                   
+OL,19,  or 96x120 pixels                      

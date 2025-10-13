@@ -1,0 +1,34 @@
+DE,Level 3.5 DRCS mode 1 parrot demo display page
+PN,21100
+SC,0000
+PS,8000
+RE,0
+CT,20,T
+OL,27,D@_|@@@A_|@@@B_|@@@OQlD@@H_|@@@H_|@@@@@@
+OL,28,@@@|g@@`Jq[tnIpZA`UB_wLs_w}ww]_}_wM@G
+OL,28,A@@@@@@@crI@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+OL,26,@mD@\M`]Ma^Mb_Mc`MdaMebMfcMgdMheMinD@\Mj
+OL,26,A]Mk^Ml_Mm`MnaMobMpcMqdMreMsoD@\Mt]Mu^Mv
+OL,26,B_Mwixp`M`aMabMbcMcdMdeMepD@\Mf]Mg^Mh_Mi
+OL,26,C`MjaMkbMlcMmdMneMoqD@\Mp]Mq^Mr_Ms`MtaMu
+OL,26,DbMvcMwiXqdM`eMarD@\Mb]Mc^Md_Me`MfaMgbMh
+OL,26,EcMidMjeMksD@\Ml]Mm^Mn_Mo`MpaMqbMrcMsdMt
+OL,26,FeMutD@\Mv]Mwixq^M`_Ma`MbaMcbMdcMedMfeMg
+OL,26,GuD@\Mh]Mi^Mj_Mk`MlaMmbMncModMpeMqvD@\Mr
+OL,26,H]Ms^Mt_Mu`MvaMwiXrbM`cMadMbeMcwD@\Md]Me
+OL,26,I^Mf_Mg`MhaMibMjcMkdMleMmxD@\Mn]Mo^Mp_Mq
+OL,26,J`MraMsbMtcMudMveMwyD@ixr\M`]Ma^Mb_Mc`Md
+OL,26,KaMebMfcMgdMheMizD@\Mj]Mk^Ml_Mm`MnaMobMp
+OL,26,LcMqdMreMs{D@\Mt]Mu^Mv_MwiXs`M`aMabMbcMc
+OL,26,MdMdeMe|D@\Mf]Mg^Mh_Mi`MjaMkbMlcMmdMneMo
+OL,26,NCCCCCCCCCCCCC
+OL,6, Level 3.5 DRCS                         
+OL,8, Mode 1 characters                      
+OL,9,  12x10 pixels of                       
+OL,10,  2 bitplanes                           
+OL,11,  or 4 colours                          
+OL,13, 160 DRCS characters                    
+OL,14,  over 320 PTUs stored                  
+OL,15,  across 7 subtables                    
+OL,17, 16 rows of 10 columns                  
+OL,18,  or 120x160 pixels                     
