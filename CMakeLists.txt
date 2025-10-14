@@ -11,14 +11,11 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 COMPONENTS Core Widgets REQUIRED)
 
-qt_standard_project_setup()
-
 add_subdirectory(src/qteletextdecoder)
-
 add_subdirectory(3rdparty/QtGifImage)
 
 file (GLOB SOURCES src/qteletextmaker/*.cpp)
-qt_add_executable(qteletextmaker ${SOURCES} src/qteletextmaker/actionicons.qrc)
+add_executable(qteletextmaker ${SOURCES} src/qteletextmaker/actionicons.qrc)
 
 target_link_libraries(qteletextmaker PRIVATE QtGifImage::QtGifImage qteletextdecoder Qt::Widgets)
 
@@ -60,10 +57,3 @@ if(UNIX AND NOT APPLE)
 		DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
 	)
 endif()
-
-qt_generate_deploy_app_script(
-	TARGET qteletextmaker
-	OUTPUT_SCRIPT deploy_script
-	NO_UNSUPPORTED_PLATFORM_ERROR
-)
-install(SCRIPT ${deploy_script})
