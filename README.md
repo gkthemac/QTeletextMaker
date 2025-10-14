@@ -6,14 +6,14 @@ It is written in C++ using the Qt 6 widget libraries.
 Features
 - Load and save pages in TTI format.
 - Rendering of pages in Levels 1, 1.5, 2.5 and 3.5 including Local Objects and side panels.
+- Rendering of DRCS characters imported from DRCS downloading pages.
 - Import and export of single pages in t42, EP1 and HTT formats.
 - Export PNG and animated GIF images of pages.
 - Undo and redo of editing actions.
 - Interactive X/26 Local Enhancement Data triplet editor.
 - Editing of X/27/4 and X/27/5 compositional links to enhancement data pages.
 - Palette editor.
-- Configurable zoom.
-- View pages in 4:3, 16:9 pillar-box and 16:9 stretch aspect ratios.
+- View pages in 4:3, 16:9 pillar-box and 16:9 stretch aspect ratios with configurable zoom level.
 - View pages in mix and attribute-less monochrome modes.
 
 Although designed on and developed for Linux, the Qt libraries are cross platform so a Windows executable can be built. A Windows executable can be found within the "Releases" link, compiled on a Linux host using [MXE](https://github.com/mxe/mxe) based on [these instructions](https://web.archive.org/web/20230606021352/https://blog.8bitbuddhism.com/2018/08/22/cross-compiling-windows-applications-with-mxe/). After MXE is installed `make qt6-qtbase` should build and install the required dependencies to build QTeletextMaker.
@@ -37,7 +37,6 @@ Optionally, type `cmake --install .` to place the executable into /usr/local/bin
 ## Current limitations
 The following X/26 enhancement triplets are not rendered by the editor, although the list is fully aware of them.
 - Invocation of Objects from POP and GPOP pages.
-- DRCS characters.
 - Proportional font spacing on Level 3.5
 
 ## Using the X/26 triplet editor
