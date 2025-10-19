@@ -74,6 +74,7 @@ private slots:
 	void exportImage();
 	void exportM29();
 	void updateRecentFileActions();
+	void clearRecentFiles();
 	void updateExportAutoAction();
 	void openRecentFile();
 	void about();
@@ -118,9 +119,7 @@ private:
 	void openFile(const QString &fileName);
 	void loadFile(const QString &fileName);
 	void extractImages(QImage sceneImage[], bool smooth = false, bool flashExtract = false);
-	static bool hasRecentFiles();
 	void prependToRecentFiles(const QString &fileName);
-	void setRecentFilesVisible(bool visible);
 	bool saveFile(const QString &fileName);
 	void setCurrentFile(const QString &fileName);
 	static QString strippedName(const QString &fullFileName);
@@ -144,7 +143,6 @@ private:
 	DClutDockWidget *m_dClutDockWidget;
 
 	QAction *m_recentFileActs[m_MaxRecentFiles];
-	QAction *m_recentFileSeparator;
 	QAction *m_recentFileSubMenuAct;
 	QAction *m_exportAutoAct;
 	QAction *m_deleteSubPageAction;

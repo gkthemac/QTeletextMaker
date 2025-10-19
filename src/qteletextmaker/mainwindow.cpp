@@ -452,6 +452,8 @@ void MainWindow::createActions()
 	QToolBar *fileToolBar = addToolBar(tr("File"));
 	fileToolBar->setObjectName("fileToolBar");
 
+	connect(fileMenu, &QMenu::aboutToShow, this, &MainWindow::updateRecentFileActions);
+
 	const QIcon newIcon = QIcon::fromTheme("document-new", QIcon(":/images/new.png"));
 	QAction *newAct = new QAction(newIcon, tr("&New"), this);
 	newAct->setShortcuts(QKeySequence::New);
@@ -467,6 +469,18 @@ void MainWindow::createActions()
 	connect(openAct, &QAction::triggered, this, &MainWindow::open);
 	fileMenu->addAction(openAct);
 	fileToolBar->addAction(openAct);
+
+	const QIcon recentIcon = QIcon::fromTheme("document-open-recent");
+	QMenu *recentMenu = fileMenu->addMenu(recentIcon, tr("Open recent"));
+	m_recentFileSubMenuAct = recentMenu->menuAction();
+
+	for (int i = 0; i < m_MaxRecentFiles; ++i) {
+		m_recentFileActs[i] = recentMenu->addAction(QString(), this, &MainWindow::openRecentFile);
+		m_recentFileActs[i]->setVisible(false);
+	}
+	recentMenu->addSeparator();
+	const QIcon clearRecentIcon = QIcon::fromTheme("edit-clear-history");
+	recentMenu->addAction(clearRecentIcon, tr("Clear list"), this, &MainWindow::clearRecentFiles);
 
 	const QIcon saveIcon = QIcon::fromTheme("document-save", QIcon(":/images/save.png"));
 	QAction *saveAct = new QAction(saveIcon, tr("&Save"), this);
@@ -487,19 +501,6 @@ void MainWindow::createActions()
 	reloadAct->setStatusTip(tr("Reload the document from disk"));
 
 	fileMenu->addSeparator();
-
-	QMenu *recentMenu = fileMenu->addMenu(tr("Recent"));
-	connect(recentMenu, &QMenu::aboutToShow, this, &MainWindow::updateRecentFileActions);
-	m_recentFileSubMenuAct = recentMenu->menuAction();
-
-	for (int i = 0; i < m_MaxRecentFiles; ++i) {
-		m_recentFileActs[i] = recentMenu->addAction(QString(), this, &MainWindow::openRecentFile);
-		m_recentFileActs[i]->setVisible(false);
-	}
-
-	m_recentFileSeparator = fileMenu->addSeparator();
-
-	setRecentFilesVisible(MainWindow::hasRecentFiles());
 
 	m_exportAutoAct = fileMenu->addAction(tr("Export subpage..."));
 	m_exportAutoAct->setEnabled(false);
@@ -1318,12 +1319,6 @@ void MainWindow::loadFile(const QString &fileName)
 	statusBar()->showMessage(tr("File loaded"), 2000);
 }
 
-void MainWindow::setRecentFilesVisible(bool visible)
-{
-	m_recentFileSubMenuAct->setVisible(visible);
-	m_recentFileSeparator->setVisible(visible);
-}
-
 static inline QString recentFilesKey() { return QStringLiteral("recentFileList"); }
 static inline QString fileKey() { return QStringLiteral("file"); }
 
@@ -1350,14 +1345,6 @@ static void writeRecentFiles(const QStringList &files, QSettings &settings)
 	settings.endArray();
 }
 
-bool MainWindow::hasRecentFiles()
-{
-	QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-	const int count = settings.beginReadArray(recentFilesKey());
-	settings.endArray();
-	return count > 0;
-}
-
 void MainWindow::prependToRecentFiles(const QString &fileName)
 {
 	QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
@@ -1369,7 +1356,7 @@ void MainWindow::prependToRecentFiles(const QString &fileName)
 	if (oldRecentFiles != recentFiles)
 		writeRecentFiles(recentFiles, settings);
 
-	setRecentFilesVisible(!recentFiles.isEmpty());
+	m_recentFileSubMenuAct->setEnabled(!recentFiles.isEmpty());
 }
 
 void MainWindow::updateRecentFileActions()
@@ -1387,6 +1374,15 @@ void MainWindow::updateRecentFileActions()
 	}
 	for ( ; i < m_MaxRecentFiles; ++i)
 		m_recentFileActs[i]->setVisible(false);
+
+	m_recentFileSubMenuAct->setEnabled(recentFiles.size() != 0);
+}
+
+void MainWindow::clearRecentFiles()
+{
+	QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+
+	writeRecentFiles(QStringList(), settings);
 }
 
 void MainWindow::updateExportAutoAction()
