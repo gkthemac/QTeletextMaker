@@ -1,6 +1,6 @@
 file (GLOB SOURCES *.cpp)
 
-add_library(qteletextdecoder ${SOURCES} teletextfonts.qrc)
+add_library(qteletextdecoder STATIC ${SOURCES} teletextfonts.qrc)
 
 target_include_directories(qteletextdecoder PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

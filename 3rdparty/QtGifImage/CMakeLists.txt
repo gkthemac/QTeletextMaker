@@ -13,7 +13,7 @@ set(GIF_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/3rdparty/giflib)
 
 # Next line was "add_library(${PROJECT_NAME} SHARED"
 # but it breaks MXE static compilation
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} STATIC
     ${GIF_IMAGE_DIR}/qgifglobal.h ${GIF_IMAGE_DIR}/qgifimage.cpp
     ${GIF_IMAGE_DIR}/qgifimage.h  ${GIF_IMAGE_DIR}/qgifimage_p.h
 
