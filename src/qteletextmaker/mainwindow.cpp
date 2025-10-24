@@ -397,7 +397,26 @@ void MainWindow::init()
 	createActions();
 	createStatusBar();
 
-	readSettings();
+	QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+	const int settingsSchema = settings.value("schema", 1).toInt();
+
+	// Don't restore geometry/states from pre 0.8.1 versions: they had a bug which sometimes squashed the
+	// page view unusably small and forgetting the layout could be the only way out of it
+	const QByteArray geometry = settingsSchema >= 2 ? settings.value("geometry", QByteArray()).toByteArray() : QByteArray();
+	const QByteArray windowState = settingsSchema >= 2 ? settings.value("windowState", QByteArray()).toByteArray() : QByteArray();
+
+	m_viewBorder = settings.value("border", 1).toInt();
+	m_viewBorder = (m_viewBorder < 0 || m_viewBorder > 2) ? 1 : m_viewBorder;
+	m_borderActs[m_viewBorder]->setChecked(true);
+	m_viewAspectRatio = settings.value("aspectratio", 0).toInt();
+	m_viewAspectRatio = (m_viewAspectRatio < 0 || m_viewAspectRatio > 3) ? 0 : m_viewAspectRatio;
+	m_aspectRatioActs[m_viewAspectRatio]->setChecked(true);
+	m_viewSmoothTransform = settings.value("smoothTransform", 0).toBool();
+	m_smoothTransformAction->blockSignals(true);
+	m_smoothTransformAction->setChecked(m_viewSmoothTransform);
+	m_smoothTransformAction->blockSignals(false);
+	m_viewZoom = settings.value("zoom", 2).toInt();
+	m_viewZoom = (m_viewZoom < 0 || m_viewZoom > 12) ? 2 : m_viewZoom;
 
 	m_textView = new QGraphicsView(this);
 	m_textView->setScene(m_textScene);
@@ -406,6 +425,37 @@ void MainWindow::init()
 	m_zoomSlider->setValue(m_viewZoom);
 	setSceneDimensions();
 	setCentralWidget(m_textView);
+
+	// zoom 0 = 430,385px, 1 = 500,530px, 2 = 650,670px
+	if (geometry.isEmpty()) {
+		const QRect availableGeometry = QGuiApplication::primaryScreen()->availableGeometry();
+		if (availableGeometry.width() < 500 || availableGeometry.height() < 530) {
+			resize(430, 385);
+			m_viewZoom = 0;
+		} else if (availableGeometry.width() < 650 || availableGeometry.height() < 670) {
+			resize(500, 530);
+			m_viewZoom = 1;
+		} else
+			resize(650, 670);
+//			m_viewZoom = 2;
+		move((availableGeometry.width() - width()) / 2, (availableGeometry.height() - height()) / 2);
+	} else
+		restoreGeometry(geometry);
+	if (windowState.isEmpty()) {
+		m_pageOptionsDockWidget->hide();
+		m_pageOptionsDockWidget->setFloating(true);
+		m_pageEnhancementsDockWidget->hide();
+		m_pageEnhancementsDockWidget->setFloating(true);
+		m_x26DockWidget->hide();
+		m_x26DockWidget->setFloating(true);
+		m_paletteDockWidget->hide();
+		m_paletteDockWidget->setFloating(true);
+		m_dClutDockWidget->hide();
+		m_dClutDockWidget->setFloating(true);
+		m_pageComposeLinksDockWidget->hide();
+		m_pageComposeLinksDockWidget->setFloating(true);
+	} else
+		restoreState(windowState);
 
 	connect(m_textWidget->document(), &TeletextDocument::cursorMoved, this, &MainWindow::updateCursorPosition);
 	connect(m_textWidget->document(), &TeletextDocument::selectionMoved, m_textScene, &LevelOneScene::updateSelection);
@@ -1174,61 +1224,10 @@ void MainWindow::createStatusBar()
 	connect(m_levelRadioButton[3], &QAbstractButton::clicked, [=]() { m_textWidget->pageDecode()->setLevel(3); m_textWidget->update(); m_paletteDockWidget->setLevel3p5Accepted(true);});
 }
 
-void MainWindow::readSettings()
-{
-	//TODO window sizing
-	QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-	const QByteArray geometry = settings.value("geometry", QByteArray()).toByteArray();
-	const QByteArray windowState = settings.value("windowState", QByteArray()).toByteArray();
-
-	m_viewBorder = settings.value("border", 1).toInt();
-	m_viewBorder = (m_viewBorder < 0 || m_viewBorder > 2) ? 1 : m_viewBorder;
-	m_borderActs[m_viewBorder]->setChecked(true);
-	m_viewAspectRatio = settings.value("aspectratio", 0).toInt();
-	m_viewAspectRatio = (m_viewAspectRatio < 0 || m_viewAspectRatio > 3) ? 0 : m_viewAspectRatio;
-	m_aspectRatioActs[m_viewAspectRatio]->setChecked(true);
-	m_viewSmoothTransform = settings.value("smoothTransform", 0).toBool();
-	m_smoothTransformAction->blockSignals(true);
-	m_smoothTransformAction->setChecked(m_viewSmoothTransform);
-	m_smoothTransformAction->blockSignals(false);
-	m_viewZoom = settings.value("zoom", 2).toInt();
-	m_viewZoom = (m_viewZoom < 0 || m_viewZoom > 12) ? 2 : m_viewZoom;
-
-	// zoom 0 = 430,385px, 1 = 500,530px, 2 = 650,670px
-	if (geometry.isEmpty()) {
-		const QRect availableGeometry = QGuiApplication::primaryScreen()->availableGeometry();
-		if (availableGeometry.width() < 500 || availableGeometry.height() < 530) {
-			resize(430, 385);
-			m_viewZoom = 0;
-		} else if (availableGeometry.width() < 650 || availableGeometry.height() < 670) {
-			resize(500, 530);
-			m_viewZoom = 1;
-		} else
-			resize(650, 670);
-//			m_viewZoom = 2;
-		move((availableGeometry.width() - width()) / 2, (availableGeometry.height() - height()) / 2);
-	} else
-		restoreGeometry(geometry);
-	if (windowState.isEmpty()) {
-		m_pageOptionsDockWidget->hide();
-		m_pageOptionsDockWidget->setFloating(true);
-		m_pageEnhancementsDockWidget->hide();
-		m_pageEnhancementsDockWidget->setFloating(true);
-		m_x26DockWidget->hide();
-		m_x26DockWidget->setFloating(true);
-		m_paletteDockWidget->hide();
-		m_paletteDockWidget->setFloating(true);
-		m_dClutDockWidget->hide();
-		m_dClutDockWidget->setFloating(true);
-		m_pageComposeLinksDockWidget->hide();
-		m_pageComposeLinksDockWidget->setFloating(true);
-	} else
-		restoreState(windowState);
-}
-
 void MainWindow::writeSettings()
 {
 	QSettings settings(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+	settings.setValue("schema", 2);
 	settings.setValue("geometry", saveGeometry());
 	settings.setValue("windowState", saveState());
 	settings.setValue("border", m_viewBorder);

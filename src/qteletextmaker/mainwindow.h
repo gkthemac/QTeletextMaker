@@ -113,7 +113,6 @@ private:
 	void init();
 	void createActions();
 	void createStatusBar();
-	void readSettings();
 	void writeSettings();
 	bool maybeSave();
 	void openFile(const QString &fileName);
