@@ -415,14 +415,14 @@ void MainWindow::init()
 	m_smoothTransformAction->blockSignals(true);
 	m_smoothTransformAction->setChecked(m_viewSmoothTransform);
 	m_smoothTransformAction->blockSignals(false);
-	m_viewZoom = settings.value("zoom", 2).toInt();
-	m_viewZoom = (m_viewZoom < 0 || m_viewZoom > 12) ? 2 : m_viewZoom;
+	int zoomSliderInit = settings.value("zoom", 2).toInt();
+	zoomSliderInit = (zoomSliderInit < 0 || zoomSliderInit > 8) ? 2 : zoomSliderInit;
 
 	m_textView = new QGraphicsView(this);
 	m_textView->setScene(m_textScene);
 	if (m_viewSmoothTransform)
 		m_textView->setRenderHints(QPainter::SmoothPixmapTransform);
-	m_zoomSlider->setValue(m_viewZoom);
+	m_zoomSlider->setValue(zoomSliderInit);
 	setSceneDimensions();
 	setCentralWidget(m_textView);
 
@@ -1233,7 +1233,7 @@ void MainWindow::writeSettings()
 	settings.setValue("border", m_viewBorder);
 	settings.setValue("aspectratio", m_viewAspectRatio);
 	settings.setValue("smoothTransform", m_viewSmoothTransform);
-	settings.setValue("zoom", m_viewZoom);
+	settings.setValue("zoom", m_zoomSlider->value());
 }
 
 bool MainWindow::maybeSave()
