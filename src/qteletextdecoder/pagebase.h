@@ -22,11 +22,8 @@
 
 #include <QByteArray>
 
-// If we inherit from QObject then we can't copy construct, so "make a new subpage that's a copy of this one" wouldn't work
-class PageBase //: public QObject
+class PageBase
 {
-	//Q_OBJECT
-
 public:
 	enum ControlBitsEnum { C4ErasePage, C5Newsflash, C6Subtitle, C7SuppressHeader, C8Update, C9InterruptedSequence, C10InhibitDisplay, C11SerialMagazine, C12NOS, C13NOS, C14NOS };
 	// Available Page Functions according to 9.4.2.1 of the spec
@@ -36,22 +33,22 @@ public:
 
 	PageBase();
 
-	virtual PageFunctionEnum pageFunction() const { return PFUnknown; }
-	virtual PacketCodingEnum packetCoding() const { return CodingUnknown; }
+	virtual PageFunctionEnum pageFunction() const;
+	virtual PacketCodingEnum packetCoding() const;
 
 	virtual bool isEmpty() const;
 
-	virtual QByteArray packet(int y) const { return m_displayPackets[y]; }
-	virtual QByteArray packet(int y, int d) const { return m_designationPackets[y-26][d]; }
+	virtual QByteArray packet(int y) const;
+	virtual QByteArray packet(int y, int d) const;
 	virtual bool setPacket(int y, QByteArray pkt);
 	virtual bool setPacket(int y, int d, QByteArray pkt);
-	virtual bool packetExists(int y) const { return !m_displayPackets[y].isEmpty(); }
-	virtual bool packetExists(int y, int d) const { return !m_designationPackets[y-26][d].isEmpty(); }
+	virtual bool packetExists(int y) const;
+	virtual bool packetExists(int y, int d) const ;
 	virtual bool clearPacket(int y);
 	virtual bool clearPacket(int y, int d);
 	virtual void clearAllPackets();
 
-	virtual bool controlBit(int b) const { return m_controlBits[b]; }
+	virtual bool controlBit(int b) const;
 	virtual bool setControlBit(int b, bool active);
 
 private:

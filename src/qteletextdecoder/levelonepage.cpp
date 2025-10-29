@@ -80,6 +80,16 @@ void LevelOnePage::clearPage()
 //	If clearPage() is called outside constructor, we need to implement m_enhancements.clear();
 }
 
+PageBase::PageFunctionEnum LevelOnePage::pageFunction() const
+{
+	return PFLevelOnePage;
+}
+
+PageBase::PacketCodingEnum LevelOnePage::packetCoding() const
+{
+	return Coding7bit;
+}
+
 bool LevelOnePage::isEmpty() const
 {
 	if (!m_enhancements.isEmpty())
@@ -295,10 +305,47 @@ bool LevelOnePage::setControlBit(int b, bool active)
 	return PageX26Base::setControlBit(b, active);
 }
 
+int LevelOnePage::maxEnhancements() const
+{
+	return 208;
+}
+
 /* void LevelOnePage::setSubPageNumber(int newSubPageNumber) { m_subPageNumber = newSubPageNumber; } */
-void LevelOnePage::setCycleValue(int newValue) { m_cycleValue = newValue; };
-void LevelOnePage::setCycleType(CycleTypeEnum newType) { m_cycleType = newType; }
-void LevelOnePage::setDefaultCharSet(int newDefaultCharSet) { m_defaultCharSet = newDefaultCharSet; }
+
+int LevelOnePage::cycleValue() const
+{
+	return m_cycleValue;
+}
+
+void LevelOnePage::setCycleValue(int newValue)
+{
+	m_cycleValue = newValue;
+}
+
+LevelOnePage::CycleTypeEnum LevelOnePage::cycleType() const
+{
+	return m_cycleType;
+}
+
+void LevelOnePage::setCycleType(CycleTypeEnum newType)
+{
+	m_cycleType = newType;
+}
+
+int LevelOnePage::defaultCharSet() const
+{
+	return m_defaultCharSet;
+}
+
+void LevelOnePage::setDefaultCharSet(int newDefaultCharSet)
+{
+	m_defaultCharSet = newDefaultCharSet;
+}
+
+int LevelOnePage::defaultNOS() const
+{
+	return m_defaultNOS;
+}
 
 void LevelOnePage::setDefaultNOS(int defaultNOS)
 {
@@ -309,6 +356,11 @@ void LevelOnePage::setDefaultNOS(int defaultNOS)
 	PageX26Base::setControlBit(C14NOS, m_defaultNOS & 0x4);
 }
 
+int LevelOnePage::secondCharSet() const
+{
+	return m_secondCharSet;
+}
+
 void LevelOnePage::setSecondCharSet(int newSecondCharSet)
 {
 	m_secondCharSet = newSecondCharSet;
@@ -316,7 +368,17 @@ void LevelOnePage::setSecondCharSet(int newSecondCharSet)
 		m_secondNOS = 0x7;
 }
 
+int LevelOnePage::secondNOS() const
+{
+	return m_secondNOS;
+}
+
 void LevelOnePage::setSecondNOS(int newSecondNOS) { m_secondNOS = newSecondNOS; }
+
+unsigned char LevelOnePage::character(int r, int c) const
+{
+	return PageX26Base::packetExists(r) ? PageX26Base::packet(r).at(c) : 0x20;
+}
 
 void LevelOnePage::setCharacter(int r, int c, unsigned char newCharacter)
 {
@@ -338,10 +400,45 @@ void LevelOnePage::setCharacter(int r, int c, unsigned char newCharacter)
 	}
 }
 
-void LevelOnePage::setDefaultScreenColour(int newDefaultScreenColour) { m_defaultScreenColour = newDefaultScreenColour; }
-void LevelOnePage::setDefaultRowColour(int newDefaultRowColour) { m_defaultRowColour = newDefaultRowColour; }
-void LevelOnePage::setColourTableRemap(int newColourTableRemap) { m_colourTableRemap = newColourTableRemap; }
-void LevelOnePage::setBlackBackgroundSubst(bool newBlackBackgroundSubst) { m_blackBackgroundSubst = newBlackBackgroundSubst; }
+int LevelOnePage::defaultScreenColour() const
+{
+	return m_defaultScreenColour;
+}
+
+void LevelOnePage::setDefaultScreenColour(int newDefaultScreenColour)
+{
+	m_defaultScreenColour = newDefaultScreenColour;
+}
+
+int LevelOnePage::defaultRowColour() const
+{
+	return m_defaultRowColour;
+}
+
+void LevelOnePage::setDefaultRowColour(int newDefaultRowColour)
+{
+	m_defaultRowColour = newDefaultRowColour;
+}
+
+int LevelOnePage::colourTableRemap() const
+{
+	return m_colourTableRemap;
+}
+
+void LevelOnePage::setColourTableRemap(int newColourTableRemap)
+{
+	m_colourTableRemap = newColourTableRemap;
+}
+
+bool LevelOnePage::blackBackgroundSubst() const
+{
+	return m_blackBackgroundSubst;
+}
+
+void LevelOnePage::setBlackBackgroundSubst(bool newBlackBackgroundSubst)
+{
+	m_blackBackgroundSubst = newBlackBackgroundSubst;
+}
 
 int LevelOnePage::CLUT(int index, int renderLevel) const
 {
@@ -552,14 +649,59 @@ int LevelOnePage::levelRequired() const
 	return levelSeen;
 }
 
-void LevelOnePage::setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed) { m_leftSidePanelDisplayed = newLeftSidePanelDisplayed; }
-void LevelOnePage::setRightSidePanelDisplayed(bool newRightSidePanelDisplayed) { m_rightSidePanelDisplayed = newRightSidePanelDisplayed; }
-void LevelOnePage::setSidePanelColumns(int newSidePanelColumns) { m_sidePanelColumns = newSidePanelColumns; }
-void LevelOnePage::setSidePanelStatusL25(bool newSidePanelStatusL25) { m_sidePanelStatusL25 = newSidePanelStatusL25; }
+bool LevelOnePage::leftSidePanelDisplayed() const
+{
+	return m_leftSidePanelDisplayed;
+}
+
+void LevelOnePage::setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed)
+{
+	m_leftSidePanelDisplayed = newLeftSidePanelDisplayed;
+}
+
+bool LevelOnePage::rightSidePanelDisplayed() const
+{
+	return m_rightSidePanelDisplayed;
+}
+
+void LevelOnePage::setRightSidePanelDisplayed(bool newRightSidePanelDisplayed)
+{
+	m_rightSidePanelDisplayed = newRightSidePanelDisplayed;
+}
+
+int LevelOnePage::sidePanelColumns() const
+{
+	return m_sidePanelColumns;
+}
+
+void LevelOnePage::setSidePanelColumns(int newSidePanelColumns)
+{
+	m_sidePanelColumns = newSidePanelColumns;
+}
+
+bool LevelOnePage::sidePanelStatusL25() const
+{
+	return m_sidePanelStatusL25;
+}
+
+void LevelOnePage::setSidePanelStatusL25(bool newSidePanelStatusL25)
+{
+	m_sidePanelStatusL25 = newSidePanelStatusL25;
+}
+
+int LevelOnePage::fastTextLinkPageNumber(int linkNumber) const
+{
+	return m_fastTextLink[linkNumber].pageNumber;
+}
 
 void LevelOnePage::setFastTextLinkPageNumber(int linkNumber, int pageNumber)
 {
 	m_fastTextLink[linkNumber].pageNumber = pageNumber;
+}
+
+int LevelOnePage::composeLinkFunction(int linkNumber) const
+{
+	return m_composeLink[linkNumber].function;
 }
 
 void LevelOnePage::setComposeLinkFunction(int linkNumber, int newFunction)
@@ -567,9 +709,19 @@ void LevelOnePage::setComposeLinkFunction(int linkNumber, int newFunction)
 	m_composeLink[linkNumber].function = newFunction;
 }
 
+bool LevelOnePage::composeLinkLevel2p5(int linkNumber) const
+{
+	return m_composeLink[linkNumber].level2p5;
+}
+
 void LevelOnePage::setComposeLinkLevel2p5(int linkNumber, bool newRequired)
 {
 	m_composeLink[linkNumber].level2p5 = newRequired;
+}
+
+bool LevelOnePage::composeLinkLevel3p5(int linkNumber) const
+{
+	return m_composeLink[linkNumber].level3p5;
 }
 
 void LevelOnePage::setComposeLinkLevel3p5(int linkNumber, bool newRequired)
@@ -577,9 +729,19 @@ void LevelOnePage::setComposeLinkLevel3p5(int linkNumber, bool newRequired)
 	m_composeLink[linkNumber].level3p5 = newRequired;
 }
 
+int LevelOnePage::composeLinkPageNumber(int linkNumber) const
+{
+	return m_composeLink[linkNumber].pageNumber;
+}
+
 void LevelOnePage::setComposeLinkPageNumber(int linkNumber, int newPageNumber)
 {
 	m_composeLink[linkNumber].pageNumber = newPageNumber;
+}
+
+int LevelOnePage::composeLinkSubPageCodes(int linkNumber) const
+{
+	return m_composeLink[linkNumber].subPageCodes;
 }
 
 void LevelOnePage::setComposeLinkSubPageCodes(int linkNumber, int newSubPageCodes)

@@ -21,6 +21,11 @@
 
 #include "pagex26base.h"
 
+X26TripletList *PageX26Base::enhancements()
+{
+	return &m_enhancements;
+}
+
 QByteArray PageX26Base::packetFromEnhancementList(int p) const
 {
 	QByteArray result(40, 0x00);
@@ -78,4 +83,9 @@ void PageX26Base::setEnhancementListFromPacket(int p, QByteArray pkt)
 		// Last triplet was a Termination Marker (without ..follows) so clean up the repeated ones
 		while (m_enhancements.size()>1 && m_enhancements.at(m_enhancements.size()-2).mode() == 0x1f && m_enhancements.at(m_enhancements.size()-2).address() == 0x3f && m_enhancements.at(m_enhancements.size()-2).data() == newX26Triplet.data())
 			m_enhancements.removeLast();
+}
+
+bool PageX26Base::packetFromEnhancementListNeeded(int n) const
+{
+	return ((m_enhancements.size()+12) / 13) > n;
 }

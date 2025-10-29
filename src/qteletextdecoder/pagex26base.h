@@ -26,18 +26,16 @@
 #include "pagebase.h"
 #include "x26triplets.h"
 
-class PageX26Base : public PageBase //: public QObject
+class PageX26Base : public PageBase
 {
-	//Q_OBJECT
-
 public:
-	X26TripletList *enhancements() { return &m_enhancements; };
+	X26TripletList *enhancements();
 	virtual int maxEnhancements() const =0;
 
 protected:
 	QByteArray packetFromEnhancementList(int p) const;
 	void setEnhancementListFromPacket(int p, QByteArray pkt);
-	bool packetFromEnhancementListNeeded(int n) const { return ((m_enhancements.size()+12) / 13) > n; };
+	bool packetFromEnhancementListNeeded(int n) const;
 
 	X26TripletList m_enhancements;
 };

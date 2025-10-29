@@ -42,8 +42,8 @@ public:
 	LevelOnePage();
 	LevelOnePage(const PageBase &other);
 
-	PageFunctionEnum pageFunction() const override { return PFLevelOnePage; }
-	PacketCodingEnum packetCoding() const override { return Coding7bit; }
+	PageFunctionEnum pageFunction() const override;
+	PacketCodingEnum packetCoding() const override;
 
 	bool isEmpty() const override;
 
@@ -55,30 +55,30 @@ public:
 
 	void clearPage();
 
-	int maxEnhancements() const override { return 208; };
+	int maxEnhancements() const override;
 
 /*	void setSubPageNumber(int); */
-	int cycleValue() const { return m_cycleValue; };
+	int cycleValue() const;
 	void setCycleValue(int newValue);
-	CycleTypeEnum cycleType() const { return m_cycleType; };
+	CycleTypeEnum cycleType() const;
 	void setCycleType(CycleTypeEnum newType);
-	int defaultCharSet() const { return m_defaultCharSet; }
+	int defaultCharSet() const;
 	void setDefaultCharSet(int newDefaultCharSet);
-	int defaultNOS() const { return m_defaultNOS; }
+	int defaultNOS() const;
 	void setDefaultNOS(int defaultNOS);
-	int secondCharSet() const { return m_secondCharSet; }
+	int secondCharSet() const;
 	void setSecondCharSet(int newSecondCharSet);
-	int secondNOS() const { return m_secondNOS; }
+	int secondNOS() const;
 	void setSecondNOS(int newSecondNOS);
-	unsigned char character(int r, int c) const { return PageX26Base::packetExists(r) ? PageX26Base::packet(r).at(c) : 0x20; }
+	unsigned char character(int r, int c) const;
 	void setCharacter(int r, int c, unsigned char newChar);
-	int defaultScreenColour() const { return m_defaultScreenColour; }
+	int defaultScreenColour() const;
 	void setDefaultScreenColour(int newDefaultScreenColour);
-	int defaultRowColour() const { return m_defaultRowColour; }
+	int defaultRowColour() const;
 	void setDefaultRowColour(int newDefaultRowColour);
-	int colourTableRemap() const { return m_colourTableRemap; }
+	int colourTableRemap() const;
 	void setColourTableRemap(int newColourTableRemap);
-	bool blackBackgroundSubst() const { return m_blackBackgroundSubst; }
+	bool blackBackgroundSubst() const;
 	void setBlackBackgroundSubst(bool newBlackBackgroundSubst);
 	int CLUT(int index, int renderLevel=3) const;
 	void setCLUT(int index, int newColour);
@@ -88,25 +88,25 @@ public:
 	int dCLUT(bool globalDrcs, int mode, int index) const;
 	void setDCLUT(bool globalDrcs, int mode, int index, int colour);
 	int levelRequired() const;
-	bool leftSidePanelDisplayed() const { return m_leftSidePanelDisplayed; }
+	bool leftSidePanelDisplayed() const;
 	void setLeftSidePanelDisplayed(bool newLeftSidePanelDisplayed);
-	bool rightSidePanelDisplayed() const { return m_rightSidePanelDisplayed; }
+	bool rightSidePanelDisplayed() const;
 	void setRightSidePanelDisplayed(bool newRightSidePanelDisplayed);
-	int sidePanelColumns() const { return m_sidePanelColumns; }
+	int sidePanelColumns() const;
 	void setSidePanelColumns(int newSidePanelColumns);
-	bool sidePanelStatusL25() const { return m_sidePanelStatusL25; }
+	bool sidePanelStatusL25() const;
 	void setSidePanelStatusL25(bool newSidePanelStatusL25);
-	int fastTextLinkPageNumber(int linkNumber) const { return m_fastTextLink[linkNumber].pageNumber; }
+	int fastTextLinkPageNumber(int linkNumber) const;
 	void setFastTextLinkPageNumber(int linkNumber, int pageNumber);
-	int composeLinkFunction(int linkNumber) const { return m_composeLink[linkNumber].function; }
+	int composeLinkFunction(int linkNumber) const;
 	void setComposeLinkFunction(int linkNumber, int newFunction);
-	bool composeLinkLevel2p5(int linkNumber) const { return m_composeLink[linkNumber].level2p5; }
+	bool composeLinkLevel2p5(int linkNumber) const;
 	void setComposeLinkLevel2p5(int linkNumber, bool newRequired);
-	bool composeLinkLevel3p5(int linkNumber) const { return m_composeLink[linkNumber].level3p5; }
+	bool composeLinkLevel3p5(int linkNumber) const;
 	void setComposeLinkLevel3p5(int linkNumber, bool newRequired);
-	int composeLinkPageNumber(int linkNumber) const { return m_composeLink[linkNumber].pageNumber; }
+	int composeLinkPageNumber(int linkNumber) const;
 	void setComposeLinkPageNumber(int linkNumber, int newPageNumber);
-	int composeLinkSubPageCodes(int linkNumber) const { return m_composeLink[linkNumber].subPageCodes; }
+	int composeLinkSubPageCodes(int linkNumber) const;
 	void setComposeLinkSubPageCodes(int linkNumber, int newSubPageCodes);
 
 private:

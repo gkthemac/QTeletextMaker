@@ -36,13 +36,13 @@ public:
 
 	X26Triplet(int address, int mode, int data);
 
-	int address() const { return m_address; }
-	int mode() const { return m_mode; }
-	int modeExt() const { return (m_address >= 40) ? m_mode : (m_mode | 0x20); }
-	int data() const { return m_data; }
-	int addressRow() const { return (m_address == 40) ? 24 :m_address-40; }
-	int addressColumn() const { return (m_address); }
-	bool isRowTriplet() const { return (m_address >= 40); }
+	int address() const;
+	int mode() const;
+	int modeExt() const;
+	int data() const;
+	int addressRow() const;
+	int addressColumn() const;
+	bool isRowTriplet() const;
 
 	void setAddress(int address);
 	void setMode(int mode);
@@ -50,23 +50,23 @@ public:
 	void setAddressRow(int addressRow);
 	void setAddressColumn(int addressColumn);
 
-	int objectSource() const { return (m_address & 0x18) >> 3; }
+	int objectSource() const;
 
-	int objectLocalDesignationCode() const { return (((m_address & 0x01) << 3) | (m_data >> 4)); }
-	int objectLocalTripletNumber() const { return m_data & 0x0f; }
-	int objectLocalIndex() const { return objectLocalDesignationCode() * 13 + objectLocalTripletNumber(); }
+	int objectLocalDesignationCode() const;
+	int objectLocalTripletNumber() const;
+	int objectLocalIndex() const;
 	void setObjectLocalDesignationCode(int i);
 	void setObjectLocalTripletNumber(int i);
 	void setObjectLocalIndex(int i);
 
-	int activePositionRow() const { return m_activePositionRow; }
-	int activePositionColumn() const { return m_activePositionColumn; }
-	int activePositionRow1p5() const { return m_activePositionRow1p5; }
-	int activePositionColumn1p5() const { return m_activePositionColumn1p5; }
-	X26TripletError error() const { return m_error; }
-	bool reservedMode() const { return m_reservedMode; }
-	bool reservedData() const { return m_reservedData; }
-	bool activePosition1p5Differs() const { return m_activePosition1p5Differs; }
+	int activePositionRow() const;
+	int activePositionColumn() const;
+	int activePositionRow1p5() const;
+	int activePositionColumn1p5() const;
+	X26TripletError error() const;
+	bool reservedMode() const;
+	bool reservedData() const;
+	bool activePosition1p5Differs() const;
 
 	friend class X26TripletList;
 
@@ -91,14 +91,13 @@ public:
 	void insert(int i, const X26Triplet &value);
 	void removeAt(int i);
 	void replace(int i, const X26Triplet &value);
+	void removeLast();
+	const X26Triplet &at(int i) const;
+	bool isEmpty() const;
+	void reserve(int alloc);
+	int size() const;
 
-	void removeLast() { m_list.removeLast(); }
-
-	const X26Triplet &at(int i) const { return m_list.at(i); }
-	bool isEmpty() const { return m_list.isEmpty(); }
-	void reserve(int alloc) { m_list.reserve(alloc); }
-	int size() const { return m_list.size(); }
-	const QList<int> &objects(int t) const { return m_objects[t]; };
+	const QList<int> &objects(int t) const;
 
 private:
 	void updateInternalData();
@@ -111,11 +110,9 @@ private:
 	public:
 		ActivePosition();
 		void reset();
-//		int row() const { return (m_row == -1) ? 0 : m_row; }
-//		int column() const { return (m_column == -1) ? 0 : m_column; }
-		int row() const { return m_row; }
-		int column() const { return m_column; }
-		bool isDeployed() const { return m_row != -1; }
+		int row() const;
+		int column() const;
+		bool isDeployed() const;
 		bool setRow(int);
 		bool setColumn(int);
 //		bool setRowAndColumn(int, int);

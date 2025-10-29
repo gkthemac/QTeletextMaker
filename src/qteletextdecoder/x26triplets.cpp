@@ -26,6 +26,41 @@ X26Triplet::X26Triplet(int address, int mode, int data)
 	m_data = data;
 }
 
+int X26Triplet::address() const
+{
+	return m_address;
+}
+
+int X26Triplet::mode() const
+{
+	return m_mode;
+}
+
+int X26Triplet::modeExt() const
+{
+	return (m_address >= 40) ? m_mode : (m_mode | 0x20);
+}
+
+int X26Triplet::data() const
+{
+	return m_data;
+}
+
+int X26Triplet::addressRow() const
+{
+	return (m_address == 40) ? 24 :m_address-40;
+}
+
+int X26Triplet::addressColumn() const
+{
+	return (m_address);
+}
+
+bool X26Triplet::isRowTriplet() const
+{
+	return (m_address >= 40);
+}
+
 void X26Triplet::setAddress(int address)
 {
 	m_address = address;
@@ -51,6 +86,26 @@ void X26Triplet::setAddressColumn(int addressColumn)
 	m_address = addressColumn;
 }
 
+int X26Triplet::objectSource() const
+{
+	return (m_address & 0x18) >> 3;
+}
+
+int X26Triplet::objectLocalDesignationCode() const
+{
+	return (((m_address & 0x01) << 3) | (m_data >> 4));
+}
+
+int X26Triplet::objectLocalTripletNumber() const
+{
+	return m_data & 0x0f;
+}
+
+int X26Triplet::objectLocalIndex() const
+{
+	return objectLocalDesignationCode() * 13 + objectLocalTripletNumber();
+}
+
 void X26Triplet::setObjectLocalDesignationCode(int i)
 {
 	m_address = (m_address & 0x38) | (i >> 3);
@@ -66,6 +121,46 @@ void X26Triplet::setObjectLocalIndex(int i)
 {
 	m_address = (m_address & 0x38) + (i >= 104); // Set bit 0 of address if triplet >= 8
 	m_data = (((i / 13) & 0x07) << 4) | (i % 13);
+}
+
+int X26Triplet::activePositionRow() const
+{
+	return m_activePositionRow;
+}
+
+int X26Triplet::activePositionColumn() const
+{
+	return m_activePositionColumn;
+}
+
+int X26Triplet::activePositionRow1p5() const
+{
+	return m_activePositionRow1p5;
+}
+
+int X26Triplet::activePositionColumn1p5() const
+{
+	return m_activePositionColumn1p5;
+}
+
+X26Triplet::X26TripletError X26Triplet::error() const
+{
+	return m_error;
+}
+
+bool X26Triplet::reservedMode() const
+{
+	return m_reservedMode;
+}
+
+bool X26Triplet::reservedData() const
+{
+	return m_reservedData;
+}
+
+bool X26Triplet::activePosition1p5Differs() const
+{
+	return m_activePosition1p5Differs;
 }
 
 
@@ -282,6 +377,35 @@ void X26TripletList::replace(int i, const X26Triplet &value)
 	updateInternalData();
 }
 
+void X26TripletList::removeLast()
+{
+	m_list.removeLast();
+}
+
+const X26Triplet &X26TripletList::at(int i) const
+{
+	return m_list.at(i);
+}
+
+bool X26TripletList::isEmpty() const
+{
+	return m_list.isEmpty();
+}
+
+void X26TripletList::reserve(int alloc)
+{
+	m_list.reserve(alloc);
+}
+
+int X26TripletList::size() const
+{
+	return m_list.size();
+}
+
+const QList<int> &X26TripletList::objects(int t) const
+{
+	return m_objects[t];
+};
 
 X26TripletList::ActivePosition::ActivePosition()
 {
@@ -291,6 +415,21 @@ X26TripletList::ActivePosition::ActivePosition()
 void X26TripletList::ActivePosition::reset()
 {
 	m_row = m_column = -1;
+}
+
+int X26TripletList::ActivePosition::row() const
+{
+	return m_row; // return (m_row == -1) ? 0 : m_row;
+}
+
+int X26TripletList::ActivePosition::column() const
+{
+	return m_column; // return (m_column == -1) ? 0 : m_column;
+}
+
+bool X26TripletList::ActivePosition::isDeployed() const
+{
+	return m_row != -1;
 }
 
 bool X26TripletList::ActivePosition::setRow(int row)

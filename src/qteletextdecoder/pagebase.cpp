@@ -27,6 +27,16 @@ PageBase::PageBase()
 		m_controlBits[b] = false;
 }
 
+PageBase::PageFunctionEnum PageBase::pageFunction() const
+{
+	return PFUnknown;
+}
+
+PageBase::PacketCodingEnum PageBase::packetCoding() const
+{
+	return CodingUnknown;
+}
+
 bool PageBase::isEmpty() const
 {
 	for (int y=0; y<26; y++)
@@ -38,6 +48,16 @@ bool PageBase::isEmpty() const
 				return false;
 
 	return true;
+}
+
+QByteArray PageBase::packet(int y) const
+{
+	return m_displayPackets[y];
+}
+
+QByteArray PageBase::packet(int y, int d) const
+{
+	return m_designationPackets[y-26][d];
 }
 
 bool PageBase::setPacket(int y, QByteArray pkt)
@@ -52,6 +72,16 @@ bool PageBase::setPacket(int y, int d, QByteArray pkt)
 	m_designationPackets[y-26][d] = pkt;
 
 	return true;
+}
+
+bool PageBase::packetExists(int y) const
+{
+	return !m_displayPackets[y].isEmpty();
+}
+
+bool PageBase::packetExists(int y, int d) const
+{
+	return !m_designationPackets[y-26][d].isEmpty();
 }
 
 bool PageBase::clearPacket(int y)
@@ -75,6 +105,11 @@ void PageBase::clearAllPackets()
 	for (int y=0; y<3; y++)
 		for (int d=0; d<16; d++)
 			clearPacket(y, d);
+}
+
+bool PageBase::controlBit(int b) const
+{
+	return m_controlBits[b];
 }
 
 bool PageBase::setControlBit(int b, bool active)

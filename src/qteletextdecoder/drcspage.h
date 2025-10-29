@@ -30,8 +30,8 @@ public:
 	DRCSPage(const PageBase &other);
 
 	// TODO PFNormalPOP as well?
-	PageFunctionEnum pageFunction() const { return PFGlobalPOP; }
-	PacketCodingEnum packetCoding() const override { return Coding7bit; }
+	PageFunctionEnum pageFunction() const;
+	PacketCodingEnum packetCoding() const;
 
 	int drcsMode(int c) const;
 	bool ptu(int c, uchar *data) const;
