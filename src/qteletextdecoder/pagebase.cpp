@@ -37,6 +37,14 @@ PageBase::PacketCodingEnum PageBase::packetCoding() const
 	return Coding7bit;
 }
 
+PageBase::PacketCodingEnum PageBase::packetCoding(int y, int d) const
+{
+	if (y == 27 && d < 4)
+		return Coding4bit;
+	else
+		return Coding18bit;
+}
+
 bool PageBase::isEmpty() const
 {
 	for (int y=0; y<26; y++)

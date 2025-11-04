@@ -35,6 +35,7 @@ public:
 
 	virtual PageFunctionEnum pageFunction() const;
 	virtual PacketCodingEnum packetCoding() const;
+	virtual PacketCodingEnum packetCoding(int y, int d) const;
 
 	virtual bool isEmpty() const;
 
@@ -43,7 +44,7 @@ public:
 	virtual bool setPacket(int y, QByteArray pkt);
 	virtual bool setPacket(int y, int d, QByteArray pkt);
 	virtual bool packetExists(int y) const;
-	virtual bool packetExists(int y, int d) const ;
+	virtual bool packetExists(int y, int d) const;
 	virtual bool clearPacket(int y);
 	virtual bool clearPacket(int y, int d);
 	virtual void clearAllPackets();
