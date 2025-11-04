@@ -160,8 +160,23 @@ QByteArray SaveTTIFormat::format18BitPacket(QByteArray packet)
 	// TTI stores the triplets 6 bits at a time like we do, without Hamming encoding
 	// We don't touch the first byte; the caller replaces it with the designation code
 	// unless it's X/1-X/25 used in (G)POP pages
-	for (int i=1; i<packet.size(); i++)
+	for (int i=1; i<packet.size(); i++) {
+		// Save invalid triplets as address 41, mode 0x1e, data 0
+		// which hopefully won't do anything when parsed as X/26 enhancements
+		if ((packet.at(i) & 0xff) == 0xff)
+			switch (i % 3) {
+				case 1:
+					packet[i] = 41;
+					break;
+				case 2:
+					packet[i] = 0x1e;
+					break;
+				case 0:
+					packet[i] = 0;
+					break;
+			}
 		packet[i] = packet.at(i) | 0x40;
+	}
 
 	return packet;
 }
@@ -322,26 +337,30 @@ QByteArray SaveT42Format::format4BitPacket(QByteArray packet)
 
 QByteArray SaveT42Format::format18BitPacket(QByteArray packet)
 {
-	for (int c=1; c<packet.size(); c+=3) {
-		unsigned int D5_D11;
-		unsigned int D12_D18;
-		unsigned int P5, P6;
-		unsigned int Byte_0;
+	for (int c=1; c<packet.size(); c+=3)
+		// For invalid packets, save as all zeroes which will fail Hamming 24/18 decoding
+		if ((packet.at(c) & 0xff) == 0xff)
+			packet[c] = packet[c+1] = packet[c+2] = 0;
+		else {
+			unsigned int D5_D11;
+			unsigned int D12_D18;
+			unsigned int P5, P6;
+			unsigned int Byte_0;
 
-		const unsigned int toEncode = packet[c] | (packet[c+1] << 6) | (packet[c+2] << 12);
+			const unsigned int toEncode = packet[c] | (packet[c+1] << 6) | (packet[c+2] << 12);
 
-		Byte_0 = (hamming_24_18_forward[0][(toEncode >> 0) & 0xff] ^ hamming_24_18_forward[1][(toEncode >> 8) & 0xff] ^ hamming_24_18_forward_2[(toEncode >> 16) & 0x03]);
-		packet[c] = Byte_0;
+			Byte_0 = (hamming_24_18_forward[0][(toEncode >> 0) & 0xff] ^ hamming_24_18_forward[1][(toEncode >> 8) & 0xff] ^ hamming_24_18_forward_2[(toEncode >> 16) & 0x03]);
+			packet[c] = Byte_0;
 
-		D5_D11 = (toEncode >> 4) & 0x7f;
-		D12_D18 = (toEncode >> 11) & 0x7f;
+			D5_D11 = (toEncode >> 4) & 0x7f;
+			D12_D18 = (toEncode >> 11) & 0x7f;
 
-		P5 = 0x80 & ~(hamming_24_18_parities[0][D12_D18] << 2);
-		packet[c+1] = D5_D11 | P5;
+			P5 = 0x80 & ~(hamming_24_18_parities[0][D12_D18] << 2);
+			packet[c+1] = D5_D11 | P5;
 
-		P6 = 0x80 & ((hamming_24_18_parities[0][Byte_0] ^ hamming_24_18_parities[0][D5_D11]) << 2);
-		packet[c+2] = D12_D18 | P6;
-	}
+			P6 = 0x80 & ((hamming_24_18_parities[0][Byte_0] ^ hamming_24_18_parities[0][D5_D11]) << 2);
+			packet[c+2] = D12_D18 | P6;
+		}
 
 	return packet;
 }
@@ -440,14 +459,21 @@ bool SaveEP1Format::getWarnings(const PageBase &subPage)
 
 QByteArray SaveEP1Format::format18BitPacket(QByteArray packet)
 {
-	for (int c=1; c<packet.size(); c+=3) {
-		// Shuffle triplet bits to 6 bit address, 5 bit mode, 7 bit data
-		packet[c+2] = ((packet.at(c+2) & 0x3f) << 1) | ((packet.at(c+1) & 0x20) >> 5);
-		packet[c+1] = packet.at(c+1) & 0x1f;
-		// Address of termination marker is 7f instead of 3f
-		if (packet.at(c+1) == 0x1f && packet.at(c) == 0x3f)
-			packet[c] = 0x7f;
-	}
+	for (int c=1; c<packet.size(); c+=3)
+		if ((packet.at(c+1) & 0xff) == 0xff) {
+			// Save invalid triplets as address 41, mode 0x1e, data 0
+			// which hopefully won't do anything when parsed as X/26 enhancements
+			packet[c]   = 41;
+			packet[c+1] = 0x1e;
+			packet[c+2] = 0;
+		} else {
+			// Shuffle triplet bits to 6 bit address, 5 bit mode, 7 bit data
+			packet[c+2] = ((packet.at(c+2) & 0x3f) << 1) | ((packet.at(c+1) & 0x20) >> 5);
+			packet[c+1] = packet.at(c+1) & 0x1f;
+			// Address of termination marker is 7f instead of 3f
+			if (packet.at(c+1) == 0x1f && packet.at(c) == 0x3f)
+				packet[c] = 0x7f;
+		}
 
 	return packet;
 }

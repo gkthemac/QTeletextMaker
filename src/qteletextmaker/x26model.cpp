@@ -108,7 +108,7 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 				else
 					return QVariant();
 			case 1:
-				if (!triplet.isRowTriplet())
+				if (triplet.isValid() && !triplet.isRowTriplet())
 					return triplet.addressColumn();
 				// For Set Active Position and Origin Modifier, data is the column
 				else if (triplet.modeExt() == 0x04)
@@ -122,9 +122,14 @@ QVariant X26Model::data(const QModelIndex &index, int role) const
 	QString result;
 
 	if (role == Qt::DisplayRole) {
-		if (index.column() == 2)
+		if (index.column() == 2) {
+			if (!triplet.isValid())
+				return "Error decoding triplet";
 			return (m_modeTripletNames.modeName(triplet.modeExt()));
+		}
 		// Column 3 - describe effects of data/address triplet parameters in plain English
+		if (!triplet.isValid())
+			return QVariant();
 		switch (triplet.modeExt()) {
 			case 0x01: // Full row colour
 			case 0x07: // Address row 0
@@ -609,12 +614,15 @@ bool X26Model::setData(const QModelIndex &index, const QVariant &value, int role
 				return true;
 
 			case 2: // Cooked triplet mode
-				if (intValue < 0x20 && !triplet.isRowTriplet()) {
+				if (!triplet.isValid()) {
+					// Changing from invalid triplet
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, intValue < 0x20 ? 41 : 0, role));
+					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 32, role));
+				} else if (intValue < 0x20 && !triplet.isRowTriplet()) {
 					// Changing mode from column triplet to row triplet
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, 41, role));
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0, role));
-				}
-				if (intValue >= 0x20 && triplet.isRowTriplet()) {
+				} else if (intValue >= 0x20 && triplet.isRowTriplet()) {
 					// Changing mode from row triplet to column triplet
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETaddress, 0x00, 0, role));
 					m_parentMainWidget->document()->undoStack()->push(new EditTripletCommand(m_parentMainWidget->document(), this, index.row(), EditTripletCommand::ETdata, 0x00, 0, role));

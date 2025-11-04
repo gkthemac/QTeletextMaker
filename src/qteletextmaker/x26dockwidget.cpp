@@ -678,6 +678,13 @@ void X26DockWidget::updateAllCookedTripletWidgets(const QModelIndex &index)
 {
 	const int modeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
 
+	if (modeExt == 0xff) {
+		disableTripletWidgets();
+		m_cookedModePushButton->setEnabled(true);
+		m_cookedModePushButton->setText("Replace...");
+		return;
+	}
+
 	m_cookedModePushButton->setEnabled(true);
 	m_cookedModePushButton->setText(m_modeTripletNames.modeName(modeExt));
 
@@ -1034,7 +1041,7 @@ void X26DockWidget::insertTriplet(int modeExt, int row)
 			if (modeExt >= 0x20 && modeExt != 0x24 && modeExt != 0x25 && modeExt != 0x26 && modeExt != 0x2a) {
 				const int existingTripletModeExt = index.model()->data(index.model()->index(index.row(), 2), Qt::EditRole).toInt();
 
-				if (existingTripletModeExt >= 0x20 && existingTripletModeExt != 0x24 && existingTripletModeExt != 0x25 && existingTripletModeExt != 0x26 && existingTripletModeExt != 0x2a)
+				if (existingTripletModeExt >= 0x20 && existingTripletModeExt <= 0x3f && existingTripletModeExt != 0x24 && existingTripletModeExt != 0x25 && existingTripletModeExt != 0x26 && existingTripletModeExt != 0x2a)
 					newTriplet.setAddress(index.model()->data(index.model()->index(index.row(), 0), Qt::UserRole).toInt());
 			}
 			// If we're inserting a Set Active Position or Full Row Colour triplet,

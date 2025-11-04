@@ -227,6 +227,9 @@ bool LoadT42Format::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 	int foundPageNumber = -1;
 	bool firstPacket0Found = false;
 	bool pageBodyPacketsFound = false;
+	bool errorEnhancements = false;
+	bool errorLinks = false;
+	bool errorPresentation = false;
 
 	m_inFile = inFile;
 
@@ -374,6 +377,7 @@ bool LoadT42Format::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 					// Error found in at least one byte of the link
 					// Neutralise the whole link to same magazine, page FF, subcode 3F7F
 					qDebug("X/27/%d link %d decoding error", readDesignationCode, i);
+					errorLinks = true;
 					m_inLine[b]   = 0xf;
 					m_inLine[b+1] = 0xf;
 					m_inLine[b+2] = 0xf;
@@ -416,15 +420,17 @@ bool LoadT42Format::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 				// Error decoding Hamming 24/18
 				qDebug("X/%d/%d triplet %d decoding error", readPacketNumber, readDesignationCode, i);
 				if (readPacketNumber == 26) {
-					// Enhancements packet, set to "dummy" Address 41, Mode 0x1e, Data 0
-					m_inLine[b]   = 41;
-					m_inLine[b+1] = 0x1e;
-					m_inLine[b+2] = 0;
+					// Enhancements packet, set to invalid triplet
+					m_inLine[b]   = 0xff;
+					m_inLine[b+1] = 0xff;
+					m_inLine[b+2] = 0xff;
+					errorEnhancements = true;
 				} else {
 					// Zero out whole decoded triplet, bound to make things go wrong...
 					m_inLine[b]   = 0x00;
 					m_inLine[b+1] = 0x00;
 					m_inLine[b+2] = 0x00;
+					errorPresentation = true;
 				}
 			} else {
 				m_inLine[b]   = d & 0x0003f;
@@ -441,8 +447,15 @@ bool LoadT42Format::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 	} else if (!pageBodyPacketsFound) {
 		m_error = "X/0 found, but no page body packets were found.";
 		return false;
-	} else
-		return true;
+	}
+
+	if (errorEnhancements)
+		m_warnings.append("Error decoding triplet(s) in enhancement data.");
+	if (errorLinks)
+		m_warnings.append("Error decoding FLOF links.");
+	if (errorPresentation)
+		m_warnings.append("Error decoding triplet(s) in presentation data.");
+	return true;
 }
 
 

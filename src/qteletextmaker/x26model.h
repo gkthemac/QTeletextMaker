@@ -60,8 +60,9 @@ private:
 	};
 
 	// Needs to be in the same order as enum X26TripletError in x26triplets.h
-	const tripletErrorShow m_tripletErrors[6] {
+	const tripletErrorShow m_tripletErrors[7] {
 		{ "", 0 }, // No error
+		{ "Error decoding triplet", 2 },
 		{ "Active Position can't move up", 0 },
 		{ "Active Position can't move left within row", 1 },
 		{ "Invocation not pointing to Object Definition", 3 },

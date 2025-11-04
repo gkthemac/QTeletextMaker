@@ -26,7 +26,7 @@ class X26Triplet
 {
 public:
 	// x26model.h has the Plain English descriptions of these errors
-	enum X26TripletError { NoError, ActivePositionMovedUp, ActivePositionMovedLeft, InvokePointerInvalid, InvokeTypeMismatch, OriginModifierAlone };
+	enum X26TripletError { NoError, ErrorDecodingTriplet, ActivePositionMovedUp, ActivePositionMovedLeft, InvokePointerInvalid, InvokeTypeMismatch, OriginModifierAlone };
 	enum ObjectSource { InvalidObjectSource, LocalObject, POPObject, GPOPObject };
 
 	X26Triplet() {}
@@ -36,6 +36,7 @@ public:
 
 	X26Triplet(int address, int mode, int data);
 
+	bool isValid() const;
 	int address() const;
 	int mode() const;
 	int modeExt() const;
@@ -44,6 +45,7 @@ public:
 	int addressColumn() const;
 	bool isRowTriplet() const;
 
+	void setInvalid();
 	void setAddress(int address);
 	void setMode(int mode);
 	void setData(int data);

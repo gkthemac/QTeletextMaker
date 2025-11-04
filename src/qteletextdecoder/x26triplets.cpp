@@ -26,6 +26,11 @@ X26Triplet::X26Triplet(int address, int mode, int data)
 	m_data = data;
 }
 
+bool X26Triplet::isValid() const
+{
+	return m_mode != 0xff;
+}
+
 int X26Triplet::address() const
 {
 	return m_address;
@@ -59,6 +64,11 @@ int X26Triplet::addressColumn() const
 bool X26Triplet::isRowTriplet() const
 {
 	return (m_address >= 40);
+}
+
+void X26Triplet::setInvalid()
+{
+	m_address = m_mode = m_data = 0xff;
 }
 
 void X26Triplet::setAddress(int address)
@@ -180,7 +190,9 @@ void X26TripletList::updateInternalData()
 		triplet->m_reservedMode = false;
 		triplet->m_reservedData = false;
 
-		if (triplet->isRowTriplet()) {
+		if (!triplet->isValid())
+			triplet->m_error = X26Triplet::ErrorDecodingTriplet;
+		else if (triplet->isRowTriplet()) {
 			switch (triplet->modeExt()) {
 				case 0x00: // Full screen colour
 					if (activePosition.isDeployed())
