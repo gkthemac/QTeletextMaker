@@ -29,12 +29,12 @@ PageBase::PageBase()
 
 PageBase::PageFunctionEnum PageBase::pageFunction() const
 {
-	return PFUnknown;
+	return PFLevelOnePage;
 }
 
 PageBase::PacketCodingEnum PageBase::packetCoding() const
 {
-	return CodingUnknown;
+	return Coding7bit;
 }
 
 bool PageBase::isEmpty() const

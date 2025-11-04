@@ -80,16 +80,6 @@ void LevelOnePage::clearPage()
 //	If clearPage() is called outside constructor, we need to implement m_enhancements.clear();
 }
 
-PageBase::PageFunctionEnum LevelOnePage::pageFunction() const
-{
-	return PFLevelOnePage;
-}
-
-PageBase::PacketCodingEnum LevelOnePage::packetCoding() const
-{
-	return Coding7bit;
-}
-
 bool LevelOnePage::isEmpty() const
 {
 	if (!m_enhancements.isEmpty())

@@ -31,7 +31,6 @@ public:
 
 	// TODO PFNormalPOP as well?
 	PageFunctionEnum pageFunction() const;
-	PacketCodingEnum packetCoding() const;
 
 	int drcsMode(int c) const;
 	bool ptu(int c, uchar *data) const;

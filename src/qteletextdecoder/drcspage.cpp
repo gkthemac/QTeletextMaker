@@ -41,11 +41,6 @@ PageBase::PageFunctionEnum DRCSPage::pageFunction() const
 	return PFGlobalPOP;
 }
 
-PageBase::PacketCodingEnum DRCSPage::packetCoding() const
-{
-	return Coding7bit;
-}
-
 int DRCSPage::drcsMode(int c) const
 {
 	if (!packetExists(28, 3))

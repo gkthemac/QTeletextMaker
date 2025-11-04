@@ -42,9 +42,6 @@ public:
 	LevelOnePage();
 	LevelOnePage(const PageBase &other);
 
-	PageFunctionEnum pageFunction() const override;
-	PacketCodingEnum packetCoding() const override;
-
 	bool isEmpty() const override;
 
 	QByteArray packet(int y, int d) const override;
