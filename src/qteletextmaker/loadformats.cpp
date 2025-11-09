@@ -139,11 +139,11 @@ bool LoadTTIFormat::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash 
 							fastTextPacket[i*6+2] = (fastTextLinkRead & 0x0f0) >> 4;
 							fastTextPacket[i*6+4] = 0x7 | ((fastTextLinkRead & 0x100) >> 5);
 							fastTextPacket[i*6+6] = 0x3 | ((fastTextLinkRead & 0x600) >> 7);
-
-							loadingPage->setPacket(27, 0, fastTextPacket);
 						}
 					}
 				}
+				loadingPage->setPacket(27, 0, fastTextPacket);
+
 				if (metadata != nullptr)
 					metadata->insert(QString("fastextAbsolute"), true);
 			}
