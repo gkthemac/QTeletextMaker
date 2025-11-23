@@ -824,16 +824,23 @@ void MainWindow::createActions()
 	QMenu *alphaColourSubMenu = insertMenu->addMenu(tr("Alphanumeric colour"));
 	QMenu *mosaicColourSubMenu = insertMenu->addMenu(tr("Mosaic colour"));
 	for (int i=0; i<=7; i++) {
-		const char *colours[] = { "Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White" };
+		const char *colourNames[] = { "Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White" };
+		const QChar azertyKeys[] = { 'P', 'A', 'Z', 'E', 'R', 'T', 'Y', 'U' };
 
-		QAction *alphaColour = alphaColourSubMenu->addAction(tr(colours[i]));
-		alphaColour->setShortcut(QKeySequence(QString("Esc, %1").arg(i)));
-		alphaColour->setStatusTip(QString("Insert alphanumeric %1 attribute").arg(QString(colours[i]).toLower()));
+		QAction *alphaColour = alphaColourSubMenu->addAction(tr(colourNames[i]));
+		alphaColour->setShortcuts(QList<QKeySequence> {
+			QKeySequence(QString("Esc, %1").arg(i)),
+			QKeySequence(QString("Esc, %1").arg(azertyKeys[i]))
+		} );
+		alphaColour->setStatusTip(QString("Insert alphanumeric %1 attribute").arg(QString(colourNames[i]).toLower()));
 		connect(alphaColour, &QAction::triggered, [=]() { m_textWidget->setCharacter(i); });
 
-		QAction *mosaicColour = mosaicColourSubMenu->addAction(tr(colours[i]));
-		mosaicColour->setShortcut(QKeySequence(QString("Esc, Shift+%1").arg(i)));
-		mosaicColour->setStatusTip(QString("Insert mosaic %1 attribute").arg(QString(colours[i]).toLower()));
+		QAction *mosaicColour = mosaicColourSubMenu->addAction(tr(colourNames[i]));
+		mosaicColour->setShortcuts(QList<QKeySequence> {
+			QKeySequence(QString("Esc, Shift+%1").arg(i)),
+			QKeySequence(QString("Esc, Shift+%1").arg(azertyKeys[i]))
+		} );
+		mosaicColour->setStatusTip(QString("Insert mosaic %1 attribute").arg(QString(colourNames[i]).toLower()));
 		connect(mosaicColour, &QAction::triggered, [=]() { m_textWidget->setCharacter(i+0x10); });
 	}
 
