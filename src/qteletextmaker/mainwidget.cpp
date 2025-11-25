@@ -539,6 +539,11 @@ void TeletextWidget::paste()
 	m_teletextDocument->undoStack()->push(new PasteCommand(m_teletextDocument, m_pageDecode.level1CharSet(m_teletextDocument->cursorRow(), m_teletextDocument->cursorColumn())));
 }
 
+void TeletextWidget::selectAll()
+{
+	m_teletextDocument->setSelection((int)!m_teletextDocument->rowZeroAllowed(), 0, 24, 39);
+}
+
 QPair<int, int> TeletextWidget::mouseToRowAndColumn(const QPoint &mousePosition)
 {
 	int row = mousePosition.y() / 10;

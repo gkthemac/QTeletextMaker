@@ -637,6 +637,13 @@ void MainWindow::createActions()
 	editMenu->addAction(pasteAct);
 	editToolBar->addAction(pasteAct);
 
+	const QIcon selectAllIcon = QIcon::fromTheme("edit-select-all");
+	QAction *selectAllAct = new QAction(selectAllIcon, tr("Select &all"), this);
+	selectAllAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
+	selectAllAct->setStatusTip(tr("Select the whole subpage"));
+	connect(selectAllAct, &QAction::triggered, m_textWidget, &TeletextWidget::selectAll);
+	editMenu->addAction(selectAllAct);
+
 	QAction *copyImageAct = editMenu->addAction(tr("Copy as image"));
 	copyImageAct->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
 	copyImageAct->setStatusTip(tr("Copy this subpage as an image to the clipboard"));

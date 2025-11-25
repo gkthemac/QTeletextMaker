@@ -82,6 +82,8 @@ public slots:
 	void copy();
 	void paste();
 
+	void selectAll();
+
 	void changeSize();
 
 protected:
