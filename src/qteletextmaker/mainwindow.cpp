@@ -191,6 +191,9 @@ void MainWindow::extractImages(QImage sceneImage[], bool smooth, bool flashExtra
 	// Prepare widget image for extraction
 	m_textScene->hideGUIElements(true);
 
+	if (m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderMix)
+		m_textScene->setBackgroundBrush(Qt::NoBrush);
+
 	const int flashTiming = flashExtract ? m_textWidget->flashTiming() : 0;
 
 	// Allocate initial image, with additional images for flashing if necessary
@@ -221,6 +224,9 @@ void MainWindow::extractImages(QImage sceneImage[], bool smooth, bool flashExtra
 		}
 
 	// Now we've extracted the image we can put the GUI things back
+	if (m_textWidget->pageRender()->renderMode() == TeletextPageRender::RenderMix)
+		m_textScene->setBackgroundBrush(QColor(40, 54, 96));
+
 	m_textScene->hideGUIElements(false);
 	m_textWidget->resumeFlash();
 
