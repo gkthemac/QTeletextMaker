@@ -56,15 +56,15 @@ public:
 
 	QImage* image(int i) const;
 	RenderMode renderMode() const;
+	void setRenderMode(RenderMode renderMode);
 	void setDecoder(TeletextPageDecode *decoder);
+	void setReveal(bool reveal);
 	void renderPage(bool force=false);
 	bool showControlCodes() const;
+	void setShowControlCodes(bool showControlCodes);
 
 public slots:
 	void colourChanged(int index);
-	void setReveal(bool reveal);
-	void setRenderMode(RenderMode renderMode);
-	void setShowControlCodes(bool showControlCodes);
 
 signals:
 	void flashChanged(int newFlashHz);
