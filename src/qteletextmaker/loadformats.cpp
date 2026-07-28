@@ -28,7 +28,6 @@
 #include <QVariant>
 
 #include "hamming.h"
-#include "levelonepage.h"
 #include "pagebase.h"
 
 bool LoadTTIFormat::load(QFile *inFile, QList<PageBase>& subPages, QVariantHash *metadata)
