@@ -58,8 +58,6 @@ void LevelOnePage::clearPage()
 		setControlBit(b, false);
 	for (int i=0; i<8; i++)
 		m_composeLink[i] = { (i<4) ? i : 0, false, i>=4, 0x0ff, 0x0000 };
-	for (int i=0; i<6; i++)
-		m_fastTextLink[i] = { 0x0ff, 0x3f7f };
 
 /*	m_subPageNumber = 0x0000; */
 	m_cycleValue = 20;
@@ -104,21 +102,6 @@ QByteArray LevelOnePage::packet(int y, int d) const
 			return result; // Blank result
 
 		return packetFromEnhancementList(d);
-	}
-
-	if (y == 27 && d == 0) {
-		for (int i=0; i<6; i++) {
-			result[i*6+1] = m_fastTextLink[i].pageNumber & 0x00f;
-			result[i*6+2] = (m_fastTextLink[i].pageNumber & 0x0f0) >> 4;
-			result[i*6+3] = m_fastTextLink[i].subPageNumber & 0x000f;
-			result[i*6+4] = ((m_fastTextLink[i].subPageNumber & 0x0070) >> 4) | ((m_fastTextLink[i].pageNumber & 0x100) >> 5);
-			result[i*6+5] = (m_fastTextLink[i].subPageNumber & 0x0f00) >> 8;
-			result[i*6+6] = ((m_fastTextLink[i].subPageNumber & 0x3000) >> 12) | ((m_fastTextLink[i].pageNumber & 0x600) >> 7);
-		}
-		result[37] = 0xf;
-		result[38] = result[39] = 0;
-
-		return result;
 	}
 
 	if (y == 27 && (d == 4 || d == 5)) {
@@ -178,19 +161,6 @@ bool LevelOnePage::setPacket(int y, int d, QByteArray pkt)
 		return true;
 	}
 
-	if (y == 27 && d == 0) {
-		for (int i=0; i<6; i++) {
-			int relativeMagazine = (pkt.at(i*6+4) >> 3) | ((pkt.at(i*6+6) & 0xc) >> 1);
-			int pageNumber = (pkt.at(i*6+2) << 4) | pkt.at(i*6+1);
-			m_fastTextLink[i].pageNumber = (relativeMagazine << 8) | pageNumber;
-			m_fastTextLink[i].subPageNumber = pkt.at(i*6+3) | ((pkt.at(i*6+4) & 0x7) << 4) | (pkt.at(i*6+5) << 8) | ((pkt.at(i*6+6) & 0x3) << 12);
-			// TODO remove this warning when we can preserve FastText subpage links
-			if (m_fastTextLink[i].subPageNumber != 0x3f7f)
-				qDebug("FastText link %d has custom subPageNumber %x - will NOT be saved!", i, m_fastTextLink[i].subPageNumber);
-		}
-		return true;
-	}
-
 	if (y == 27 && (d == 4 || d == 5)) {
 		for (int i=0; i<(d == 4 ? 6 : 2); i++) {
 			int pageLinkNumber = i+(d == 4 ? 0 : 6);
@@ -241,14 +211,6 @@ bool LevelOnePage::packetExists(int y, int d) const
 {
 	if (y == 26)
 		return packetFromEnhancementListNeeded(d);
-
-	if (y == 27 && d == 0) {
-		for (int i=0; i<6; i++)
-			if ((m_fastTextLink[i].pageNumber & 0x0ff) != 0xff)
-				return true;
-
-		return false;
-	}
 
 	if (y == 27 && (d == 4 || d == 5)) {
 		for (int i=0; i<(d == 4 ? 6 : 2); i++) {
@@ -680,14 +642,68 @@ void LevelOnePage::setSidePanelStatusL25(bool newSidePanelStatusL25)
 	m_sidePanelStatusL25 = newSidePanelStatusL25;
 }
 
-int LevelOnePage::fastTextLinkPageNumber(int linkNumber) const
+int LevelOnePage::fastTextLinkPageNumber(int l) const
 {
-	return m_fastTextLink[linkNumber].pageNumber;
+	if (!packetExists(27, 0))
+		return 0x0ff;
+
+	const QByteArray pkt = packet(27, 0);
+
+	return ((pkt.at(l*6+6) & 0xc) << 7) | ((pkt.at(l*6+4) & 0x8) << 5) | ((pkt.at(l*6+2)) << 4) | pkt.at(l*6+1);
 }
 
-void LevelOnePage::setFastTextLinkPageNumber(int linkNumber, int pageNumber)
+void LevelOnePage::setFastTextLinkPageNumber(int l, int p)
 {
-	m_fastTextLink[linkNumber].pageNumber = pageNumber;
+	const QByteArray defaultPkt = QByteArrayLiteral("\x00" // Designation code 0
+	"\x0f\x0f\x0f\x07\x0f\x03" // Link 0: page 0ff, subpage 3f7f
+	"\x0f\x0f\x0f\x07\x0f\x03" // Link 1
+	"\x0f\x0f\x0f\x07\x0f\x03" // Link 2
+	"\x0f\x0f\x0f\x07\x0f\x03" // Link 3
+	"\x0f\x0f\x0f\x07\x0f\x03" // Link 4
+	"\x0f\x0f\x0f\x07\x0f\x03" // Link 5
+	"\x0f\x00\x00");           // Link control byte and show X/24, CRC checksum 0000
+
+	QByteArray pkt;
+
+	const bool setToFF = (p & 0xff) == 0xff;
+
+	if (!packetExists(27, 0)) {
+		if (setToFF)
+			return;
+		pkt = defaultPkt;
+	} else
+		pkt = packet(27, 0);
+
+	pkt[l*6+1] = p & 0x00f;
+	pkt[l*6+2] = (p & 0x0f0) >> 4;
+	pkt[l*6+3] = 0xf;
+	pkt[l*6+4] = 0x7 | ((p & 0x100) >> 5);
+	pkt[l*6+5] = 0xf;
+	pkt[l*6+6] = 0x3 | ((p & 0x600) >> 7);
+
+	/* Alternate version that handles subpage numbers
+	pkt[l*6+3] = s & 0x000f;
+	pkt[l*6+4] = ((s & 0x0070) >> 4) | ((p & 0x100) >> 5);
+	pkt[l*6+5] = (s & 0x0f00) >> 8;
+	pkt[l*6+6] = ((s & 0x3000) >> 12) | ((p & 0x600) >> 7);
+	*/
+
+	if (setToFF) {
+		bool allFFs = true;
+
+		for (int c=0; c<6; c++)
+			if (pkt.at(c*6+1) != 0xf || pkt.at(c*6+2) != 0xf) {
+				allFFs = false;
+				break;
+			}
+
+		if (allFFs) {
+			clearPacket(27, 0);
+			return;
+		}
+	}
+
+	setPacket(27, 0, pkt);
 }
 
 int LevelOnePage::composeLinkFunction(int linkNumber) const
