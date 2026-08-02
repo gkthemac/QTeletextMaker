@@ -123,6 +123,37 @@ void PageComposeLinksDockWidget::setComposeLinkPageNumber(int linkNumber, const 
 	// Stored as page link with relative magazine number, convert from absolute page number that was entered
 	newPageNumberRead ^= (m_parentMainWidget->document()->pageNumber() & 0x700);
 	m_parentMainWidget->document()->currentSubPage()->setComposeLinkPageNumber(linkNumber, newPageNumberRead);
+
+	// Enable or disable the other widgets of this link
+	const bool linkEnabled = (newPageNumberRead & 0x0ff) != 0x0ff;
+
+	if (linkNumber >= 4)
+		m_composeLinkFunctionComboBox[linkNumber-4]->setEnabled(linkEnabled);
+	else {
+		m_composeLinkLevelCheckbox[linkNumber][0]->setEnabled(linkEnabled);
+		m_composeLinkLevelCheckbox[linkNumber][1]->setEnabled(linkEnabled);
+	}
+
+	// Since we haven't yet set the new enablement of the subpage widget, we can find out now
+	// if the link was previously enabled or disabled using that property
+
+	// If link was just enabled by changing page number from xFF to a valid page,
+	// put in a default of only first subpage (S1=0) required
+	if (linkEnabled && !m_composeLinkSubPageNumbersLineEdit[linkNumber]->isEnabled()) {
+		m_composeLinkSubPageNumbersLineEdit[linkNumber]->setText("0");
+		m_parentMainWidget->document()->currentSubPage()->setComposeLinkSubPageCodes(linkNumber, 0x1);
+
+		m_composeLinkSubPageNumbersLineEdit[linkNumber]->setEnabled(true);
+	}
+
+	// If link was just disabled by changing valid page number to xFF, set all the
+	// sub-code flags to 1 and clear the subpage widget
+	if (!linkEnabled && m_composeLinkSubPageNumbersLineEdit[linkNumber]->isEnabled()) {
+		m_composeLinkSubPageNumbersLineEdit[linkNumber]->setText(QString());
+		m_parentMainWidget->document()->currentSubPage()->setComposeLinkSubPageCodes(linkNumber, 0xffff);
+
+		m_composeLinkSubPageNumbersLineEdit[linkNumber]->setEnabled(false);
+	}
 }
 
 void PageComposeLinksDockWidget::setComposeLinkSubPageNumbers(int linkNumber, const QString &newSubPagesString)
@@ -169,18 +200,6 @@ void PageComposeLinksDockWidget::setComposeLinkSubPageNumbers(int linkNumber, co
 void PageComposeLinksDockWidget::updateWidgets()
 {
 	for (int i=0; i<8; i++) {
-		if (i >= 4) {
-			m_composeLinkFunctionComboBox[i-4]->blockSignals(true);
-			m_composeLinkFunctionComboBox[i-4]->setCurrentIndex(m_parentMainWidget->document()->currentSubPage()->composeLinkFunction(i));
-			m_composeLinkFunctionComboBox[i-4]->blockSignals(false);
-		} else {
-			m_composeLinkLevelCheckbox[i][0]->blockSignals(true);
-			m_composeLinkLevelCheckbox[i][0]->setChecked(m_parentMainWidget->document()->currentSubPage()->composeLinkLevel2p5(i));
-			m_composeLinkLevelCheckbox[i][0]->blockSignals(false);
-			m_composeLinkLevelCheckbox[i][1]->blockSignals(true);
-			m_composeLinkLevelCheckbox[i][1]->setChecked(m_parentMainWidget->document()->currentSubPage()->composeLinkLevel3p5(i));
-			m_composeLinkLevelCheckbox[i][1]->blockSignals(false);
-		}
 		// Stored as page link with relative magazine number, convert to absolute page number for display
 		int absoluteLinkPageNumber = m_parentMainWidget->document()->currentSubPage()->composeLinkPageNumber(i) ^ (m_parentMainWidget->document()->pageNumber() & 0x700);
 		// Fix magazine 0 to 8
@@ -190,10 +209,32 @@ void PageComposeLinksDockWidget::updateWidgets()
 		m_composeLinkPageNumberLineEdit[i]->setText(QString::number(absoluteLinkPageNumber, 16).toUpper());
 		m_composeLinkPageNumberLineEdit[i]->blockSignals(false);
 
+		const bool linkEnabled = (absoluteLinkPageNumber & 0x0ff) != 0x0ff;
+
+		if (i >= 4) {
+			m_composeLinkFunctionComboBox[i-4]->setEnabled(linkEnabled);
+
+			m_composeLinkFunctionComboBox[i-4]->blockSignals(true);
+			m_composeLinkFunctionComboBox[i-4]->setCurrentIndex(m_parentMainWidget->document()->currentSubPage()->composeLinkFunction(i));
+			m_composeLinkFunctionComboBox[i-4]->blockSignals(false);
+		} else {
+			m_composeLinkLevelCheckbox[i][0]->setEnabled(linkEnabled);
+			m_composeLinkLevelCheckbox[i][1]->setEnabled(linkEnabled);
+
+			m_composeLinkLevelCheckbox[i][0]->blockSignals(true);
+			m_composeLinkLevelCheckbox[i][0]->setChecked(m_parentMainWidget->document()->currentSubPage()->composeLinkLevel2p5(i));
+			m_composeLinkLevelCheckbox[i][0]->blockSignals(false);
+			m_composeLinkLevelCheckbox[i][1]->blockSignals(true);
+			m_composeLinkLevelCheckbox[i][1]->setChecked(m_parentMainWidget->document()->currentSubPage()->composeLinkLevel3p5(i));
+			m_composeLinkLevelCheckbox[i][1]->blockSignals(false);
+		}
+
+		m_composeLinkSubPageNumbersLineEdit[i]->setEnabled(linkEnabled);
+
 		// Turn subpage bits into user-friendly comma separated numbers and number-ranges
 		QString rangeString;
 
-		if (m_parentMainWidget->document()->currentSubPage()->composeLinkSubPageCodes(i) != 0x0000) {
+		if (linkEnabled && m_parentMainWidget->document()->currentSubPage()->composeLinkSubPageCodes(i) != 0x0000) {
 			// First build a list of consecutive ranges seen
 			// The "b-index" is based on https://codereview.stackexchange.com/a/90074
 			QMap<int, QPair<int, int>> ranges;
