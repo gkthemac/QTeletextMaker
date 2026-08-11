@@ -4,7 +4,7 @@ SC,0001
 PS,8000
 RE,0
 CT,20,T
-OL,27,D@}@@@A}@@@B}@@@OPhD@@H}@@@H}@@@@@@
+OL,27,D@_||A_||B_||OPhD@@H_||I_||@@@
 OL,28,@@@|gpCUC@TpK@PA`Ub{~Ls_w}ww]_}_wMPv
 OL,26,@kD@PM`Rm`TMaVmamD@JAPKKYMMuOMuQMuSMu\KQ
 OL,26,A]APnD@hS|TMtUIPoD@hS|LM`NM`PM`RM`TM`UMd
@@ -43,7 +43,7 @@ SC,0002
 PS,8000
 RE,0
 CT,20,T
-OL,27,D@}@@@A}@@@B}@@@OPhD@@H}@@@H}@@@@@@
+OL,27,D@_||A_||B_||OPhD@@H_||H_||@@@
 OL,28,@@@|gpCUC@TpK@PA`Ub{~Ls_w}ww]_}_wMPv
 OL,26,@kD@PM`Rm`TMaVmamD@JAPKKYMMuOMuQMuSMu\KQ
 OL,26,A]APnD@hS|TMtUIPoD@hS|Lm`Nm`Pm`Rm`Tm`UMh
@@ -82,7 +82,7 @@ SC,0003
 PS,8000
 RE,0
 CT,20,T
-OL,27,D@}@@@A}@@@B}@@@OPhD@@H}@@@H}@@@@@@
+OL,27,D@_||A_||B_||OPhD@@H_||H_||@@@
 OL,28,@@@|gpCUC@TpK@PA`Ub{~Ls_w}ww]_}_wMPv
 OL,26,@kD@PM`Rm`TMaVmamD@JAPKKYMMuOMuQMuSMu\KQ
 OL,26,A]APnD@hS|TMtUIPoD@hS|LMaNMaPMaRMaTMaUMl
@@ -121,7 +121,7 @@ SC,0004
 PS,8000
 RE,0
 CT,20,T
-OL,27,D@}@@@A}@@@B}@@@OPhD@@H}@@@H}@@@@@@
+OL,27,D@_||A_||B_||OPhD@@H_||H_||@@@
 OL,28,@@@|gpCUC@TpK@PA`Ub{~Ls_w}ww]_}_wMPv
 OL,26,@kD@PM`Rm`TMaVmamD@JAPKKYMMuOMuQMuSMu\KQ
 OL,26,A]APnD@hS|TMtUIPoD@hS|LmaNmaPmaRmaTmaUMp
