@@ -95,16 +95,16 @@ public:
 	void setSidePanelStatusL25(bool newSidePanelStatusL25);
 	int fastTextLinkPageNumber(int l) const;
 	void setFastTextLinkPageNumber(int l, int n);
-	int composeLinkFunction(int linkNumber) const;
-	void setComposeLinkFunction(int linkNumber, int newFunction);
-	bool composeLinkLevel2p5(int linkNumber) const;
-	void setComposeLinkLevel2p5(int linkNumber, bool newRequired);
-	bool composeLinkLevel3p5(int linkNumber) const;
-	void setComposeLinkLevel3p5(int linkNumber, bool newRequired);
-	int composeLinkPageNumber(int linkNumber) const;
-	void setComposeLinkPageNumber(int linkNumber, int newPageNumber);
-	int composeLinkSubPageCodes(int linkNumber) const;
-	void setComposeLinkSubPageCodes(int linkNumber, int newSubPageCodes);
+	int composeLinkFunction(int l);
+	void setComposeLinkFunction(int l, int f);
+	bool composeLinkLevel2p5(int l);
+	void setComposeLinkLevel2p5(int l, bool r);
+	bool composeLinkLevel3p5(int l);
+	void setComposeLinkLevel3p5(int l, bool r);
+	int composeLinkPageNumber(int l);
+	void setComposeLinkPageNumber(int l, int n);
+	int composeLinkSubPageCodes(int l);
+	void setComposeLinkSubPageCodes(int l, int s);
 
 private:
 /*	int m_subPageNumber; */
@@ -114,11 +114,6 @@ private:
 	int m_defaultScreenColour, m_defaultRowColour, m_colourTableRemap, m_sidePanelColumns;
 	bool m_blackBackgroundSubst, m_leftSidePanelDisplayed, m_rightSidePanelDisplayed, m_sidePanelStatusL25;
 	int m_CLUT[32];
-	struct composeLink {
-		int function;
-		bool level2p5, level3p5;
-		int pageNumber, subPageCodes;
-	} m_composeLink[8];
 
 	static constexpr int m_defaultCLUT[32] = {
 		0x000, 0xf00, 0x0f0, 0xff0, 0x00f, 0xf0f, 0x0ff, 0xfff,
@@ -126,6 +121,8 @@ private:
 		0xf05, 0xf70, 0x0f7, 0xffb, 0x0ca, 0x500, 0x652, 0xc77,
 		0x333, 0xf77, 0x7f7, 0xff7, 0x77f, 0xf7f, 0x7ff, 0xddd
 	};
+
+	QByteArray findComposeTriplet(int l, int &d, int &t);
 };
 
 #endif

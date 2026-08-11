@@ -56,8 +56,6 @@ void LevelOnePage::clearPage()
 {
 	for (int b=C4ErasePage; b<=C14NOS; b++)
 		setControlBit(b, false);
-	for (int i=0; i<8; i++)
-		m_composeLink[i] = { (i<4) ? i : 0, false, i>=4, 0x0ff, 0x0000 };
 
 /*	m_subPageNumber = 0x0000; */
 	m_cycleValue = 20;
@@ -104,22 +102,6 @@ QByteArray LevelOnePage::packet(int y, int d) const
 		return packetFromEnhancementList(d);
 	}
 
-	if (y == 27 && (d == 4 || d == 5)) {
-		for (int i=0; i<(d == 4 ? 6 : 2); i++) {
-			int pageLinkNumber = i+(d == 4 ? 0 : 6);
-
-			result[i*6+1] = (m_composeLink[pageLinkNumber].level3p5 << 3) | (m_composeLink[pageLinkNumber].level2p5 << 2) | m_composeLink[pageLinkNumber].function;
-			result[i*6+2] = ((m_composeLink[pageLinkNumber].pageNumber & 0x100) >> 3) | 0x10 | (m_composeLink[pageLinkNumber].pageNumber & 0x00f);
-			result[i*6+3] = ((m_composeLink[pageLinkNumber].pageNumber & 0x0f0) >> 2) | ((m_composeLink[pageLinkNumber].pageNumber & 0x600) >> 9);
-
-			result[i*6+4] = ((m_composeLink[pageLinkNumber].subPageCodes & 0x000f) << 2);
-			result[i*6+5] = ((m_composeLink[pageLinkNumber].subPageCodes & 0x03f0) >> 4);
-			result[i*6+6] = ((m_composeLink[pageLinkNumber].subPageCodes & 0xfc00) >> 10);
-		}
-
-		return result;
-	}
-
 	if (y == 28 && (d == 0 || d == 4)) {
 		int CLUToffset = (d == 0) ? 16 : 0;
 
@@ -161,25 +143,6 @@ bool LevelOnePage::setPacket(int y, int d, QByteArray pkt)
 		return true;
 	}
 
-	if (y == 27 && (d == 4 || d == 5)) {
-		for (int i=0; i<(d == 4 ? 6 : 2); i++) {
-			int pageLinkNumber = i+(d == 4 ? 0 : 6);
-			int pageFunction = pkt.at(i*6+1) & 0x03;
-			if (i >= 4)
-				m_composeLink[pageLinkNumber].function = pageFunction;
-			else if (i != pageFunction)
-				qDebug("X/27/4 link number %d fixed at function %d. Attempted to set to %d.", pageLinkNumber, pageLinkNumber, pageFunction);
-
-			m_composeLink[pageLinkNumber].level2p5 = pkt.at(i*6+1) & 0x04;
-			m_composeLink[pageLinkNumber].level3p5 = pkt.at(i*6+1) & 0x08;
-
-			m_composeLink[pageLinkNumber].pageNumber = ((pkt.at(i*6+3) & 0x03) << 9) | ((pkt.at(i*6+2) & 0x20) << 3) | ((pkt.at(i*6+3) & 0x3c) << 2) | (pkt.at(i*6+2) & 0x0f);
-
-			m_composeLink[pageLinkNumber].subPageCodes = (pkt.at(i*6+4) >> 2) | (pkt.at(i*6+5) << 4) | (pkt.at(i*6+6) << 10);
-		}
-		return true;
-	}
-
 	if (y == 28 && (d == 0 || d == 4)) {
 		int CLUToffset = (d == 0) ? 16 : 0;
 
@@ -211,15 +174,6 @@ bool LevelOnePage::packetExists(int y, int d) const
 {
 	if (y == 26)
 		return packetFromEnhancementListNeeded(d);
-
-	if (y == 27 && (d == 4 || d == 5)) {
-		for (int i=0; i<(d == 4 ? 6 : 2); i++) {
-			int pageLinkNumber = i+(d == 4 ? 0 : 6);
-			if ((m_composeLink[pageLinkNumber].pageNumber & 0x0ff) != 0x0ff)
-				return true;
-		}
-		return false;
-	}
 
 	if (y == 28) {
 		if (d == 0) {
@@ -706,52 +660,152 @@ void LevelOnePage::setFastTextLinkPageNumber(int l, int p)
 	setPacket(27, 0, pkt);
 }
 
-int LevelOnePage::composeLinkFunction(int linkNumber) const
+QByteArray LevelOnePage::findComposeTriplet(int l, int &d, int &t)
 {
-	return m_composeLink[linkNumber].function;
+	const QByteArray defaultX27d4 = QByteArrayLiteral("\x04" // Designation code 4
+	"\x0c\x1f\x3c\x3c\x3f\x3f" // Link 0: link to GPOP, required at L2.5 and L3.5, page 0FF, all subcodes
+	"\x0d\x1f\x3c\x3c\x3f\x3f" // Link 1: link to POP
+	"\x0e\x1f\x3c\x3c\x3f\x3f" // Link 2: link to GDRCS
+	"\x0f\x1f\x3c\x3c\x3f\x3f" // Link 3: link to DRCS
+	"\x08\x1f\x3c\x3c\x3f\x3f" // Link 4: link to GPOP, required at L3.5 only
+	"\x09\x1f\x3c\x3c\x3f\x3f" // Link 5: link to POP
+	"\x00\x00\x00");           // Reserved
+	const QByteArray defaultX27d5 = QByteArrayLiteral("\x05" // Designation code 5
+	"\x0a\x1f\x3c\x3c\x3f\x3f" // Link 6: link to GDRCS, required at L3.5 only, page 0FF, all subcodes
+	"\x0b\x1f\x3c\x3c\x3f\x3f" // Link 7: link to DRCS
+	"\x00\x00\x00\x00\x00\x00" // Reserved
+	"\x00\x00\x00\x00\x00\x00"
+	"\x00\x00\x00\x00\x00\x00"
+	"\x00\x00\x00\x00\x00\x00"
+	"\x00\x00\x00");
+
+	d = l<6 ? 4 : 5;
+	t = l % 6;
+
+	if (!packetExists(27, d))
+		return (d == 4) ? defaultX27d4 : defaultX27d5;
+	else
+		return packet(27, d);
 }
 
-void LevelOnePage::setComposeLinkFunction(int linkNumber, int newFunction)
+int LevelOnePage::composeLinkFunction(int l)
 {
-	m_composeLink[linkNumber].function = newFunction;
+	int d, t;
+
+	return findComposeTriplet(l, d, t).at(t*6+1) & 0x03;
 }
 
-bool LevelOnePage::composeLinkLevel2p5(int linkNumber) const
+void LevelOnePage::setComposeLinkFunction(int l, int f)
 {
-	return m_composeLink[linkNumber].level2p5;
+	if (l < 4)
+		return;
+
+	int d, t;
+	QByteArray pkt = findComposeTriplet(l, d, t);
+
+	pkt[t*6+1] = (pkt.at(t*6+1) & 0x3c) | f;
+
+	setPacket(27, d, pkt);
 }
 
-void LevelOnePage::setComposeLinkLevel2p5(int linkNumber, bool newRequired)
+bool LevelOnePage::composeLinkLevel2p5(int l)
 {
-	m_composeLink[linkNumber].level2p5 = newRequired;
+	int d, t;
+
+	return findComposeTriplet(l, d, t).at(t*6+1) & 0x04;
 }
 
-bool LevelOnePage::composeLinkLevel3p5(int linkNumber) const
+void LevelOnePage::setComposeLinkLevel2p5(int l, bool r)
 {
-	return m_composeLink[linkNumber].level3p5;
+	int d, t;
+	QByteArray pkt = findComposeTriplet(l, d, t);
+
+	if (r)
+		pkt[t*6+1] |= 0x04;
+	else
+		pkt[t*6+1] &= 0x3b;
+
+	setPacket(27, d, pkt);
 }
 
-void LevelOnePage::setComposeLinkLevel3p5(int linkNumber, bool newRequired)
+bool LevelOnePage::composeLinkLevel3p5(int l)
 {
-	m_composeLink[linkNumber].level3p5 = newRequired;
+	int d, t;
+
+	return findComposeTriplet(l, d, t).at(t*6+1) & 0x08;
 }
 
-int LevelOnePage::composeLinkPageNumber(int linkNumber) const
+void LevelOnePage::setComposeLinkLevel3p5(int l, bool r)
 {
-	return m_composeLink[linkNumber].pageNumber;
+	int d, t;
+	QByteArray pkt = findComposeTriplet(l, d, t);
+
+	if (r)
+		pkt[t*6+1] |= 0x08;
+	else
+		pkt[t*6+1] &= 0x37;
+
+	setPacket(27, d, pkt);
 }
 
-void LevelOnePage::setComposeLinkPageNumber(int linkNumber, int newPageNumber)
+int LevelOnePage::composeLinkPageNumber(int l)
 {
-	m_composeLink[linkNumber].pageNumber = newPageNumber;
+	int d, t;
+	const QByteArray pkt = findComposeTriplet(l, d, t);
+
+	return ((pkt.at(t*6+3) & 0x03) << 9) | ((pkt.at(t*6+2) & 0x20) << 3) | ((pkt.at(t*6+3) & 0x3c) << 2) | (pkt.at(t*6+2) & 0x0f);
 }
 
-int LevelOnePage::composeLinkSubPageCodes(int linkNumber) const
+void LevelOnePage::setComposeLinkPageNumber(int l, int n)
 {
-	return m_composeLink[linkNumber].subPageCodes;
+	int d, t;
+	QByteArray pkt = findComposeTriplet(l, d, t);
+
+	const bool setToFF = (n & 0xff) == 0xff;
+
+	if (!packetExists(27, d))
+		if (setToFF)
+			return;
+
+	pkt[t*6+2] = ((n & 0x100) >> 3) | 0x10 | (n & 0x00f);
+	pkt[t*6+3] = ((n & 0x0f0) >> 2) | ((n & 0x600) >> 9);
+
+	if (setToFF) {
+		bool allFFs = true;
+
+		const int tl = d == 4 ? 6 : 2;
+
+		for (int c=0; c<tl; c++)
+			if ((pkt.at(c*6+3) & 0x3c) != 0x3c || (pkt.at(c*6+2) & 0x0f) != 0x0f) {
+				allFFs = false;
+				break;
+			}
+
+		if (allFFs) {
+			clearPacket(27, d);
+			return;
+		}
+	}
+
+	setPacket(27, d, pkt);
 }
 
-void LevelOnePage::setComposeLinkSubPageCodes(int linkNumber, int newSubPageCodes)
+int LevelOnePage::composeLinkSubPageCodes(int l)
 {
-	m_composeLink[linkNumber].subPageCodes = newSubPageCodes;
+	int d, t;
+	const QByteArray pkt = findComposeTriplet(l, d, t);
+
+	return (pkt.at(t*6+4) >> 2) | (pkt.at(t*6+5) << 4) | (pkt.at(t*6+6) << 10);
+}
+
+void LevelOnePage::setComposeLinkSubPageCodes(int l, int s)
+{
+	int d, t;
+	QByteArray pkt = findComposeTriplet(l, d, t);
+
+	pkt[t*6+4] = ((s & 0x000f) << 2);
+	pkt[t*6+5] = ((s & 0x03f0) >> 4);
+	pkt[t*6+6] = ((s & 0xfc00) >> 10);
+
+	setPacket(27, d, pkt);
 }
