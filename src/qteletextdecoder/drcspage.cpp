@@ -70,10 +70,6 @@ bool DRCSPage::ptu(int c, uchar *data) const
 
 	const int start = c%2 * 20;
 
-	// FIXME should we check all 20 D-bytes for SPACE instead of just the first D-byte?
-	if (packet(pktNo).at(start) < 0x40)
-		return false;
-
 	if (data != nullptr) {
 		const int end = start + 20;
 
