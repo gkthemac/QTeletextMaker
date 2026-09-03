@@ -159,7 +159,7 @@ void PageEnhancementsDockWidget::updateWidgets()
 	m_blackBackgroundSubstAct->blockSignals(false);
 
 	if (m_parentMainWidget->document()->currentSubPage()->leftSidePanelDisplayed())
-		leftSidePanelColumnsResult = (m_parentMainWidget->document()->currentSubPage()->sidePanelColumns() == 0) ? 16 : m_parentMainWidget->document()->currentSubPage()->sidePanelColumns();
+		leftSidePanelColumnsResult = (m_parentMainWidget->document()->currentSubPage()->sidePanelColumns() == 0 && !m_parentMainWidget->document()->currentSubPage()->rightSidePanelDisplayed()) ? 16 : m_parentMainWidget->document()->currentSubPage()->sidePanelColumns();
 
 	if (m_parentMainWidget->document()->currentSubPage()->rightSidePanelDisplayed())
 		rightSidePanelColumnsResult = 16-m_parentMainWidget->document()->currentSubPage()->sidePanelColumns();

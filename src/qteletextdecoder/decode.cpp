@@ -603,7 +603,7 @@ void TeletextPageDecode::updateSidePanels()
 	int oldRightSidePanelColumns = m_rightSidePanelColumns;
 
 	if (m_level >= (3-m_levelOnePage->sidePanelStatusL25()) && m_levelOnePage->leftSidePanelDisplayed())
-		m_leftSidePanelColumns = (m_levelOnePage->sidePanelColumns() == 0) ? 16 : m_levelOnePage->sidePanelColumns();
+		m_leftSidePanelColumns = (m_levelOnePage->sidePanelColumns() == 0 && !m_levelOnePage->rightSidePanelDisplayed()) ? 16 : m_levelOnePage->sidePanelColumns();
 	else
 		m_leftSidePanelColumns = 0;
 
