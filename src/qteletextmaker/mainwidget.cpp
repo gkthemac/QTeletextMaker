@@ -219,12 +219,14 @@ void TeletextWidget::setSidePanelWidths(int newLeftSidePanelColumns, int newRigh
 	else
 		m_levelOnePage->setSidePanelColumns((newRightSidePanelColumns == 0) ? 0 : 16-newRightSidePanelColumns);
 	m_pageDecode.updateSidePanels();
+	update();
 }
 
 void TeletextWidget::setSidePanelAtL35Only(bool newSidePanelAtL35Only)
 {
 	m_levelOnePage->setSidePanelStatusL25(!newSidePanelAtL35Only);
 	m_pageDecode.updateSidePanels();
+	update();
 }
 
 void TeletextWidget::changeSize()
