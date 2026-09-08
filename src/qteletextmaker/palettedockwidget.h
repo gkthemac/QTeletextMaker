@@ -33,6 +33,8 @@ class PaletteDockWidget : public QDockWidget
 public:
 	PaletteDockWidget(TeletextWidget *parent);
 	void updateAllColourButtons();
+	bool showHexValues();
+	void setShowHexValues(bool b);
 
 public slots:
 	void updateColourButton(int colourIndex);

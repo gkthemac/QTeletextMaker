@@ -423,6 +423,7 @@ void MainWindow::init()
 	m_smoothTransformAction->blockSignals(false);
 	int zoomSliderInit = settings.value("zoom", 2).toInt();
 	zoomSliderInit = (zoomSliderInit < 0 || zoomSliderInit > 8) ? 2 : zoomSliderInit;
+	m_paletteDockWidget->setShowHexValues(settings.value("showHexColourValues", 0).toBool());
 
 	m_textView = new QGraphicsView(this);
 	m_textView->setScene(m_textScene);
@@ -1254,6 +1255,7 @@ void MainWindow::writeSettings()
 	settings.setValue("aspectratio", m_viewAspectRatio);
 	settings.setValue("smoothTransform", m_viewSmoothTransform);
 	settings.setValue("zoom", m_zoomSlider->value());
+	settings.setValue("showHexColourValues", m_paletteDockWidget->showHexValues());
 }
 
 bool MainWindow::maybeSave()

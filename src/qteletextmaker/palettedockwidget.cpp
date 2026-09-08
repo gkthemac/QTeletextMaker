@@ -76,6 +76,16 @@ PaletteDockWidget::PaletteDockWidget(TeletextWidget *parent): QDockWidget(parent
 	connect(m_parentMainWidget->document(), &TeletextDocument::colourChanged, this, &PaletteDockWidget::updateColourButton);
 }
 
+bool PaletteDockWidget::showHexValues()
+{
+	return m_showHexValuesCheckBox->isChecked();
+}
+
+void PaletteDockWidget::setShowHexValues(bool b)
+{
+	m_showHexValuesCheckBox->setChecked(b);
+}
+
 void PaletteDockWidget::updateColourButton(int colourIndex)
 {
 	if (colourIndex == 8)
