@@ -97,6 +97,7 @@ void TeletextWidget::subPageSelected()
 
 void TeletextWidget::refreshPage()
 {
+	m_pageDecode.updateSidePanels();
 	m_pageDecode.decodePage();
 	update();
 }
