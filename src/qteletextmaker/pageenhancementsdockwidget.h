@@ -23,7 +23,9 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDockWidget>
+#include <QRadioButton>
 #include <QSpinBox>
+#include <QStackedLayout>
 
 #include "mainwidget.h"
 
@@ -36,13 +38,19 @@ public:
 	void updateWidgets();
 
 private:
+	void setSidePanels(int newSidePanels);
+	void setOneSidePanelWidth(int newPanelWidth);
 	void setLeftSidePanelWidth(int newLeftPanelSize);
 	void setRightSidePanelWidth(int newRightPanelSize);
+
+	void updateSidePanelWidgets(int sidePanelRadio);
 
 	TeletextWidget *m_parentMainWidget;
 	QComboBox *m_defaultScreenColourCombo, *m_defaultRowColourCombo, *m_colourTableCombo;
 	QCheckBox *m_blackBackgroundSubstAct, *m_sidePanelStatusAct;
-	QSpinBox *m_leftSidePanelSpinBox, *m_rightSidePanelSpinBox;
+	QRadioButton *m_sidePanelRadioButton[4];
+	QStackedLayout *m_columnsStackedLayout;
+	QSpinBox *m_oneSidePanelSpinBox, *m_leftSidePanelSpinBox, *m_rightSidePanelSpinBox;
 };
 
 #endif

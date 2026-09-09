@@ -210,14 +210,19 @@ void TeletextWidget::setDefaultNOS(int newDefaultNOS)
 	m_levelOnePage->setDefaultNOS(newDefaultNOS);
 }
 
-void TeletextWidget::setSidePanelWidths(int newLeftSidePanelColumns, int newRightSidePanelColumns)
+void TeletextWidget::setSidePanels(bool l, bool r)
 {
-	m_levelOnePage->setLeftSidePanelDisplayed(newLeftSidePanelColumns != 0);
-	m_levelOnePage->setRightSidePanelDisplayed(newRightSidePanelColumns != 0);
-	if (newLeftSidePanelColumns)
-		m_levelOnePage->setSidePanelColumns((newLeftSidePanelColumns == 16) ? 0 : newLeftSidePanelColumns);
-	else
-		m_levelOnePage->setSidePanelColumns((newRightSidePanelColumns == 0) ? 0 : 16-newRightSidePanelColumns);
+	m_levelOnePage->setLeftSidePanelDisplayed(l);
+	m_levelOnePage->setRightSidePanelDisplayed(r);
+
+	m_pageDecode.updateSidePanels();
+	update();
+}
+
+void TeletextWidget::setSidePanelColumns(int c)
+{
+	m_levelOnePage->setSidePanelColumns(c);
+
 	m_pageDecode.updateSidePanels();
 	update();
 }

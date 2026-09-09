@@ -21,8 +21,11 @@
 #include <QComboBox>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QRadioButton>
 #include <QSpinBox>
+#include <QStackedLayout>
 
 #include "pageenhancementsdockwidget.h"
 
@@ -77,7 +80,7 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 	connect(m_blackBackgroundSubstAct, &QCheckBox::stateChanged, [=](int state){ m_parentMainWidget->document()->undoStack()->push(new SetBlackBackgroundSubstCommand(m_parentMainWidget->document(), state)); });
 #endif
 
-	// Add group box to the main layout
+	// Add colour group box to the main layout
 	colourGroupBox->setLayout(colourLayout);
 	pageEnhancementsLayout->addWidget(colourGroupBox);
 
@@ -86,29 +89,87 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 	QGroupBox *sidePanelsGroupBox = new QGroupBox(tr("Side panels"));
 	QGridLayout *sidePanelsLayout = new QGridLayout;
 
-	// Side panel columns
-	sidePanelsLayout->addWidget(new QLabel(tr("Left side panel columns")), 0, 0, 1, 1);
-	m_leftSidePanelSpinBox = new QSpinBox(this);
-	m_leftSidePanelSpinBox->setMaximum(16);
-	sidePanelsLayout->addWidget(m_leftSidePanelSpinBox, 0, 1, 1, 1, Qt::AlignTop);
-	connect(m_leftSidePanelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int index){ setLeftSidePanelWidth(index); });
+	// Left or right side panel radio buttons
+	m_sidePanelRadioButton[0] = new QRadioButton(tr("None"));
+	m_sidePanelRadioButton[1] = new QRadioButton(tr("Left"));
+	m_sidePanelRadioButton[2] = new QRadioButton(tr("Right"));
+	m_sidePanelRadioButton[3] = new QRadioButton(tr("Both"));
 
-	sidePanelsLayout->addWidget(new QLabel(tr("Right side panel columns")), 1, 0, 1, 1);
-	m_rightSidePanelSpinBox = new QSpinBox(this);
+	for (int i=0; i<4; i++) {
+		sidePanelsLayout->addWidget(m_sidePanelRadioButton[i], 0, i, 1, 1);
+		connect(m_sidePanelRadioButton[i], &QAbstractButton::clicked, [=]() { setSidePanels(i); });
+	}
+
+	// Stacked widgets that alter the number of side panel columns
+	QHBoxLayout *oneSidePanelLayout = new QHBoxLayout;
+	// Index 0 is a blank label widget, we allocate it later when we start stacking
+
+	// Index 1 - single spinbox for left or right side panel only
+	QLabel *oneSidePanelLabel = new QLabel("Columns");
+	oneSidePanelLayout->addWidget(oneSidePanelLabel);
+	m_oneSidePanelSpinBox = new QSpinBox;
+	m_oneSidePanelSpinBox->setMinimum(1);
+	m_oneSidePanelSpinBox->setMaximum(16);
+	oneSidePanelLayout->addWidget(m_oneSidePanelSpinBox);
+	connect(m_oneSidePanelSpinBox, &QSpinBox::valueChanged, this, &PageEnhancementsDockWidget::setOneSidePanelWidth);
+
+	// Index 2 - two spinboxes for both side panels
+	QHBoxLayout *bothSidePanelsLayout = new QHBoxLayout;
+
+	QLabel *bothLeftLabel = new QLabel(tr("Left cols"));
+	bothSidePanelsLayout->addWidget(bothLeftLabel);
+	m_leftSidePanelSpinBox = new QSpinBox;
+	m_leftSidePanelSpinBox->setMaximum(15);
+	bothSidePanelsLayout->addWidget(m_leftSidePanelSpinBox);
+	connect(m_leftSidePanelSpinBox, &QSpinBox::valueChanged, this, &PageEnhancementsDockWidget::setLeftSidePanelWidth);
+
+	QLabel *bothRightLabel = new QLabel(tr("Right cols"));
+	bothSidePanelsLayout->addWidget(bothRightLabel);
+	m_rightSidePanelSpinBox = new QSpinBox;
+	m_rightSidePanelSpinBox->setMinimum(1);
 	m_rightSidePanelSpinBox->setMaximum(16);
-	sidePanelsLayout->addWidget(m_rightSidePanelSpinBox, 1, 1, 1, 1, Qt::AlignTop);
-	connect(m_rightSidePanelSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int index){ setRightSidePanelWidth(index); });
+	bothSidePanelsLayout->addWidget(m_rightSidePanelSpinBox);
+	connect(m_rightSidePanelSpinBox, &QSpinBox::valueChanged, this, &PageEnhancementsDockWidget::setRightSidePanelWidth);
+
+	// Stack all the column layouts together
+	m_columnsStackedLayout = new QStackedLayout;
+
+	// Index 0
+	// Blank label
+	QLabel *blankWidget = new QLabel(" ");
+	m_columnsStackedLayout->addWidget(blankWidget);
+
+	// Index 1
+	oneSidePanelLayout->setContentsMargins(0, 0, 0, 0);
+	QWidget *oneSidePanelWidget = new QWidget;
+	oneSidePanelWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+	oneSidePanelWidget->setLayout(oneSidePanelLayout);
+	m_columnsStackedLayout->addWidget(oneSidePanelWidget);
+
+	// Index 2
+	bothSidePanelsLayout->setContentsMargins(0, 0, 0, 0);
+	QWidget *bothSidePanelsWidget = new QWidget;
+	bothSidePanelsWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+	bothSidePanelsWidget->setLayout(bothSidePanelsLayout);
+	m_columnsStackedLayout->addWidget(bothSidePanelsWidget);
+
+	// We could simply: sidePanelsLayout->addLayout(m_columnsStackedLayout);
+	// but we need to keep it to the smallest size, only possible by putting it inside a QWidget
+	QWidget *columnsStackedWidget = new QWidget;
+	columnsStackedWidget->setLayout(m_columnsStackedLayout);
+	columnsStackedWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+	sidePanelsLayout->addWidget(columnsStackedWidget, 1, 0, 1, 4, Qt::AlignTop);
 
 	// Side panels status
 	m_sidePanelStatusAct = new QCheckBox("Side panels at level 3.5 only");
-	sidePanelsLayout->addWidget(m_sidePanelStatusAct, 2, 0, 1, 2, Qt::AlignTop);
+	sidePanelsLayout->addWidget(m_sidePanelStatusAct, 2, 0, 1, 4, Qt::AlignTop);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	connect(m_sidePanelStatusAct, &QCheckBox::checkStateChanged, m_parentMainWidget, &TeletextWidget::setSidePanelAtL35Only);
 #else
 	connect(m_sidePanelStatusAct, &QCheckBox::stateChanged, m_parentMainWidget, &TeletextWidget::setSidePanelAtL35Only);
 #endif
 
-	// Add group box to the main layout
+	// Add side panels group box to the main layout
 	sidePanelsGroupBox->setLayout(sidePanelsLayout);
 	pageEnhancementsLayout->addWidget(sidePanelsGroupBox);
 
@@ -118,33 +179,101 @@ PageEnhancementsDockWidget::PageEnhancementsDockWidget(TeletextWidget *parent): 
 	this->setWidget(pageEnhancementsWidget);
 }
 
+void PageEnhancementsDockWidget::setSidePanels(int newSidePanels)
+{
+	m_parentMainWidget->setSidePanels(newSidePanels & 1, newSidePanels & 2);
+
+	switch (newSidePanels) {
+		case 0:
+			m_columnsStackedLayout->setCurrentIndex(0);
+			break;
+		case 1:
+		case 2:
+			m_columnsStackedLayout->setCurrentIndex(1);
+			break;
+		case 3:
+			m_columnsStackedLayout->setCurrentIndex(2);
+			break;
+	}
+
+	updateSidePanelWidgets(newSidePanels);
+}
+
+void PageEnhancementsDockWidget::setOneSidePanelWidth(int newPanelWidth)
+{
+	if (m_parentMainWidget->document()->currentSubPage()->leftSidePanelDisplayed())
+		if (newPanelWidth == 16)
+			m_parentMainWidget->setSidePanelColumns(0);
+		else
+			m_parentMainWidget->setSidePanelColumns(newPanelWidth);
+
+	if (m_parentMainWidget->document()->currentSubPage()->rightSidePanelDisplayed())
+		m_parentMainWidget->setSidePanelColumns(16 - newPanelWidth);
+}
+
 void PageEnhancementsDockWidget::setLeftSidePanelWidth(int newLeftPanelSize)
 {
-	if (newLeftPanelSize && m_rightSidePanelSpinBox->value()) {
-		int newRightPanelSize = 16-newLeftPanelSize;
-		m_rightSidePanelSpinBox->blockSignals(true);
-		m_rightSidePanelSpinBox->setValue(newRightPanelSize);
-		m_rightSidePanelSpinBox->blockSignals(false);
-	}
-	m_parentMainWidget->setSidePanelWidths(newLeftPanelSize, m_rightSidePanelSpinBox->value());
+	// Both side panels, and left-columns spinbox was changed.
+	// Update the right-columns spinbox to maintain 16 additional column total.
+	m_rightSidePanelSpinBox->blockSignals(true);
+	m_rightSidePanelSpinBox->setValue(16 - newLeftPanelSize);
+	m_rightSidePanelSpinBox->blockSignals(false);
+
+	m_parentMainWidget->setSidePanelColumns(newLeftPanelSize);
 }
 
 void PageEnhancementsDockWidget::setRightSidePanelWidth(int newRightPanelSize)
 {
-	if (newRightPanelSize && m_leftSidePanelSpinBox->value()) {
-		int newLeftPanelSize = 16-newRightPanelSize;
-		m_leftSidePanelSpinBox->blockSignals(true);
-		m_leftSidePanelSpinBox->setValue(newLeftPanelSize);
-		m_leftSidePanelSpinBox->blockSignals(false);
+	// Both side panels, and right-columns spinbox was changed.
+	// Update the left-columns spinbox to maintain 16 additional column total.
+	const int newLeftPanelSize = 16 - newRightPanelSize;
+
+	m_leftSidePanelSpinBox->blockSignals(true);
+	m_leftSidePanelSpinBox->setValue(newLeftPanelSize);
+	m_leftSidePanelSpinBox->blockSignals(false);
+
+	m_parentMainWidget->setSidePanelColumns(newLeftPanelSize);
+}
+
+// Called when the radio button changes, either by being clicked or when a new page is shown.
+void PageEnhancementsDockWidget::updateSidePanelWidgets(int sidePanelRadio)
+{
+	switch (sidePanelRadio) {
+		case 0:
+			m_columnsStackedLayout->setCurrentIndex(0);
+			break;
+		case 1:
+			m_oneSidePanelSpinBox->blockSignals(true);
+			if (m_parentMainWidget->document()->currentSubPage()->sidePanelColumns() == 0)
+				m_oneSidePanelSpinBox->setValue(16);
+			else
+				m_oneSidePanelSpinBox->setValue(m_parentMainWidget->document()->currentSubPage()->sidePanelColumns());
+			m_oneSidePanelSpinBox->blockSignals(false);
+
+			m_columnsStackedLayout->setCurrentIndex(1);
+			break;
+		case 2:
+			m_oneSidePanelSpinBox->blockSignals(true);
+			m_oneSidePanelSpinBox->setValue(16 - m_parentMainWidget->document()->currentSubPage()->sidePanelColumns());
+			m_oneSidePanelSpinBox->blockSignals(false);
+
+			m_columnsStackedLayout->setCurrentIndex(1);
+			break;
+		case 3:
+			m_leftSidePanelSpinBox->blockSignals(true);
+			m_rightSidePanelSpinBox->blockSignals(true);
+			m_leftSidePanelSpinBox->setValue(m_parentMainWidget->document()->currentSubPage()->sidePanelColumns());
+			m_rightSidePanelSpinBox->setValue(16 - m_parentMainWidget->document()->currentSubPage()->sidePanelColumns());
+			m_leftSidePanelSpinBox->blockSignals(false);
+			m_rightSidePanelSpinBox->blockSignals(false);
+
+			m_columnsStackedLayout->setCurrentIndex(2);
+			break;
 	}
-	m_parentMainWidget->setSidePanelWidths(m_leftSidePanelSpinBox->value(), newRightPanelSize);
 }
 
 void PageEnhancementsDockWidget::updateWidgets()
 {
-	int leftSidePanelColumnsResult = 0;
-	int rightSidePanelColumnsResult = 0;
-
 	m_defaultScreenColourCombo->blockSignals(true);
 	m_defaultScreenColourCombo->setCurrentIndex(m_parentMainWidget->document()->currentSubPage()->defaultScreenColour());
 	m_defaultScreenColourCombo->blockSignals(false);
@@ -158,18 +287,19 @@ void PageEnhancementsDockWidget::updateWidgets()
 	m_blackBackgroundSubstAct->setChecked(m_parentMainWidget->document()->currentSubPage()->blackBackgroundSubst());
 	m_blackBackgroundSubstAct->blockSignals(false);
 
+	int sidePanelRadio = 0;
+
 	if (m_parentMainWidget->document()->currentSubPage()->leftSidePanelDisplayed())
-		leftSidePanelColumnsResult = (m_parentMainWidget->document()->currentSubPage()->sidePanelColumns() == 0 && !m_parentMainWidget->document()->currentSubPage()->rightSidePanelDisplayed()) ? 16 : m_parentMainWidget->document()->currentSubPage()->sidePanelColumns();
-
+		sidePanelRadio |= 1;
 	if (m_parentMainWidget->document()->currentSubPage()->rightSidePanelDisplayed())
-		rightSidePanelColumnsResult = 16-m_parentMainWidget->document()->currentSubPage()->sidePanelColumns();
+		sidePanelRadio |= 2;
 
-	m_leftSidePanelSpinBox->blockSignals(true);
-	m_leftSidePanelSpinBox->setValue(leftSidePanelColumnsResult);
-	m_leftSidePanelSpinBox->blockSignals(false);
-	m_rightSidePanelSpinBox->blockSignals(true);
-	m_rightSidePanelSpinBox->setValue(rightSidePanelColumnsResult);
-	m_rightSidePanelSpinBox->blockSignals(false);
+	m_sidePanelRadioButton[sidePanelRadio]->blockSignals(true);
+	m_sidePanelRadioButton[sidePanelRadio]->toggle();
+	m_sidePanelRadioButton[sidePanelRadio]->blockSignals(false);
+
+	updateSidePanelWidgets(sidePanelRadio);
+
 	m_sidePanelStatusAct->blockSignals(true);
 	m_sidePanelStatusAct->setChecked(!m_parentMainWidget->document()->currentSubPage()->sidePanelStatusL25());
 	m_sidePanelStatusAct->blockSignals(false);

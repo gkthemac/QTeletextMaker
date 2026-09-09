@@ -78,7 +78,8 @@ public slots:
 	void setControlBit(int bitNumber, bool active);
 	void setDefaultCharSet(int newDefaultCharSet);
 	void setDefaultNOS(int newDefaultNOS);
-	void setSidePanelWidths(int newLeftSidePanelColumns, int newRightSidePanelColumns);
+	void setSidePanels(bool l, bool r);
+	void setSidePanelColumns(int c);
 	void setSidePanelAtL35Only(bool newSidePanelAtL35Only);
 
 	void cut();
