@@ -53,7 +53,7 @@ install(DIRECTORY
 
 if(UNIX AND NOT APPLE)
 	install(FILES
-		${CMAKE_CURRENT_LIST_DIR}/share/qteletextmaker.desktop
+		${CMAKE_CURRENT_LIST_DIR}/share/linux/qteletextmaker.desktop
 		DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
 	)
 endif()
