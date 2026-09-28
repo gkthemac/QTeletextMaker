@@ -4,6 +4,7 @@ Name=QTeletextMaker
 GenericName=Teletext page editor
 Exec=qteletextmaker %F
 TryExec=qteletextmaker
+Icon=qteletextmaker
 Categories=Graphics;
 Keywords=teletext;
 MimeType=text/x.teletext.tti;text/x-softel-teletext;

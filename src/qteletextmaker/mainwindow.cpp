@@ -378,6 +378,7 @@ void MainWindow::about()
 
 void MainWindow::init()
 {
+	setWindowIcon(QIcon(":/images/appicon.png"));
 	setAttribute(Qt::WA_DeleteOnClose);
 
 	m_isUntitled = true;

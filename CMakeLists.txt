@@ -15,13 +15,19 @@ add_subdirectory(src/qteletextdecoder)
 add_subdirectory(3rdparty/QtGifImage)
 
 file (GLOB SOURCES src/qteletextmaker/*.cpp)
-add_executable(qteletextmaker ${SOURCES} src/qteletextmaker/actionicons.qrc)
+add_executable(qteletextmaker ${SOURCES}
+	src/qteletextmaker/actionicons.qrc
+	src/qteletextmaker/appicon.qrc
+)
 
 target_link_libraries(qteletextmaker PRIVATE QtGifImage::QtGifImage qteletextdecoder Qt::Widgets)
 
-set_target_properties(qteletextmaker PROPERTIES
-	WIN32_EXECUTABLE ON
-)
+if(WIN32)
+	set_target_properties(qteletextmaker PROPERTIES
+		WIN32_EXECUTABLE ON
+	)
+	target_sources(qteletextmaker PUBLIC ${CMAKE_CURRENT_LIST_DIR}/share/windows/appicon.rc)
+endif()
 
 if(UNIX)
 	include(GNUInstallDirs)
@@ -55,5 +61,9 @@ if(UNIX AND NOT APPLE)
 	install(FILES
 		${CMAKE_CURRENT_LIST_DIR}/share/linux/qteletextmaker.desktop
 		DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+	)
+	install(DIRECTORY
+		${CMAKE_CURRENT_LIST_DIR}/share/linux/icons
+		DESTINATION ${CMAKE_INSTALL_DATADIR}
 	)
 endif()

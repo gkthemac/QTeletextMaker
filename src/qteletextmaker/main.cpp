@@ -24,6 +24,7 @@
 
 int main(int argc, char *argv[])
 {
+	Q_INIT_RESOURCE(appicon);
 	Q_INIT_RESOURCE(actionicons);
 	QApplication app(argc, argv);
 	QApplication::setApplicationName("QTeletextMaker");
