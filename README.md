@@ -16,10 +16,15 @@ Features
 - View pages in 4:3, 16:9 pillar-box and 16:9 stretch aspect ratios with configurable zoom level.
 - View pages in mix and attribute-less monochrome modes.
 
-Although designed on and developed for Linux, the Qt libraries are cross platform so a Windows executable can be built. A Windows executable can be found within the "Releases" link, compiled on a Linux host using [MXE](https://github.com/mxe/mxe) based on [these instructions](https://web.archive.org/web/20230606021352/https://blog.8bitbuddhism.com/2018/08/22/cross-compiling-windows-applications-with-mxe/). After MXE is installed `make qt6-qtbase` should build and install the required dependencies to build QTeletextMaker.
+## Downloading
+Downloads can be found on the [release page](https://github.com/gkthemac/QTeletextMaker/releases).
+
+For Linux release v1.0 is available as an AppImage. Download the AppImage and make the file executable, either in your file manager or use `chmod +x` on the command line.
+
+Windows executables are within a zip file. Please note that qteletextmaker.exe is NOT an installer but a complete .exe file that should run straight away (subject to Windows Defender SmartScreen warnings).
 
 ## Building
-### Linux
+### Building on Linux
 Install version 6 of the QtCore, QtGui and QtWidgets libraries and build headers, along with CMake.
 
 Change into the source directory and run the following commands. -j8 can be replaced with the number of processor cores used for the compile process
@@ -33,6 +38,9 @@ make -j8
 The above should place the qteletextmaker executable into the build directory created by the above commands. Within the build directory type `./qteletextmaker` in the terminal to launch.
 
 Optionally, type `cmake --install .` to place the executable into /usr/local/bin and the example .tti files into /usr/local/share/doc/qteletextmaker.
+
+### Building a Windows executable on a Linux host
+The Windows releases are self-compiled on a Linux host using [MXE](https://github.com/mxe/mxe) based on [these instructions](https://web.archive.org/web/20230606021352/https://blog.8bitbuddhism.com/2018/08/22/cross-compiling-windows-applications-with-mxe/). After MXE is installed `make qt6-qtbase` should build and install the required dependencies to build QTeletextMaker.
 
 ## Current limitations
 The following X/26 enhancement triplets are not rendered by the editor, although the list is fully aware of them.
