@@ -418,6 +418,13 @@ void MainWindow::init()
 	m_viewAspectRatio = settings.value("aspectratio", 0).toInt();
 	m_viewAspectRatio = (m_viewAspectRatio < 0 || m_viewAspectRatio > 3) ? 0 : m_viewAspectRatio;
 	m_aspectRatioActs[m_viewAspectRatio]->setChecked(true);
+	int renderMode = settings.value("renderMode", 0).toInt();
+	if (renderMode < 0 || renderMode > 3)
+		renderMode = 0;
+
+	m_renderModeActs[renderMode]->setChecked(true);
+	m_textScene->setRenderMode(
+		static_cast<TeletextPageRender::RenderMode>(renderMode));
 	m_viewSmoothTransform = settings.value("smoothTransform", 0).toBool();
 	m_smoothTransformAction->blockSignals(true);
 	m_smoothTransformAction->setChecked(m_viewSmoothTransform);
@@ -425,6 +432,17 @@ void MainWindow::init()
 	int zoomSliderInit = settings.value("zoom", 2).toInt();
 	zoomSliderInit = (zoomSliderInit < 0 || zoomSliderInit > 8) ? 2 : zoomSliderInit;
 	m_paletteDockWidget->setShowHexValues(settings.value("showHexColourValues", 0).toBool());
+
+	m_gridAct->setChecked(settings.value("showGrid", false).toBool());
+	m_showControlCodesAct->setChecked(
+		settings.value("showControlCodes", false).toBool());
+
+	m_rowZeroAct->setChecked(settings.value("editHeaderRow", false).toBool());
+	m_revealAct->setChecked(settings.value("reveal", false).toBool());
+
+	const bool insertMode = settings.value("insertMode", false).toBool();
+	m_textWidget->setInsertMode(insertMode);
+	m_insertModePushButton->setText(insertMode ? "INSERT" : "OVERWRITE");
 
 	m_textView = new QGraphicsView(this);
 	m_textView->setScene(m_textScene);
@@ -702,36 +720,36 @@ void MainWindow::createActions()
 
 	QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
 
-	QAction *revealAct = viewMenu->addAction(tr("&Reveal"));
-	revealAct->setCheckable(true);
-	revealAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_R));
-	revealAct->setStatusTip(tr("Toggle reveal"));
-	connect(revealAct, &QAction::toggled, m_textWidget, &TeletextWidget::setReveal);
+	m_revealAct = viewMenu->addAction(tr("&Reveal"));
+	m_revealAct->setCheckable(true);
+	m_revealAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_R));
+	m_revealAct->setStatusTip(tr("Toggle reveal"));
+	connect(m_revealAct, &QAction::toggled, m_textWidget, &TeletextWidget::setReveal);
 
-	QAction *gridAct = viewMenu->addAction(tr("&Grid"));
-	gridAct->setCheckable(true);
-	gridAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_G));
-	gridAct->setStatusTip(tr("Toggle the text grid"));
-	connect(gridAct, &QAction::toggled, m_textScene, &LevelOneScene::toggleGrid);
+	m_gridAct = viewMenu->addAction(tr("&Grid"));
+	m_gridAct->setCheckable(true);
+	m_gridAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_G));
+	m_gridAct->setStatusTip(tr("Toggle the text grid"));
+	connect(m_gridAct, &QAction::toggled, m_textScene, &LevelOneScene::toggleGrid);
 
-	QAction *showControlCodesAct = viewMenu->addAction(tr("Control codes"));
-	showControlCodesAct->setCheckable(true);
-	showControlCodesAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_T));
-	showControlCodesAct->setStatusTip(tr("Toggle showing of control codes"));
-	connect(showControlCodesAct, &QAction::toggled, m_textWidget, &TeletextWidget::setShowControlCodes);
+	m_showControlCodesAct = viewMenu->addAction(tr("Control codes"));
+	m_showControlCodesAct->setCheckable(true);
+	m_showControlCodesAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_T));
+	m_showControlCodesAct->setStatusTip(tr("Toggle showing of control codes"));
+	connect(m_showControlCodesAct, &QAction::toggled,
+			m_textWidget, &TeletextWidget::setShowControlCodes);
 
 	viewMenu->addSeparator();
 
 	QMenu *renderModeSubMenu = viewMenu->addMenu(tr("Render mode"));
-	QAction *renderModeActs[4];
-	renderModeActs[0] = renderModeSubMenu->addAction(tr("Normal"));
-	renderModeActs[0]->setStatusTip(tr("Render page normally"));
-	renderModeActs[1] = renderModeSubMenu->addAction(tr("Mix"));
-	renderModeActs[1]->setStatusTip(tr("Render page in mix mode"));
-	renderModeActs[2] = renderModeSubMenu->addAction(tr("White on black"));
-	renderModeActs[2]->setStatusTip(tr("Render page with white foreground on black background"));
-	renderModeActs[3] = renderModeSubMenu->addAction(tr("Black on white"));
-	renderModeActs[3]->setStatusTip(tr("Render page with black foreground on white background"));
+	m_renderModeActs[0] = renderModeSubMenu->addAction(tr("Normal"));
+	m_renderModeActs[0]->setStatusTip(tr("Render page normally"));
+	m_renderModeActs[1] = renderModeSubMenu->addAction(tr("Mix"));
+	m_renderModeActs[1]->setStatusTip(tr("Render page in mix mode"));
+	m_renderModeActs[2] = renderModeSubMenu->addAction(tr("White on black"));
+	m_renderModeActs[2]->setStatusTip(tr("Render page with white foreground on black background"));
+	m_renderModeActs[3] = renderModeSubMenu->addAction(tr("Black on white"));
+	m_renderModeActs[3]->setStatusTip(tr("Render page with black foreground on white background"));
 
 	QMenu *borderSubMenu = viewMenu->addMenu(tr("Border"));
 	m_borderActs[0] = borderSubMenu->addAction(tr("None"));
@@ -755,9 +773,9 @@ void MainWindow::createActions()
 	QActionGroup *borderGroup = new QActionGroup(this);
 	QActionGroup *aspectRatioGroup = new QActionGroup(this);
 	for (int i=0; i<=3; i++) {
-		renderModeActs[i]->setCheckable(true);
-		connect(renderModeActs[i], &QAction::triggered, [=]() { m_textScene->setRenderMode(static_cast<TeletextPageRender::RenderMode>(i)); });
-		renderModeGroup->addAction(renderModeActs[i]);
+		m_renderModeActs[i]->setCheckable(true);
+		connect(m_renderModeActs[i], &QAction::triggered, [=]() { m_textScene->setRenderMode(static_cast<TeletextPageRender::RenderMode>(i)); });
+		renderModeGroup->addAction(m_renderModeActs[i]);
 
 		m_aspectRatioActs[i]->setCheckable(true);
 		connect(m_aspectRatioActs[i], &QAction::triggered, [=]() { setAspectRatio(i); });
@@ -770,7 +788,7 @@ void MainWindow::createActions()
 		connect(m_borderActs[i], &QAction::triggered, [=]() { setBorder(i); });
 		borderGroup->addAction(m_borderActs[i]);
 	}
-	renderModeActs[0]->setChecked(true);
+	m_renderModeActs[0]->setChecked(true);
 
 	viewMenu->addSeparator();
 
@@ -1257,6 +1275,12 @@ void MainWindow::writeSettings()
 	settings.setValue("smoothTransform", m_viewSmoothTransform);
 	settings.setValue("zoom", m_zoomSlider->value());
 	settings.setValue("showHexColourValues", m_paletteDockWidget->showHexValues());
+	settings.setValue("showGrid", m_gridAct->isChecked());
+	settings.setValue("showControlCodes", m_showControlCodesAct->isChecked());
+	settings.setValue("insertMode", m_textWidget->insertMode());
+	settings.setValue("editHeaderRow", m_rowZeroAct->isChecked());
+	settings.setValue("reveal", m_revealAct->isChecked());
+	settings.setValue("renderMode", static_cast<int>(m_textWidget->pageRender()->renderMode()));
 }
 
 bool MainWindow::maybeSave()

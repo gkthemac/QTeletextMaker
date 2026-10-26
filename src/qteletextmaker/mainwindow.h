@@ -148,8 +148,13 @@ private:
 	QAction *m_rowZeroAct;
 	QAction *m_borderActs[3];
 	QAction *m_aspectRatioActs[4];
+	QAction *m_revealAct;
+	QAction *m_renderModeActs[4];
 	QAction *m_smoothTransformAction;
 	QAction *m_drcsSection[2], *m_drcsClear[2], *m_drcsSwap;
+
+	QAction *m_gridAct;
+	QAction *m_showControlCodesAct;
 
 	QLabel *m_subPageLabel, *m_cursorPositionLabel;
 	QToolButton *m_previousSubPageButton, *m_nextSubPageButton;
